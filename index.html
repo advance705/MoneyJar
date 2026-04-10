@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.41</title>
+    <title>🍯 MoneyJar v0.42</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -111,10 +111,15 @@
         .dash-list b { color: var(--text-main); }
         .chart-container { position: relative; height: 220px; width: 100%; margin-top: 15px; }
 
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; }
         .calendar-nav button { padding: 8px 15px; cursor: pointer; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; font-weight: bold; transition: 0.2s;}
         .calendar-nav button:hover { background: var(--sidebar-hover); }
         
+        /* v0.42 年月快速跳轉按鈕 */
+        .month-picker-btn { background: var(--sidebar-bg); border: 1px solid var(--border); color: var(--accent); padding: 8px 15px; border-radius: 20px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: 0.2s; position: relative; display: flex; align-items: center; gap: 5px;}
+        .month-picker-btn:hover { background: var(--sidebar-hover); border-color: var(--accent); }
+        .month-picker-btn input[type="month"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; color-scheme: dark; }
+
         .filter-toggle-btn { display: none; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; width: 100%; text-align: left; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; font-weight: bold; justify-content: space-between; align-items: center; transition: 0.2s; }
         .filter-toggle-btn:hover { background: var(--sidebar-hover); }
         .calendar-filters { background: var(--card-bg); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
@@ -160,7 +165,7 @@
         .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
         
         /* v0.41 修復對帳單滑動陷阱 */
-        .ledger-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
+        .ledger-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); -webkit-overflow-scrolling: touch; }
         .ledger-table { width: 100%; border-collapse: collapse; font-size: 0.9em; min-width: 1100px; color: var(--text-main); }
         .ledger-table th { background: var(--sidebar-bg); padding: 12px 10px; text-align: right; border-bottom: 2px solid var(--border); color: var(--text-light); white-space: nowrap; font-weight: normal;}
         .ledger-table th:nth-child(1), .ledger-table th:nth-child(2), .ledger-table th:nth-child(3), .ledger-table th:nth-child(4) { text-align: left; }
@@ -171,6 +176,19 @@
         .jump-link { color: var(--accent); text-decoration: none; font-weight: bold; transition: 0.2s; }
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
+        /* v0.42 對帳單工具列 (搜尋與分頁) */
+        .ledger-tools { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; flex-wrap: wrap;}
+        .search-box { position: relative; flex: 1; min-width: 250px;}
+        .search-box input { width: 100%; padding: 10px 15px 10px 40px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; color: var(--text-main); transition: 0.2s; }
+        .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 5px rgba(136, 192, 208, 0.3); }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); opacity: 0.7; }
+        
+        .pagination { display: flex; align-items: center; gap: 5px; background: var(--card-bg); padding: 5px; border-radius: 20px; border: 1px solid var(--border); }
+        .page-btn { background: transparent; border: none; color: var(--text-light); padding: 6px 12px; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85em; }
+        .page-btn:hover:not(:disabled) { background: var(--sidebar-hover); color: var(--text-main); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .page-info { font-size: 0.85em; color: var(--text-main); margin: 0 10px; font-weight: bold; }
+
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .page > h2, .calendar-header h2 { display: none; }
@@ -211,9 +229,10 @@
             .mobile-close-btn { display: block; background: none; border: none; font-size: 1.5em; color: var(--text-light); padding: 0; margin-left: 10px; margin-top:-5px;}
             .card-title-row { padding-right: 0; }
             
-            .calendar-header { flex-direction: row; margin-bottom: 10px; gap: 0; }
-            .calendar-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
-            .calendar-nav button { padding: 6px 12px; font-size: 0.9em; }
+            .calendar-header { flex-direction: row; margin-bottom: 10px; justify-content: space-between; gap: 5px;}
+            .calendar-nav button { padding: 6px 10px; font-size: 0.85em; }
+            .month-picker-btn { padding: 6px 12px; font-size: 0.95em; }
+            
             .calendar-cell { aspect-ratio: 1/1; min-height: 0; padding: 4px; justify-content: flex-start; }
             .cell-date { font-size: 1em; text-align: center; margin-bottom: 2px;}
             .tx-badge { display: none !important; } 
@@ -221,6 +240,12 @@
             .filter-toggle-btn { display: flex; }
             .hidden-mobile { display: none !important; margin-bottom: 15px; padding: 12px; }
             .hidden-mobile.active { display: flex !important; }
+            
+            .ledger-tools { flex-direction: column; align-items: stretch; gap: 10px;}
+            .search-box { min-width: 0; width: 100%;}
+            .pagination { justify-content: center; width: 100%;}
+            .page-info { margin: 0 5px; font-size: 0.8em;}
+            .page-btn { padding: 5px 10px; font-size: 0.8em;}
         }
     </style>
 </head>
@@ -238,7 +263,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.41</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.42</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="alert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="if(confirm('目前已連接 Google Drive。確定要登出嗎？')) handleSignoutClick();">
@@ -246,7 +271,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.41</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.42</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="if(confirm('確定要登出嗎？')) handleSignoutClick();">
@@ -369,6 +394,16 @@
         <div id="ledger" class="page">
             <h2>📜 股票交易對帳單</h2>
             <p style="color:var(--text-light); font-size:0.9em; margin-top:-10px; margin-bottom:20px;">資料與行事曆連動。點擊「成交日期」可直接跳轉至日曆編輯紀錄。</p>
+            
+            <div class="ledger-tools">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="ledgerSearch" placeholder="搜尋股票、帳戶、日期、買賣..." oninput="handleLedgerSearch()">
+                </div>
+                <div class="pagination" id="paginationTop">
+                    </div>
+            </div>
+
             <div class="ledger-container">
                 <table class="ledger-table">
                     <thead>
@@ -380,6 +415,11 @@
                     <tbody id="ledgerBody"></tbody>
                 </table>
             </div>
+            
+            <div class="ledger-tools" style="margin-top: 15px; justify-content: flex-end;">
+                <div class="pagination" id="paginationBottom">
+                    </div>
+            </div>
         </div>
 
         <div id="calendar" class="page">
@@ -387,7 +427,11 @@
                 <h2>📅 日曆與收支總覽</h2>
                 <div class="calendar-nav">
                     <button onclick="changeMonth(-1)">◀ 上個月</button>
-                    <span id="currentMonthLabel" style="font-size:1.2em; font-weight:bold; margin:0 15px; color:var(--text-main);">2026年 4月</span>
+                    <div class="month-picker-btn">
+                        <span id="currentMonthLabel">2026年 4月</span>
+                        <span>▾</span>
+                        <input type="month" id="monthJumpSelector" onchange="jumpToMonth(this.value)">
+                    </div>
                     <button onclick="changeMonth(1)">下個月 ▶</button>
                 </div>
             </div>
@@ -554,7 +598,11 @@
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
         let currentDate = new Date(2026, 3, 1); let assetChartObj = null; let stockChartObj = null;
-        let cashflowView = 'month'; let isDirty = false;
+        let cashflowView = 'month';
+        
+        // v0.42 對帳單分頁與搜尋狀態
+        let ledgerCurrentPage = 1; const ledgerPageSize = 20; let ledgerSearchTerm = '';
+
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
 
         /* =======================================================
@@ -678,6 +726,14 @@
                 btnElement.classList.add('active');
             }
             document.getElementById(pageId).classList.add('active');
+            
+            // v0.42 切換到對帳單時重設分頁與搜尋
+            if(pageId === 'ledger') {
+                ledgerCurrentPage = 1;
+                document.getElementById('ledgerSearch').value = '';
+                ledgerSearchTerm = '';
+            }
+            
             renderAll();
         }
 
@@ -862,12 +918,67 @@
             });
         }
 
+        // v0.42 搜尋防抖動 (debounce)
+        let searchTimeout;
+        function handleLedgerSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                ledgerSearchTerm = document.getElementById('ledgerSearch').value.trim().toLowerCase();
+                ledgerCurrentPage = 1; // 搜尋時重設回第一頁
+                renderLedger();
+            }, 300); // 打字停止 0.3 秒後才執行搜尋
+        }
+
+        // v0.42 對帳單分頁控制
+        function changeLedgerPage(delta) {
+            ledgerCurrentPage += delta;
+            renderLedger();
+        }
+        function gotoLedgerPage(page) {
+            ledgerCurrentPage = page;
+            renderLedger();
+        }
+
+        // v0.42 渲染對帳單與分頁
         function renderLedger() {
             const tbody = document.getElementById('ledgerBody'); tbody.innerHTML = '';
-            const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell'); stockTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell');
             const buyLots = getBuyLotStatus();
             
-            stockTxs.forEach(tx => {
+            // 1. 執行搜尋過濾
+            let filteredTxs = stockTxs;
+            if (ledgerSearchTerm) {
+                filteredTxs = stockTxs.filter(tx => {
+                    const ast = appData.assets.find(a => a.ticker === tx.ticker);
+                    const name = ast ? (ast.name || '') : '';
+                    const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '';
+                    const action = tx.type === 'stock_buy' ? '買進' : '賣出';
+                    const amount = Math.round(tx.amount).toString();
+                    
+                    return tx.date.includes(ledgerSearchTerm) ||
+                           tx.ticker.toLowerCase().includes(ledgerSearchTerm) ||
+                           name.toLowerCase().includes(ledgerSearchTerm) ||
+                           accName.toLowerCase().includes(ledgerSearchTerm) ||
+                           action.includes(ledgerSearchTerm) ||
+                           amount.includes(ledgerSearchTerm);
+                });
+            }
+
+            // 2. 排序 (日期新到舊)
+            filteredTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // 3. 計算分頁
+            const totalItems = filteredTxs.length;
+            const totalPages = Math.ceil(totalItems / ledgerPageSize) || 1;
+            if (ledgerCurrentPage > totalPages) ledgerCurrentPage = totalPages;
+            if (ledgerCurrentPage < 1) ledgerCurrentPage = 1;
+            
+            const startIdx = (ledgerCurrentPage - 1) * ledgerPageSize;
+            const endIdx = startIdx + ledgerPageSize;
+            const pagedTxs = filteredTxs.slice(startIdx, endIdx);
+
+            // 4. 渲染表格內容
+            pagedTxs.forEach(tx => {
                 const ast = appData.assets.find(a => a.ticker === tx.ticker); const name = ast ? (ast.name ? `${tx.ticker} ${ast.name}` : tx.ticker) : tx.ticker;
                 const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
                 const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
@@ -887,10 +998,32 @@
                         pnlHtml = `<span style="color:${pnlColor}; font-weight:bold;">${pnlSign}${pnl.toLocaleString()}</span>`;
                     }
                 }
-
                 tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${fee.toLocaleString()}</td><td>${tax.toLocaleString()}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
-            if(stockTxs.length === 0) { tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:20px; color:var(--text-light);">目前沒有股票交易紀錄</td></tr>'; }
+            
+            if(totalItems === 0) {
+                const msg = ledgerSearchTerm ? `找不到符合「${ledgerSearchTerm}」的交易` : '目前沒有股票交易紀錄';
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:30px; color:var(--text-light);">${msg}</td></tr>`;
+            }
+
+            // 5. 渲染分頁按鈕 (上下兩組)
+            renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
+            renderPaginationControls('paginationBottom', ledgerCurrentPage, totalPages);
+        }
+
+        // v0.42 生成分頁 HTML
+        function renderPaginationControls(containerId, current, total) {
+            const container = document.getElementById(containerId);
+            if (total <= 1) { container.innerHTML = ''; return; } // 只有一頁則不顯示
+
+            let html = `
+                <button class="page-btn" onclick="gotoLedgerPage(1)" ${current === 1 ? 'disabled' : ''} title="首頁">⏮</button>
+                <button class="page-btn" onclick="changeLedgerPage(-1)" ${current === 1 ? 'disabled' : ''}>◀</button>
+                <span class="page-info">${current} / ${total}</span>
+                <button class="page-btn" onclick="changeLedgerPage(1)" ${current === total ? 'disabled' : ''}>▶</button>
+                <button class="page-btn" onclick="gotoLedgerPage(${total})" ${current === total ? 'disabled' : ''} title="末頁">⏭</button>
+            `;
+            container.innerHTML = html;
         }
 
         function loadAccSelects() {
@@ -911,6 +1044,15 @@
         }
 
         function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
+        
+        // v0.42 行事曆年月快速跳轉
+        function jumpToMonth(monthInput) {
+            if(!monthInput) return;
+            const [year, month] = monthInput.split('-');
+            currentDate.setFullYear(parseInt(year));
+            currentDate.setMonth(parseInt(month) - 1);
+            renderCalendar();
+        }
 
         let currentDayViewDate = '';
         function handleCellClick(dateStr) {
@@ -951,7 +1093,13 @@
         function openModalFromDayView() { closeDayView(); openModal(currentDayViewDate); }
 
         function renderCalendar() {
-            const year = currentDate.getFullYear(); const month = currentDate.getMonth(); document.getElementById('currentMonthLabel').innerText = `${year}年 ${month + 1}月`;
+            const year = currentDate.getFullYear(); const month = currentDate.getMonth();
+            const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}`;
+            
+            // v0.42 更新年月跳轉選擇器的值
+            document.getElementById('currentMonthLabel').innerText = `${year}年 ${month + 1}月`;
+            document.getElementById('monthJumpSelector').value = monthPrefix;
+            
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
             ['日', '一', '二', '三', '四', '五', '六'].forEach(d => grid.innerHTML += `<div class="calendar-day-header">${d}</div>`);
             const fInc = document.getElementById('filterIncome').checked; const fExp = document.getElementById('filterExpense').checked; const fBuy = document.getElementById('filterBuy').checked; const fSell = document.getElementById('filterSell').checked;
