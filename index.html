@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.43</title>
+    <title>🍯 MoneyJar v0.44</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -20,7 +20,6 @@
         
         body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
         
-        /* 登入畫面極簡化 */
         #loginOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .login-box { background: var(--sidebar-bg); padding: 40px; border-radius: 12px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 90%; width: 350px; }
         .login-logo { font-size: 3em; margin-bottom: 10px; }
@@ -111,14 +110,12 @@
         .dash-list b { color: var(--text-main); }
         .chart-container { position: relative; height: 220px; width: 100%; margin-top: 15px; }
 
-        /* v0.43 修正行事曆標題與按鈕橫向排版 */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
         .calendar-header h2 { margin: 0; padding-bottom: 0; border: none; }
         .calendar-nav { display: flex; flex-direction: row; align-items: center; gap: 10px; }
         .calendar-nav button { padding: 8px 15px; cursor: pointer; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; font-weight: bold; transition: 0.2s;}
         .calendar-nav button:hover { background: var(--sidebar-hover); }
         
-        /* v0.43 原生年月跳轉按鈕 (跨瀏覽器完美版) */
         .month-picker-input { background: var(--sidebar-bg); border: 1px solid var(--border); color: var(--accent); padding: 8px 15px; border-radius: 20px; font-size: 1.05em; font-weight: bold; cursor: pointer; color-scheme: dark; outline: none; transition: 0.2s; font-family: inherit; text-align: center; }
         .month-picker-input:hover { background: var(--sidebar-hover); border-color: var(--text-main); color: var(--text-main); }
 
@@ -154,9 +151,8 @@
         .dot-container { display: none; flex-wrap: wrap; justify-content: flex-end; gap: 3px; padding-right: 2px; }
         .tx-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-        /* v0.43 全域修復：確保彈出視窗在電腦版也能正常顯示 (display: flex) */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px); overflow-y: auto; padding-top: 5dvh; padding-bottom: 5dvh;}
-        .modal-overlay.active { display: flex; } /* 這是修復電腦版點擊無效的關鍵 */
+        .modal-overlay.active { display: flex; } 
         
         .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); margin: 0 auto; max-height: none; }
         
@@ -204,7 +200,12 @@
             .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
             .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
             
-            .main-content { flex: 1; padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            /* v0.44 終極修復：確保手機版所有頁面（包含純表格）滑到底部時，不會被 Navbar 蓋住 */
+            .main-content { 
+                flex: 1; padding: 15px; 
+                padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
+                overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            }
             
             .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
             .sidebar-header, .file-controls { display: none; }
@@ -212,7 +213,8 @@
             .nav-btn span { display: none; } 
             .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
 
-            .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} 
+            /* 移除之前寫死在部分卡片上的 80px，交給 main-content 統一管理 */
+            .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
             
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
             .card { padding: 15px !important; }
@@ -222,7 +224,6 @@
             .btn-add, .btn-fetch { padding: 8px 12px; margin-top: 5px; font-size: 0.9em; }
             .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
 
-            /* v0.43 手機版強制覆蓋為 block 以修復 Safari 高度截斷 */
             .desktop-form-wrapper, .modal-overlay { display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.75) !important; z-index: 99999 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding: calc(env(safe-area-inset-top) + 70px) 15px calc(env(safe-area-inset-bottom) + 85px) 15px !important; }
             .desktop-form-wrapper.active, .modal-overlay.active { display: block !important; }
             .desktop-form-wrapper .card, .modal { position: relative !important; top: auto !important; bottom: auto !important; width: 100% !important; max-width: 400px !important; margin: 0 auto !important; height: auto !important; max-height: none !important; border-radius: 12px !important; border: 1px solid var(--border) !important; padding-top: 15px; cursor: default !important; transform: none !important; }
@@ -268,7 +269,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.43</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.44</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="alert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="if(confirm('目前已連接 Google Drive。確定要登出嗎？')) handleSignoutClick();">
@@ -276,7 +277,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.43</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.44</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="if(confirm('確定要登出嗎？')) handleSignoutClick();">
@@ -1261,7 +1262,7 @@
                     if (data.dividend > 0) document.getElementById('newDividend').value = data.dividend;
                     if (data.exDate) document.getElementById('newExDate').value = data.exDate;
                     if (data.payDate) document.getElementById('newPayDate').value = data.payDate;
-                    if (!data.name) alert("無法抓取中文名稱，請手手動輸入。"); 
+                    if (!data.name) alert("無法抓取中文名稱，請手動輸入。"); 
                 }
             } catch (error) { alert("無法連線到雲端 API。請檢查 Apps Script 是否設定為『所有人』可存取。"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
         }
