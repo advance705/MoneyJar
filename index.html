@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.34</title>
+    <title>🍯 MoneyJar v0.35</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -94,7 +94,6 @@
         .calendar-nav button { padding: 8px 15px; cursor: pointer; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; font-weight: bold; transition: 0.2s;}
         .calendar-nav button:hover { background: var(--sidebar-hover); }
         
-        /* v0.34 篩選區塊按鈕與容器 */
         .filter-toggle-btn { display: none; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; width: 100%; text-align: left; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; font-weight: bold; justify-content: space-between; align-items: center; transition: 0.2s; }
         .filter-toggle-btn:hover { background: var(--sidebar-hover); }
         .calendar-filters { background: var(--card-bg); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
@@ -144,7 +143,6 @@
         .ledger-table th { background: var(--sidebar-bg); padding: 12px 10px; text-align: right; border-bottom: 2px solid var(--border); color: var(--text-light); white-space: nowrap; font-weight: normal;}
         .ledger-table th:nth-child(1), .ledger-table th:nth-child(2), .ledger-table th:nth-child(3), .ledger-table th:nth-child(4) { text-align: left; }
         
-        /* v0.34 防止對帳單文字換行 */
         .ledger-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
         .ledger-table td:nth-child(1), .ledger-table td:nth-child(2), .ledger-table td:nth-child(3), .ledger-table td:nth-child(4) { text-align: left; }
         
@@ -154,11 +152,13 @@
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
         /* =======================================================
-           📱 v0.34 手機版 UX 修復與終極進化
+           📱 v0.35 手機版 UX 修復與終極進化
            ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            .page > h2 { display: none; }
+            
+            /* v0.35 徹底隱藏日曆與所有頁面的大標題 */
+            .page > h2, .calendar-header h2 { display: none; }
             
             .mobile-header { 
                 display: flex; justify-content: space-between; align-items: center; 
@@ -188,16 +188,20 @@
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} 
             
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
-            /* v0.34 修復輸入格擠壓重疊：限制標籤的文字溢出 */
             .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
 
-            /* v0.34 完美修復彈出式表單頂端被切斷的問題 */
+            /* v0.35 解決 Safari 輸入格撐破與自動放大 Bug */
+            .form-group input, .form-group select {
+                min-width: 0 !important; /* 強制覆蓋 Safari 內建日期的最小寬度 */
+                max-width: 100%;
+                font-size: 16px; /* 防呆：iOS 規定低於 16px 點擊會自動 Zoom in */
+            }
+
             .desktop-form-wrapper { 
                 display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
                 background: rgba(0,0,0,0.7); z-index: 2500; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px);
             }
             .desktop-form-wrapper.active { display: flex; }
-            /* 取消原本的 position: sticky 等衝突屬性，強制讓卡片擁有上下邊距並可內部滑動 */
             .desktop-form-wrapper .card, .modal { 
                 position: relative !important; top: auto !important; width: 92%; 
                 margin: calc(env(safe-area-inset-top) + 20px) auto 20px auto !important; 
@@ -216,7 +220,8 @@
             .mobile-close-btn { display: block; background: none; border: none; font-size: 1.5em; color: var(--text-light); padding: 0; margin-left: 10px; margin-top:-5px;}
             .card-title-row { padding-right: 0; }
             
-            .calendar-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            /* v0.35 修復日曆標題隱藏後的留白問題 */
+            .calendar-header { flex-direction: row; margin-bottom: 10px; gap: 0; }
             .calendar-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
             .calendar-nav button { padding: 6px 12px; font-size: 0.9em; }
             
@@ -225,7 +230,6 @@
             .tx-badge { display: none !important; } 
             .dot-container { display: flex; } 
             
-            /* v0.34 手機版篩選器改為可折疊按鈕 */
             .filter-toggle-btn { display: flex; }
             .hidden-mobile { display: none !important; margin-bottom: 15px; padding: 12px; }
             .hidden-mobile.active { display: flex !important; }
@@ -243,7 +247,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.34</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.35</div>
         <button class="nav-btn active" onclick="switchPage('dashboard', this)">🏠 <span>總覽儀表板</span></button>
         <button class="nav-btn" onclick="switchPage('calendar', this)">📅 <span>日曆與收支</span></button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 <span>股票對帳單</span></button>
