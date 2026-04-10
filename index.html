@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.38 (Cloud)</title>
+    <title>🍯 MoneyJar v0.39 (Cloud)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -33,9 +33,10 @@
         .sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-main); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border);}
         .sidebar-header { padding: 20px; font-size: 1.2em; font-weight: bold; border-bottom: 1px solid var(--border); color: var(--accent); }
         
-        /* 雲端同步狀態區塊 */
+        /* 電腦版雲端同步狀態區塊 */
         .user-profile { padding: 15px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px dashed var(--border); }
-        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--border); }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--border); cursor: pointer; transition: 0.2s; }
+        .user-avatar:hover { filter: brightness(1.1); }
         .user-info { flex: 1; min-width: 0; }
         .user-name { font-size: 0.85em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sync-badge { font-size: 0.7em; color: var(--income); display: flex; align-items: center; gap: 4px; margin-top: 2px;}
@@ -171,19 +172,38 @@
         .jump-link { color: var(--accent); text-decoration: none; font-weight: bold; transition: 0.2s; }
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
+        /* =======================================================
+           📱 v0.39 手機版 UI/UX 優化 (修復 NavBar 擠壓)
+           ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .page > h2, .calendar-header h2 { display: none; }
             
-            .mobile-header { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); background: var(--sidebar-bg); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+            /* 1. 確保登入後顯示的電腦版資訊，在手機上絕對隱藏，不影響 NavBar */
+            #desktopProfile { display: none !important; }
+            
+            .mobile-header { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); 
+                padding-top: env(safe-area-inset-top);
+                background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+                flex-shrink: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            }
             .mobile-header-title { font-weight: bold; color: var(--accent); font-size: 1.2em; display:flex; align-items:center; gap:8px;}
-            .mobile-header-controls { display: flex; gap: 8px; align-items: center;}
-            .mobile-header-controls .user-avatar { width: 28px; height: 28px; border-radius: 50%; }
+            
+            .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
+            .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
             
             .main-content { flex: 1; padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
             
-            .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
-            .sidebar-header, .file-controls, .user-profile { display: none; }
+            .sidebar { 
+                width: 100%; height: calc(60px + env(safe-area-inset-bottom)); 
+                padding-bottom: env(safe-area-inset-bottom); 
+                flex-direction: row; justify-content: space-around; align-items: center;
+                flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); 
+                overflow: hidden; z-index: 1000; position: fixed; bottom: 0;
+            }
+            .sidebar-header, .file-controls { display: none; }
             .nav-btn { flex: 1; display: flex; justify-content: center; font-size: 1.6em; padding: 10px 0; border: none !important; margin: 0;}
             .nav-btn span { display: none; } 
             .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
@@ -236,17 +256,18 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 <span id="mobileSyncIcon" style="font-size:0.7em; margin-left:5px; opacity:0.5;">☁️</span></div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.39</div>
         <div class="mobile-header-controls">
-            <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="alert('目前已連接 Google Drive。點擊電腦版左下角可登出。')">
+            <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="alert(document.getElementById('syncStatus').innerText)">☁️</span>
+            <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="if(confirm('目前已連接 Google Drive。確定要登出嗎？')) handleSignoutClick();">
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.38</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.39</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
-            <img id="desktopAvatar" class="user-avatar" src="">
+            <img id="desktopAvatar" class="user-avatar" src="" onclick="if(confirm('確定要登出嗎？')) handleSignoutClick();">
             <div class="user-info">
                 <div id="desktopName" class="user-name">載入中...</div>
                 <div id="desktopSync" class="sync-badge">☁️ 雲端已同步</div>
@@ -439,7 +460,7 @@
                             <button id="btnApiFetch" class="btn-fetch" onclick="fetchRealApiData()">🔄 雲端抓取即時報價與名稱</button>
                             
                             <div class="flex-row" style="margin-top: 12px;">
-                                <div class="form-group"><label>初始庫存(補登設0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
+                                <div class="form-group"><label>初始庫存 (補登設0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
                                 <div class="form-group"><label>現價 (元)</label><input type="number" id="newPrice" value="0" step="0.01"></div>
                             </div>
                             
@@ -555,16 +576,12 @@
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
 
         /* =======================================================
-           ☁️ v0.38 Google Drive SaaS 雲端同步核心引擎
+           ☁️ Google Drive SaaS 雲端同步核心引擎
            ======================================================= */
         const CLIENT_ID = '844991618019-rr297egcrjg7d509k7nduil4l19cgdot.apps.googleusercontent.com';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
-        let tokenClient;
-        let accessToken = null;
-        let driveFolderId = null;
-        let driveFileId = null;
+        let tokenClient; let accessToken = null; let driveFolderId = null; let driveFileId = null;
 
-        // 初始化 Google Identity Services
         window.onload = function () {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
@@ -572,21 +589,21 @@
                 callback: async (resp) => {
                     if (resp.error !== undefined) { throw (resp); }
                     accessToken = resp.access_token;
-                    document.getElementById('loginOverlay').style.display = 'none'; // 隱藏登入畫面
+                    document.getElementById('loginOverlay').style.display = 'none'; 
                     await fetchUserProfile();
                     await initCloudSync();
                 },
             });
         };
 
-        function handleAuthClick() {
-            tokenClient.requestAccessToken();
-        }
+        function handleAuthClick() { tokenClient.requestAccessToken(); }
 
         function handleSignoutClick() {
             if (accessToken) { google.accounts.oauth2.revoke(accessToken); }
             accessToken = null; driveFolderId = null; driveFileId = null;
             document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('desktopProfile').style.display = 'none';
+            document.getElementById('mobileAvatar').style.display = 'none';
             appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
             renderAll();
         }
@@ -594,7 +611,17 @@
         function updateSyncStatus(msg, isSyncing = false) {
             document.getElementById('syncStatus').innerText = msg;
             document.getElementById('desktopSync').innerText = msg;
-            document.getElementById('mobileSyncIcon').innerText = isSyncing ? '⏳' : '☁️';
+            const mobileIcon = document.getElementById('mobileSyncIcon');
+            if (isSyncing) {
+                mobileIcon.innerText = '⏳';
+                mobileIcon.style.opacity = '0.5';
+            } else if (msg.includes('失敗')) {
+                mobileIcon.innerText = '⚠️';
+                mobileIcon.style.opacity = '1';
+            } else {
+                mobileIcon.innerText = '☁️';
+                mobileIcon.style.opacity = '1';
+            }
             document.getElementById('desktopSync').style.color = isSyncing ? 'var(--stock-sell)' : 'var(--income)';
         }
 
@@ -610,98 +637,56 @@
             } catch(e) { console.error("取得個人資料失敗", e); }
         }
 
-        // 雲端初始化：找資料夾 -> 找檔案 -> 下載
         async function initCloudSync() {
             updateSyncStatus('正在連接 Google Drive...', true);
             try {
-                // 1. 尋找或建立 MoneyJar_Data 資料夾
                 let query = encodeURIComponent("name='MoneyJar_Data' and mimeType='application/vnd.google-apps.folder' and trashed=false");
                 let res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
                 let data = await res.json();
                 
-                if (data.files && data.files.length > 0) {
-                    driveFolderId = data.files[0].id;
-                } else {
-                    // 建立資料夾
-                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: 'MoneyJar_Data', mimeType: 'application/vnd.google-apps.folder' })
-                    });
-                    let createData = await createRes.json();
-                    driveFolderId = createData.id;
+                if (data.files && data.files.length > 0) { driveFolderId = data.files[0].id; } 
+                else {
+                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'MoneyJar_Data', mimeType: 'application/vnd.google-apps.folder' }) });
+                    let createData = await createRes.json(); driveFolderId = createData.id;
                 }
 
-                // 2. 在資料夾中尋找 data.json
                 let fileQuery = encodeURIComponent(`name='data.json' and '${driveFolderId}' in parents and trashed=false`);
                 let fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
                 let fileData = await fileRes.json();
 
                 if (fileData.files && fileData.files.length > 0) {
                     driveFileId = fileData.files[0].id;
-                    // 3. 下載內容
                     updateSyncStatus('正在下載雲端資料...', true);
                     let contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
                     let cloudData = await contentRes.json();
-                    if(cloudData && cloudData.accounts) {
-                        appData = cloudData;
-                    }
+                    if(cloudData && cloudData.accounts) { appData = cloudData; }
                 }
-                updateSyncStatus('☁️ 雲端已同步');
-                renderAll();
-            } catch(e) {
-                alert("連接雲端失敗，請檢查網路連線。");
-                updateSyncStatus('⚠️ 雲端連線失敗');
-                console.error(e);
-            }
+                updateSyncStatus('☁️ 雲端已同步'); renderAll();
+            } catch(e) { alert("連接雲端失敗，請檢查網路連線。"); updateSyncStatus('⚠️ 雲端連線失敗'); }
         }
 
-        // 存檔機制全面改寫：不再用 LocalStorage，直接上傳 Drive
         async function saveData() {
-            renderAll(); // 先更新畫面
-            if (!accessToken || !driveFolderId) {
-                alert("未連接 Google Drive，無法儲存。"); return;
-            }
+            renderAll(); 
+            if (!accessToken || !driveFolderId) { alert("未連接 Google Drive，無法儲存。"); return; }
             updateSyncStatus('⏳ 儲存至雲端中...', true);
             const contentString = JSON.stringify(appData);
 
             try {
                 if (driveFileId) {
-                    // 更新現有檔案 (PATCH)
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                        body: contentString
-                    });
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
                 } else {
-                    // 建立新檔案 (先 POST metadata，再 PATCH content)
-                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: 'data.json', parents: [driveFolderId] })
-                    });
-                    let createData = await createRes.json();
-                    driveFileId = createData.id;
-                    
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                        body: contentString
-                    });
+                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'data.json', parents: [driveFolderId] }) });
+                    let createData = await createRes.json(); driveFileId = createData.id;
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
                 }
                 updateSyncStatus('☁️ 雲端已同步 (' + new Date().toLocaleTimeString() + ')');
-            } catch(e) {
-                alert("上傳雲端失敗，請稍後重試。");
-                updateSyncStatus('⚠️ 雲端同步失敗');
-            }
+            } catch(e) { alert("上傳雲端失敗，請稍後重試。"); updateSyncStatus('⚠️ 雲端同步失敗'); }
         }
 
-        function renderAll() {
-            loadAccSelects(); renderCalendar(); renderDashboard(); renderAssets(); renderLedger(); renderLoans();
-        }
+        function renderAll() { loadAccSelects(); renderCalendar(); renderDashboard(); renderAssets(); renderLedger(); renderLoans(); }
 
         /* =======================================================
-           以下維持原有的 UI 邏輯，僅將 saveToLocal 改為 saveData
+           以下維持原有的 UI 邏輯
            ======================================================= */
 
         function switchPage(pageId, btnElement) {
@@ -725,7 +710,6 @@
             setTimeout(() => { editTx({ stopPropagation: () => {} }, txId); }, 50);
         }
 
-        // 匯入按鈕改為「遷移」
         document.getElementById('btnLoad').addEventListener('click', async () => {
             if(!accessToken) { alert("請先登入 Google 帳號！"); return; }
             try {
@@ -735,13 +719,10 @@
                 let cleanedAssets = []; let seenTickers = new Set();
                 appData.assets.forEach(ast => { if (ast.type === 'stock') { if (!seenTickers.has(ast.ticker)) { seenTickers.add(ast.ticker); cleanedAssets.push(ast); } } else { cleanedAssets.push(ast); } }); appData.assets = cleanedAssets;
                 
-                // 強制上傳雲端
-                saveData(); 
-                alert("遷移成功！資料已覆蓋並上傳至 Google Drive。");
+                saveData(); alert("遷移成功！資料已覆蓋並上傳至 Google Drive。");
             } catch (e) { alert("匯入取消或失敗。"); }
         });
 
-        // 實體備份按鈕
         function exportData() {
             const dataStr = JSON.stringify(appData, null, 2); const blob = new Blob([dataStr], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
             const date = new Date(); const dateString = date.getFullYear() + String(date.getMonth() + 1).padStart(2, '0') + String(date.getDate()).padStart(2, '0');
