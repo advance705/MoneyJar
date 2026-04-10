@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.45</title>
+    <title>🍯 MoneyJar v0.46</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -28,7 +28,6 @@
         .btn-google:hover { filter: brightness(0.9); transform: scale(1.02); }
         .btn-google img { width: 18px; height: 18px; }
 
-        /* v0.45 自訂確認視窗 */
         #customConfirm { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 9999999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .confirm-card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .confirm-msg { font-size: 1.1em; font-weight: bold; color: var(--text-main); margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
@@ -209,7 +208,11 @@
             .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
             .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
             
-            .main-content { flex: 1; padding: 15px; padding-bottom: calc(90px + env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            .main-content { 
+                flex: 1; padding: 15px; 
+                padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
+                overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            }
             
             .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
             .sidebar-header, .file-controls { display: none; }
@@ -217,7 +220,9 @@
             .nav-btn span { display: none; } 
             .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
 
+            /* v0.46 覆寫行內 style，讓手機版的卡片滿版置中 */
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
+            .card-grid[style*="align-items: start"] { align-items: stretch !important; }
             
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
             .card { padding: 15px !important; }
@@ -282,7 +287,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.45</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.46</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -290,7 +295,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.45</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.46</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -621,9 +626,6 @@
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
         let tokenClient; let accessToken = null; let driveFolderId = null; let driveFileId = null;
 
-        /* =======================================================
-           v0.45 自訂通用確認視窗邏輯
-           ======================================================= */
         let confirmActionCallback = null;
         function showCustomConfirm(msg, callback, isDanger = false) {
             document.getElementById('confirmMessage').innerText = msg;
@@ -645,12 +647,13 @@
         function showCustomAlert(msg) {
             showCustomConfirm(msg, null, false);
             document.getElementById('confirmYesBtn').innerText = '我知道了';
-            setTimeout(() => { document.getElementById('confirmYesBtn').innerText = '確定'; }, 500); // 復原按鈕文字
+            setTimeout(() => { document.getElementById('confirmYesBtn').innerText = '確定'; }, 500); 
         }
         function confirmSignout() {
             showCustomConfirm('目前已連接 Google Drive。\n確定要登出嗎？', handleSignoutClick, true);
         }
 
+        /* v0.46 自動登入快取機制 */
         window.onload = function () {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
@@ -658,11 +661,33 @@
                 callback: async (resp) => {
                     if (resp.error !== undefined) { throw (resp); }
                     accessToken = resp.access_token;
+                    
+                    // 將 Token 存入 localStorage，設定約 58 分鐘後過期
+                    localStorage.setItem('mj_g_token', JSON.stringify({
+                        token: accessToken,
+                        expiresAt: Date.now() + 3500 * 1000 
+                    }));
+                    
                     document.getElementById('loginOverlay').style.display = 'none'; 
                     await fetchUserProfile();
                     await initCloudSync();
                 },
             });
+
+            // 檢查本機快取是否有未過期的 Token
+            const cachedTokenStr = localStorage.getItem('mj_g_token');
+            if (cachedTokenStr) {
+                try {
+                    const cachedToken = JSON.parse(cachedTokenStr);
+                    if (Date.now() < cachedToken.expiresAt) {
+                        accessToken = cachedToken.token;
+                        document.getElementById('loginOverlay').style.display = 'none';
+                        fetchUserProfile().then(() => initCloudSync());
+                    } else {
+                        localStorage.removeItem('mj_g_token');
+                    }
+                } catch(e) { localStorage.removeItem('mj_g_token'); }
+            }
         };
 
         function handleAuthClick() { tokenClient.requestAccessToken(); }
@@ -670,6 +695,7 @@
         function handleSignoutClick() {
             if (accessToken) { google.accounts.oauth2.revoke(accessToken); }
             accessToken = null; driveFolderId = null; driveFileId = null;
+            localStorage.removeItem('mj_g_token'); // 登出時清空快取
             document.getElementById('loginOverlay').style.display = 'flex';
             document.getElementById('desktopProfile').style.display = 'none';
             document.getElementById('mobileAvatar').style.display = 'none';
@@ -731,7 +757,10 @@
                     if(cloudData && cloudData.accounts) { appData = cloudData; }
                 }
                 updateSyncStatus('☁️ 雲端已同步'); renderAll();
-            } catch(e) { alert("連接雲端失敗，請檢查網路連線。"); updateSyncStatus('⚠️ 雲端連線失敗'); }
+            } catch(e) { 
+                updateSyncStatus('⚠️ 雲端連線失敗'); 
+                if(e.status === 401) handleSignoutClick(); // Token 過期自動登出
+            }
         }
 
         async function saveData() {
@@ -776,7 +805,6 @@
         function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); }
         function closeLoanForm() { document.getElementById('loanFormOverlay').classList.remove('active'); resetLoanForm(); }
 
-        // v0.45 修復：跳轉時同步更新行事曆的年月
         function jumpToTx(txId) {
             const tx = appData.transactions.find(t => t.id === txId);
             if (tx) {
@@ -950,7 +978,6 @@
         }
         function editLoan(id) { const l = appData.loans.find(x => x.id === id); if(!l) return; document.getElementById('editLoanId').value = l.id; document.getElementById('loanFormTitle').innerText = "✏️ 編輯貸款合約"; document.getElementById('loanName').value = l.name; document.getElementById('loanPrincipal').value = l.principal; document.getElementById('loanRate').value = l.rate; document.getElementById('loanYears').value = l.years; document.getElementById('loanGrace').value = l.grace; document.getElementById('loanStartMonth').value = l.startMonth; document.getElementById('loanPayDay').value = l.payDay; document.getElementById('loanAcc').value = l.accountId; document.getElementById('btnSaveLoan').innerText = "更新合約並重算"; document.getElementById('btnCancelLoanEdit').style.display = "block"; openLoanForm(); }
         
-        // v0.45 套用自訂確認視窗
         function deleteLoan(id) {
             showCustomConfirm('確定要刪除此貸款？', () => {
                 appData.loans = appData.loans.filter(l => l.id !== id); saveData();
@@ -1241,7 +1268,6 @@
             appData.transactions.splice(txIndex, 1);
         }
 
-        // v0.45 套用自訂確認視窗
         function confirmDeleteTransaction() {
             showCustomConfirm('確定要刪除這筆紀錄嗎？\n相關帳戶餘額將自動還原。', () => {
                 reverseTransaction(document.getElementById('editTxId').value);
@@ -1258,7 +1284,6 @@
             closeModal(); saveData();
         }
 
-        // v0.45 套用自訂確認視窗 (交割戶餘額警告)
         function saveStockTransaction() {
             const assetId = document.getElementById('stockAsset').value; const accountId = document.getElementById('stockAccount').value;
             const price = parseFloat(document.getElementById('stockPrice').value); const shares = parseFloat(document.getElementById('stockShares').value); const fee = parseFloat(document.getElementById('stockFee').value);
@@ -1285,7 +1310,7 @@
                 totalCashFlow = baseAmount + fee; 
                 if(getDynamicBalance(acc.id) < totalCashFlow) {
                     showCustomConfirm('⚠️ 交割帳戶可用餘額不足\n確定要扣除嗎？', finalizeTransaction, true);
-                    return; // 暫停執行，等待使用者確認
+                    return; 
                 }
             } else { 
                 if(getStockInventory(ast.ticker) < shares) { alert("總庫存張數不足無法賣出"); return; } 
@@ -1385,7 +1410,6 @@
             });
         }
 
-        // v0.45 套用自訂確認視窗
         function deleteAssetItem(type, id) {
             showCustomConfirm('確定要刪除？\n刪除帳戶不會影響日曆紀錄，但會導致舊紀錄失去關聯。', () => {
                 if (type === 'bank') appData.accounts = appData.accounts.filter(item => item.id !== id);
