@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.33</title>
+    <title>🍯 MoneyJar v0.34</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -94,7 +94,9 @@
         .calendar-nav button { padding: 8px 15px; cursor: pointer; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; font-weight: bold; transition: 0.2s;}
         .calendar-nav button:hover { background: var(--sidebar-hover); }
         
-        /* v0.33: 現代化膠囊篩選器 (Filter Chips) */
+        /* v0.34 篩選區塊按鈕與容器 */
+        .filter-toggle-btn { display: none; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; width: 100%; text-align: left; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; font-weight: bold; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .filter-toggle-btn:hover { background: var(--sidebar-hover); }
         .calendar-filters { background: var(--card-bg); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
         .filter-title { color:var(--text-main); font-weight:bold; margin-right:4px; display:inline-flex; align-items:center; font-size: 0.9em; }
         .filter-chip { cursor: pointer; display: inline-flex; align-items: center; margin: 0;}
@@ -125,7 +127,6 @@
         .dot-container { display: none; flex-wrap: wrap; justify-content: flex-end; gap: 3px; padding-right: 2px; }
         .tx-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-        /* v0.33 修正 Overlay 頂部切斷問題：使用 align-items: flex-start 並加入 padding */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px); overflow-y: auto; padding-top: 5dvh; padding-bottom: 5dvh;}
         .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); margin: 0 auto; max-height: none; }
         
@@ -142,15 +143,18 @@
         .ledger-table { width: 100%; border-collapse: collapse; font-size: 0.9em; min-width: 1100px; color: var(--text-main); }
         .ledger-table th { background: var(--sidebar-bg); padding: 12px 10px; text-align: right; border-bottom: 2px solid var(--border); color: var(--text-light); white-space: nowrap; font-weight: normal;}
         .ledger-table th:nth-child(1), .ledger-table th:nth-child(2), .ledger-table th:nth-child(3), .ledger-table th:nth-child(4) { text-align: left; }
-        .ledger-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: right; }
+        
+        /* v0.34 防止對帳單文字換行 */
+        .ledger-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
         .ledger-table td:nth-child(1), .ledger-table td:nth-child(2), .ledger-table td:nth-child(3), .ledger-table td:nth-child(4) { text-align: left; }
+        
         .ledger-table tbody tr:hover { background-color: var(--sidebar-hover); }
         .text-buy { color: var(--stock-buy); font-weight: bold; } .text-sell { color: var(--stock-sell); font-weight: bold; }
         .jump-link { color: var(--accent); text-decoration: none; font-weight: bold; transition: 0.2s; }
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
         /* =======================================================
-           📱 v0.33 手機版 UX 終極進化 (RWD)
+           📱 v0.34 手機版 UX 修復與終極進化
            ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -183,18 +187,23 @@
 
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} 
             
-            /* v0.33 恢復表單並排：保持 row 排列 */
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
-            .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            /* v0.34 修復輸入格擠壓重疊：限制標籤的文字溢出 */
+            .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
 
-            /* v0.33 彈出式表單魔法 (修復頂部切斷) */
+            /* v0.34 完美修復彈出式表單頂端被切斷的問題 */
             .desktop-form-wrapper { 
                 display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
                 background: rgba(0,0,0,0.7); z-index: 2500; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px);
-                padding-top: 5dvh; padding-bottom: 5dvh; overflow-y: auto;
             }
             .desktop-form-wrapper.active { display: flex; }
-            .desktop-form-wrapper .card { position: relative !important; width: 90%; margin: 0 auto; max-height: none !important; border: 1px solid var(--border); padding-top: 15px;}
+            /* 取消原本的 position: sticky 等衝突屬性，強制讓卡片擁有上下邊距並可內部滑動 */
+            .desktop-form-wrapper .card, .modal { 
+                position: relative !important; top: auto !important; width: 92%; 
+                margin: calc(env(safe-area-inset-top) + 20px) auto 20px auto !important; 
+                max-height: calc(100dvh - env(safe-area-inset-top) - 60px) !important; 
+                border: 1px solid var(--border); padding-top: 15px; overflow-y: auto;
+            }
             
             .mobile-fab { 
                 display: flex; position: fixed; bottom: 85px; right: 20px; z-index: 900; 
@@ -216,8 +225,10 @@
             .tx-badge { display: none !important; } 
             .dot-container { display: flex; } 
             
-            .calendar-filters { padding: 10px; }
-            .modal { width: 92%; padding: 15px; }
+            /* v0.34 手機版篩選器改為可折疊按鈕 */
+            .filter-toggle-btn { display: flex; }
+            .hidden-mobile { display: none !important; margin-bottom: 15px; padding: 12px; }
+            .hidden-mobile.active { display: flex !important; }
         }
     </style>
 </head>
@@ -232,7 +243,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.33</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.34</div>
         <button class="nav-btn active" onclick="switchPage('dashboard', this)">🏠 <span>總覽儀表板</span></button>
         <button class="nav-btn" onclick="switchPage('calendar', this)">📅 <span>日曆與收支</span></button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 <span>股票對帳單</span></button>
@@ -368,8 +379,11 @@
                 </div>
             </div>
             
-            <div class="calendar-filters">
-                <span class="filter-title">👁️ 篩選：</span>
+            <button class="filter-toggle-btn" onclick="document.getElementById('filterContainer').classList.toggle('active')">
+                <span>👁️ 篩選顯示項目</span> <span>▾</span>
+            </button>
+            <div id="filterContainer" class="calendar-filters hidden-mobile">
+                <span class="filter-title" style="display:none;">👁️ 篩選：</span>
                 <label class="filter-chip income-chip">
                     <input type="checkbox" id="filterIncome" checked onchange="renderCalendar()">
                     <span class="chip-label">現金收入</span>
@@ -763,7 +777,7 @@
                 if (isBuy) {
                     let lot = buyLots[tx.id];
                     if (lot) {
-                        if (lot.remaining === lot.shares) pnlHtml = '[庫存中]'; else if (lot.remaining === 0) pnlHtml = '[已結清]'; else pnlHtml = `[剩 ${lot.remaining} 張]`;
+                        if (lot.remaining === lot.shares) pnlHtml = '庫存中'; else if (lot.remaining === 0) pnlHtml = '已結清'; else pnlHtml = `剩 ${lot.remaining} 張`;
                     }
                 } else {
                     if (tx.realizedPnL !== undefined) {
