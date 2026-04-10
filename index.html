@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.32</title>
+    <title>🍯 MoneyJar v0.33</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -39,14 +39,13 @@
         .form-group label { display: block; font-size: 0.85em; color: var(--text-light); margin-bottom: 4px; font-weight: bold; }
         .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; color-scheme: dark; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
-        .flex-row { display: flex; gap: 10px; }
-        .flex-row .form-group { flex: 1; }
+        .flex-row { display: flex; gap: 10px; width: 100%; }
+        .flex-row .form-group { flex: 1; min-width: 0; }
         .btn-add { background: var(--accent); color: #2e3440; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; transition: 0.2s;}
         .btn-add:hover { filter: brightness(1.1); }
         .btn-fetch { background: var(--income); color: #2e3440; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 4px; font-size: 0.85em; font-weight: bold; transition: 0.2s; }
         .btn-fetch:hover { filter: brightness(1.1); }
 
-        /* v0.32: 電腦版包裹層預設為 display: block */
         .desktop-form-wrapper { display: block; }
         .mobile-fab { display: none; }
         .mobile-close-btn { display: none; }
@@ -94,8 +93,19 @@
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-nav button { padding: 8px 15px; cursor: pointer; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; font-weight: bold; transition: 0.2s;}
         .calendar-nav button:hover { background: var(--sidebar-hover); }
-        .calendar-filters { background: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; gap: 15px; font-size: 0.9em; }
-        .calendar-filters label { cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--text-light); }
+        
+        /* v0.33: 現代化膠囊篩選器 (Filter Chips) */
+        .calendar-filters { background: var(--card-bg); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
+        .filter-title { color:var(--text-main); font-weight:bold; margin-right:4px; display:inline-flex; align-items:center; font-size: 0.9em; }
+        .filter-chip { cursor: pointer; display: inline-flex; align-items: center; margin: 0;}
+        .filter-chip input { display: none; }
+        .chip-label { padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: bold; border: 1px solid var(--border); background: transparent; color: var(--text-light); transition: 0.2s; user-select: none; white-space: nowrap;}
+        
+        .income-chip input:checked + .chip-label { background: var(--income); border-color: var(--income); color: #2e3440; }
+        .expense-chip input:checked + .chip-label { background: var(--expense); border-color: var(--expense); color: #eceff4; }
+        .buy-chip input:checked + .chip-label { background: var(--stock-buy); border-color: var(--stock-buy); color: #eceff4; }
+        .sell-chip input:checked + .chip-label { background: var(--stock-sell); border-color: var(--stock-sell); color: #2e3440; }
+        
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
         
@@ -112,12 +122,13 @@
         .bg-buy { background-color: var(--stock-buy); color: #eceff4; } .bg-sell { background-color: var(--stock-sell); }
         .bg-loan { background-color: var(--loan); color: #eceff4; border-left: 3px solid var(--stock-sell); }
 
-        /* v0.32 點狀標記預設隱藏 (電腦版用文字) */
         .dot-container { display: none; flex-wrap: wrap; justify-content: flex-end; gap: 3px; padding-right: 2px; }
         .tx-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-        .modal-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); max-height: 90dvh; overflow-y: auto; }
+        /* v0.33 修正 Overlay 頂部切斷問題：使用 align-items: flex-start 並加入 padding */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px); overflow-y: auto; padding-top: 5dvh; padding-bottom: 5dvh;}
+        .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); margin: 0 auto; max-height: none; }
+        
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .modal-header h3 { margin: 0; color: var(--text-main); }
         .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-light); transition: 0.2s;}
@@ -139,15 +150,12 @@
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
         /* =======================================================
-           📱 v0.32 手機版 UX 終極進化 (RWD)
+           📱 v0.33 手機版 UX 終極進化 (RWD)
            ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            
-            /* 1. 斷捨離：隱藏多餘標題 */
             .page > h2 { display: none; }
             
-            /* 2. 頂端控制台 */
             .mobile-header { 
                 display: flex; justify-content: space-between; align-items: center; 
                 padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); 
@@ -161,7 +169,6 @@
             
             .main-content { flex: 1; padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
             
-            /* 3. 底部導覽列進化：固定置底 + 純 Emoji 置中 */
             .sidebar { 
                 width: 100%; height: calc(60px + env(safe-area-inset-bottom)); 
                 padding-bottom: env(safe-area-inset-bottom); 
@@ -171,21 +178,24 @@
             }
             .sidebar-header, .file-controls { display: none; }
             .nav-btn { flex: 1; display: flex; justify-content: center; font-size: 1.6em; padding: 10px 0; border: none !important; margin: 0;}
-            .nav-btn span { display: none; } /* 隱藏文字 */
+            .nav-btn span { display: none; } 
             .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
 
-            .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} /* 預留底部空間 */
-            .flex-row { flex-direction: column; gap: 0; }
+            .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} 
             
-            /* 4. 彈出式表單魔法 (Modal化) */
+            /* v0.33 恢復表單並排：保持 row 排列 */
+            .flex-row { flex-direction: row; gap: 10px; width: 100%; }
+            .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+            /* v0.33 彈出式表單魔法 (修復頂部切斷) */
             .desktop-form-wrapper { 
                 display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-                background: rgba(0,0,0,0.7); z-index: 2500; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+                background: rgba(0,0,0,0.7); z-index: 2500; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px);
+                padding-top: 5dvh; padding-bottom: 5dvh; overflow-y: auto;
             }
             .desktop-form-wrapper.active { display: flex; }
-            .desktop-form-wrapper .card { position: relative !important; max-height: 85dvh !important; width: 90%; margin: auto; overflow-y: auto; border: 1px solid var(--border); padding-top: 15px;}
+            .desktop-form-wrapper .card { position: relative !important; width: 90%; margin: 0 auto; max-height: none !important; border: 1px solid var(--border); padding-top: 15px;}
             
-            /* 右下角 Floating Action Button (FAB) */
             .mobile-fab { 
                 display: flex; position: fixed; bottom: 85px; right: 20px; z-index: 900; 
                 background: var(--accent); color: #2e3440; border: none; width: 55px; height: 55px; 
@@ -194,22 +204,20 @@
             }
             .mobile-fab:active { transform: scale(0.9); }
             
-            /* 彈出表單內的專屬關閉鈕 */
             .mobile-close-btn { display: block; background: none; border: none; font-size: 1.5em; color: var(--text-light); padding: 0; margin-left: 10px; margin-top:-5px;}
             .card-title-row { padding-right: 0; }
             
-            /* 5. 日曆瘦身計畫：正方形 + 點狀標記 */
             .calendar-header { flex-direction: column; align-items: flex-start; gap: 15px; }
             .calendar-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
             .calendar-nav button { padding: 6px 12px; font-size: 0.9em; }
             
             .calendar-cell { aspect-ratio: 1/1; min-height: 0; padding: 4px; justify-content: flex-start; }
             .cell-date { font-size: 1em; text-align: center; margin-bottom: 2px;}
-            .tx-badge { display: none !important; } /* 隱藏文字標籤 */
-            .dot-container { display: flex; } /* 顯示圓點 */
+            .tx-badge { display: none !important; } 
+            .dot-container { display: flex; } 
             
+            .calendar-filters { padding: 10px; }
             .modal { width: 92%; padding: 15px; }
-            .calendar-filters { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -224,7 +232,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.32</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.33</div>
         <button class="nav-btn active" onclick="switchPage('dashboard', this)">🏠 <span>總覽儀表板</span></button>
         <button class="nav-btn" onclick="switchPage('calendar', this)">📅 <span>日曆與收支</span></button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 <span>股票對帳單</span></button>
@@ -359,13 +367,27 @@
                     <button onclick="changeMonth(1)">下個月 ▶</button>
                 </div>
             </div>
+            
             <div class="calendar-filters">
-                <strong style="color:var(--text-main);">👁️ 顯示項目：</strong>
-                <label><input type="checkbox" id="filterIncome" checked onchange="renderCalendar()"> 現金收入</label>
-                <label><input type="checkbox" id="filterExpense" checked onchange="renderCalendar()"> 現金支出</label>
-                <label><input type="checkbox" id="filterBuy" checked onchange="renderCalendar()"> 股票買入</label>
-                <label><input type="checkbox" id="filterSell" checked onchange="renderCalendar()"> 股票賣出</label>
+                <span class="filter-title">👁️ 篩選：</span>
+                <label class="filter-chip income-chip">
+                    <input type="checkbox" id="filterIncome" checked onchange="renderCalendar()">
+                    <span class="chip-label">現金收入</span>
+                </label>
+                <label class="filter-chip expense-chip">
+                    <input type="checkbox" id="filterExpense" checked onchange="renderCalendar()">
+                    <span class="chip-label">現金支出</span>
+                </label>
+                <label class="filter-chip buy-chip">
+                    <input type="checkbox" id="filterBuy" checked onchange="renderCalendar()">
+                    <span class="chip-label">股票買入</span>
+                </label>
+                <label class="filter-chip sell-chip">
+                    <input type="checkbox" id="filterSell" checked onchange="renderCalendar()">
+                    <span class="chip-label">股票賣出</span>
+                </label>
             </div>
+            
             <div class="calendar-grid" id="calendarGrid"></div>
         </div>
 
@@ -393,7 +415,7 @@
                             <button id="btnApiFetch" class="btn-fetch" onclick="fetchRealApiData()">🔄 雲端抓取即時報價與名稱</button>
                             
                             <div class="flex-row" style="margin-top: 12px;">
-                                <div class="form-group"><label>初始庫存張數 (補登歷史請設為0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
+                                <div class="form-group"><label>初始庫存 (補登設0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
                                 <div class="form-group"><label>現價 (元)</label><input type="number" id="newPrice" value="0" step="0.01"></div>
                             </div>
                             
@@ -418,7 +440,7 @@
     </div>
 
     <div id="dayViewModal" class="modal-overlay">
-        <div class="modal" style="display:flex; flex-direction:column; max-height:80dvh;">
+        <div class="modal" style="display:flex; flex-direction:column;">
             <div class="modal-header">
                 <h3 id="dayViewTitle">2026-04-10 明細</h3>
                 <button class="close-btn" onclick="closeDayView()">×</button>
@@ -533,7 +555,6 @@
             if(pageId === 'dashboard') renderDashboard();
         }
 
-        // v0.32: 彈出視窗開關魔法
         function openAssetForm() { document.getElementById('assetFormOverlay').classList.add('active'); }
         function closeAssetForm() { document.getElementById('assetFormOverlay').classList.remove('active'); resetAssetForm(); }
         function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); }
@@ -775,20 +796,13 @@
 
         function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
 
-        // v0.32: 日曆點擊邏輯分流
+        let currentDayViewDate = '';
         function handleCellClick(dateStr) {
-            if (window.innerWidth <= 768) {
-                openDayView(dateStr); // 手機版開明細抽屜
-            } else {
-                openModal(dateStr); // 電腦版直接開新增視窗
-            }
+            if (window.innerWidth <= 768) { openDayView(dateStr); } else { openModal(dateStr); }
         }
 
-        // v0.32: 日曆明細抽屜生成邏輯
-        let currentDayViewDate = '';
         function openDayView(dateStr) {
-            currentDayViewDate = dateStr;
-            document.getElementById('dayViewTitle').innerText = `${dateStr} 明細`;
+            currentDayViewDate = dateStr; document.getElementById('dayViewTitle').innerText = `${dateStr} 明細`;
             const list = document.getElementById('dayViewList'); list.innerHTML = '';
             
             const dayTxs = appData.transactions.filter(tx => tx.date === dateStr);
@@ -835,8 +849,7 @@
                 const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const dayTxs = appData.transactions.filter(tx => tx.date === dateStr); const vTxs = virtualTxs.filter(t => t.date === dateStr); 
                 
-                let badgesHtml = ''; 
-                let dotsHtml = '<div class="dot-container">'; // v0.32: 點狀標記
+                let badgesHtml = ''; let dotsHtml = '<div class="dot-container">';
 
                 dayTxs.forEach(tx => {
                     const clickEvent = `onclick="editTx(event, '${tx.id}')"`;
