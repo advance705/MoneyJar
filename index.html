@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.36</title>
+    <title>🍯 MoneyJar v0.37</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* v0.37 終極核彈宣告：強制所有元素寬度包含留白與邊框，徹底解決右側溢出與偏離中心 Bug */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         :root {
             --bg-color: #2e3440; --sidebar-bg: #242933; --sidebar-hover: #3b4252;
             --text-main: #eceff4; --text-light: #d8dee9; --accent: #88c0d0;
@@ -37,7 +42,7 @@
 
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 0.85em; color: var(--text-light); margin-bottom: 4px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; color-scheme: dark; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; color-scheme: dark; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
         .flex-row { display: flex; gap: 10px; width: 100%; }
         .flex-row .form-group { flex: 1 1 0%; min-width: 0; }
@@ -155,7 +160,7 @@
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
         /* =======================================================
-           📱 v0.36 手機版 Safari 終極除錯
+           📱 v0.37 手機版 UX 完美像素修復
            ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -189,53 +194,46 @@
 
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} 
             
-            /* 修正表單並排與輸入格字體 */
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
-            .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
             
-            /* v0.36 解決 Safari 萎縮為一條線的 Bug */
+            /* v0.37 極致垂直空間壓縮：讓表單塞進單一畫面 */
+            .card { padding: 15px !important; }
+            .form-group { margin-bottom: 8px; }
+            .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
             .form-group input, .form-group select {
-                min-width: 0 !important; 
-                width: 100% !important; 
-                box-sizing: border-box !important;
-                font-size: 16px !important; /* 防 iOS 自動放大 */
-                min-height: 40px !important; /* 強制保證高度，治癒萎縮症 */
+                font-size: 16px !important; 
+                min-height: 36px !important; /* 稍微變扁 */
+                padding: 6px 8px !important;
                 -webkit-appearance: none; 
                 appearance: none;
                 background-color: var(--bg-color); 
             }
-            /* 幫 Safari 的選單找回箭頭 */
+            .btn-add, .btn-fetch { padding: 8px 12px; margin-top: 5px; font-size: 0.9em; }
+
             .form-group select {
                 background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-                background-repeat: no-repeat, repeat;
-                background-position: right .7em top 50%, 0 0;
-                background-size: .65em auto, 100%;
+                background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%;
             }
 
-            /* v0.36 終極解法：徹底鎖死彈出視窗，絕不被 Header 擋住 */
+            /* v0.37 完美置頂與全螢幕遮罩 */
             .desktop-form-wrapper, .modal-overlay { 
                 display: none; 
                 position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; 
                 background: rgba(0,0,0,0.75) !important; 
-                z-index: 99999 !important; /* 絕對最高層級 */
+                z-index: 99999 !important; 
                 overflow-y: auto !important; 
                 -webkit-overflow-scrolling: touch;
-                padding: 80px 15px 40px 15px !important; /* 用硬數值把內容往下推，避開 Header */
-                box-sizing: border-box;
+                padding: calc(env(safe-area-inset-top) + 70px) 15px calc(env(safe-area-inset-bottom) + 85px) 15px !important; 
             }
-            .desktop-form-wrapper.active, .modal-overlay.active { 
-                display: block !important; /* 從 flex 改為 block 以保證頂端不被切掉 */
-            }
+            .desktop-form-wrapper.active, .modal-overlay.active { display: block !important; }
 
             .desktop-form-wrapper .card, .modal { 
                 position: relative !important; top: auto !important; bottom: auto !important;
                 width: 100% !important; max-width: 400px !important; 
-                margin: 0 auto !important; /* 只做水平置中 */
+                margin: 0 auto !important; 
                 height: auto !important; max-height: none !important; 
                 border-radius: 12px !important; border: 1px solid var(--border) !important; 
-                padding-top: 15px; 
-                cursor: default !important; /* 取消拖曳錯覺 */
-                transform: none !important; /* 取消任何導致偏移的特效 */
+                cursor: default !important; transform: none !important; 
             }
             
             .mobile-fab { 
@@ -275,7 +273,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.36</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.37</div>
         <button class="nav-btn active" onclick="switchPage('dashboard', this)">🏠 <span>總覽儀表板</span></button>
         <button class="nav-btn" onclick="switchPage('calendar', this)">📅 <span>日曆與收支</span></button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 <span>股票對帳單</span></button>
@@ -462,7 +460,7 @@
                             <button id="btnApiFetch" class="btn-fetch" onclick="fetchRealApiData()">🔄 雲端抓取即時報價與名稱</button>
                             
                             <div class="flex-row" style="margin-top: 12px;">
-                                <div class="form-group"><label>初始庫存 (補登設0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
+                                <div class="form-group"><label>初始庫存(補登設0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
                                 <div class="form-group"><label>現價 (元)</label><input type="number" id="newPrice" value="0" step="0.01"></div>
                             </div>
                             
@@ -538,7 +536,7 @@
                 
                 <div id="sellBuyPriceRow" style="display:none; margin-bottom: 12px; padding: 10px; background: rgba(136, 192, 208, 0.1); border-left: 3px solid var(--accent); border-radius: 4px;">
                     <div class="form-group" style="margin-bottom:0; width:100%;">
-                        <label style="color:var(--accent);">指定買入成本批次 (Tax Lot 自動計算手續費)</label>
+                        <label style="color:var(--accent);">指定買入成本批次</label>
                         <select id="stockLotSelect"></select>
                     </div>
                 </div>
@@ -951,7 +949,7 @@
 
         function openModal(dateStr) {
             document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`;
-            document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
+            document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
             document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; 
             document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0;
             document.getElementById('stockAction').value = 'buy'; toggleSellRow();
@@ -963,7 +961,7 @@
             if (event && event.stopPropagation) event.stopPropagation();
             const tx = appData.transactions.find(t => t.id === txId); if (!tx) return;
             document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`;
-            loadAccSelects();
+            loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none';
             if (tx.type === 'income' || tx.type === 'expense') { switchFormTab('cash'); document.getElementById('cashType').value = tx.type; document.getElementById('cashCategory').value = tx.category; document.getElementById('cashAccount').value = tx.accountId; document.getElementById('cashAmount').value = tx.amount; document.getElementById('btnDeleteCash').style.display = 'block'; } 
             else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { 
                 switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; 
