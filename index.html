@@ -39,8 +39,11 @@
         .form-group label { display: block; font-size: 0.85em; color: var(--text-light); margin-bottom: 4px; font-weight: bold; }
         .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; color-scheme: dark; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+        
+        /* v0.35 確保 Flex 子元素可以被壓縮 */
         .flex-row { display: flex; gap: 10px; width: 100%; }
-        .flex-row .form-group { flex: 1; min-width: 0; }
+        .flex-row .form-group { flex: 1 1 0%; min-width: 0; }
+        
         .btn-add { background: var(--accent); color: #2e3440; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; transition: 0.2s;}
         .btn-add:hover { filter: brightness(1.1); }
         .btn-fetch { background: var(--income); color: #2e3440; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 4px; font-size: 0.85em; font-weight: bold; transition: 0.2s; }
@@ -49,6 +52,9 @@
         .desktop-form-wrapper { display: block; }
         .mobile-fab { display: none; }
         .mobile-close-btn { display: none; }
+
+        /* v0.35 桌機版表單固定樣式 */
+        .sticky-form { position: sticky; top: 0; z-index: 10; max-height: calc(100vh - 60px); overflow-y: auto; }
 
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid var(--border); position: relative; cursor: grab; transition: transform 0.2s, border-color 0.2s; }
@@ -152,12 +158,12 @@
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
         /* =======================================================
-           📱 v0.35 手機版 UX 修復與終極進化
+           📱 v0.35 手機版 UX 終極修復
            ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             
-            /* v0.35 徹底隱藏日曆與所有頁面的大標題 */
+            /* 隱藏所有頁面的大標題與日曆大標題 */
             .page > h2, .calendar-header h2 { display: none; }
             
             .mobile-header { 
@@ -187,26 +193,37 @@
 
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 80px;} 
             
+            /* v0.35 修復 Safari 表單擠壓與放大 */
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
             .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
-
-            /* v0.35 解決 Safari 輸入格撐破與自動放大 Bug */
             .form-group input, .form-group select {
-                min-width: 0 !important; /* 強制覆蓋 Safari 內建日期的最小寬度 */
-                max-width: 100%;
-                font-size: 16px; /* 防呆：iOS 規定低於 16px 點擊會自動 Zoom in */
+                min-width: 0 !important; 
+                width: 100% !important; 
+                box-sizing: border-box !important;
+                font-size: 16px !important; /* 防止 iOS 點擊自動放大 */
+            }
+            input[type="date"], input[type="month"] {
+                -webkit-appearance: none; appearance: none; /* 移除 Safari 原生寬度限制 */
             }
 
-            .desktop-form-wrapper { 
+            /* v0.35 完美置頂與點擊關閉防呆 */
+            .desktop-form-wrapper, .modal-overlay { 
                 display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-                background: rgba(0,0,0,0.7); z-index: 2500; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px);
+                background: rgba(0,0,0,0.7); z-index: 9999 !important; 
+                overflow-y: auto; -webkit-overflow-scrolling: touch;
+                /* 設定內距，讓表單永遠跟螢幕邊緣保持安全距離 */
+                padding: calc(env(safe-area-inset-top) + 20px) 15px calc(env(safe-area-inset-bottom) + 80px) 15px;
             }
-            .desktop-form-wrapper.active { display: flex; }
+            
+            /* 強制覆蓋 JS 寫入的 display: flex，改用 block 確保可以安全滑動不被切斷 */
+            .desktop-form-wrapper.active, .modal-overlay[style*="display: flex"] {
+                display: block !important;
+            }
+
             .desktop-form-wrapper .card, .modal { 
-                position: relative !important; top: auto !important; width: 92%; 
-                margin: calc(env(safe-area-inset-top) + 20px) auto 20px auto !important; 
-                max-height: calc(100dvh - env(safe-area-inset-top) - 60px) !important; 
-                border: 1px solid var(--border); padding-top: 15px; overflow-y: auto;
+                width: 100% !important; max-width: 450px; margin: 0 auto 30px auto !important; 
+                position: relative !important; max-height: none !important; top: auto !important;
+                border-radius: 12px; border: 1px solid var(--border); padding-top: 15px;
             }
             
             .mobile-fab { 
@@ -220,7 +237,6 @@
             .mobile-close-btn { display: block; background: none; border: none; font-size: 1.5em; color: var(--text-light); padding: 0; margin-left: 10px; margin-top:-5px;}
             .card-title-row { padding-right: 0; }
             
-            /* v0.35 修復日曆標題隱藏後的留白問題 */
             .calendar-header { flex-direction: row; margin-bottom: 10px; gap: 0; }
             .calendar-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
             .calendar-nav button { padding: 6px 12px; font-size: 0.9em; }
@@ -325,8 +341,8 @@
             <h2>🏦 貸款與負債管理</h2>
             <button class="mobile-fab" onclick="openLoanForm()">➕</button>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
-                <div id="loanFormOverlay" class="desktop-form-wrapper">
-                    <div class="card" style="background: var(--sidebar-bg); position: sticky; top: 0; z-index: 10; max-height: calc(100dvh - 60px); overflow-y: auto;">
+                <div id="loanFormOverlay" class="desktop-form-wrapper" onclick="closeLoanForm()">
+                    <div class="card sticky-form" style="background: var(--sidebar-bg);" onclick="event.stopPropagation()">
                         <div class="card-title-row">
                             <h3 class="card-title" id="loanFormTitle">➕ 新增貸款合約</h3>
                             <button class="mobile-close-btn" onclick="closeLoanForm()">✖</button>
@@ -413,8 +429,8 @@
             <h2>💼 資產與自選庫存</h2>
             <button class="mobile-fab" onclick="openAssetForm()">➕</button>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
-                <div id="assetFormOverlay" class="desktop-form-wrapper">
-                    <div class="card" style="background: var(--sidebar-bg); cursor: default; position: sticky; top: 0; z-index: 10; max-height: calc(100dvh - 60px); overflow-y: auto;">
+                <div id="assetFormOverlay" class="desktop-form-wrapper" onclick="closeAssetForm()">
+                    <div class="card sticky-form" style="background: var(--sidebar-bg); cursor: default;" onclick="event.stopPropagation()">
                         <div class="card-title-row">
                             <h3 class="card-title" id="assetFormTitle">➕ 新增帳戶/資產</h3>
                             <button class="mobile-close-btn" onclick="closeAssetForm()">✖</button>
@@ -457,8 +473,8 @@
         </div>
     </div>
 
-    <div id="dayViewModal" class="modal-overlay">
-        <div class="modal" style="display:flex; flex-direction:column;">
+    <div id="dayViewModal" class="modal-overlay" onclick="closeDayView()">
+        <div class="modal" style="display:flex; flex-direction:column;" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="dayViewTitle">2026-04-10 明細</h3>
                 <button class="close-btn" onclick="closeDayView()">×</button>
@@ -468,8 +484,8 @@
         </div>
     </div>
 
-    <div id="txModal" class="modal-overlay">
-        <div class="modal">
+    <div id="txModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="modalDateLabel">新增紀錄</h3>
                 <button class="close-btn" onclick="closeModal()">×</button>
@@ -847,9 +863,9 @@
                     </div>`;
                 });
             }
-            document.getElementById('dayViewModal').style.display = 'flex';
+            document.getElementById('dayViewModal').classList.add('active');
         }
-        function closeDayView() { document.getElementById('dayViewModal').style.display = 'none'; }
+        function closeDayView() { document.getElementById('dayViewModal').classList.remove('active'); }
         function openModalFromDayView() { closeDayView(); openModal(currentDayViewDate); }
 
         function renderCalendar() {
@@ -922,18 +938,21 @@
 
         function openModal(dateStr) {
             document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`;
-            document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
+            document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
             document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; 
             document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0;
             document.getElementById('stockAction').value = 'buy'; toggleSellRow();
-            loadAccSelects(); switchFormTab('cash'); document.getElementById('txModal').style.display = 'flex';
+            loadAccSelects(); switchFormTab('cash'); 
+            
+            // v0.35 支援 CSS class 控制顯示
+            document.getElementById('txModal').classList.add('active');
         }
 
         function editTx(event, txId) {
             if (event && event.stopPropagation) event.stopPropagation();
             const tx = appData.transactions.find(t => t.id === txId); if (!tx) return;
             document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`;
-            loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none';
+            loadAccSelects();
             if (tx.type === 'income' || tx.type === 'expense') { switchFormTab('cash'); document.getElementById('cashType').value = tx.type; document.getElementById('cashCategory').value = tx.category; document.getElementById('cashAccount').value = tx.accountId; document.getElementById('cashAmount').value = tx.amount; document.getElementById('btnDeleteCash').style.display = 'block'; } 
             else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { 
                 switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; 
@@ -944,10 +963,10 @@
                 calcStockTotal(); document.getElementById('btnDeleteStock').style.display = 'block'; 
             } 
             else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; }
-            document.getElementById('txModal').style.display = 'flex';
+            document.getElementById('txModal').classList.add('active');
         }
 
-        function closeModal() { document.getElementById('txModal').style.display = 'none'; }
+        function closeModal() { document.getElementById('txModal').classList.remove('active'); }
         
         function switchFormTab(type) {
             document.getElementById('tabCash').classList.toggle('active', type === 'cash'); document.getElementById('tabStock').classList.toggle('active', type === 'stock'); document.getElementById('tabLoanExtra').classList.toggle('active', type === 'loanExtra');
