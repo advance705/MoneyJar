@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.39 (Cloud)</title>
+    <title>🍯 MoneyJar v0.40 (Cloud)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -33,7 +33,6 @@
         .sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-main); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border);}
         .sidebar-header { padding: 20px; font-size: 1.2em; font-weight: bold; border-bottom: 1px solid var(--border); color: var(--accent); }
         
-        /* 電腦版雲端同步狀態區塊 */
         .user-profile { padding: 15px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px dashed var(--border); }
         .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--border); cursor: pointer; transition: 0.2s; }
         .user-avatar:hover { filter: brightness(1.1); }
@@ -172,23 +171,13 @@
         .jump-link { color: var(--accent); text-decoration: none; font-weight: bold; transition: 0.2s; }
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
-        /* =======================================================
-           📱 v0.39 手機版 UI/UX 優化 (修復 NavBar 擠壓)
-           ======================================================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .page > h2, .calendar-header h2 { display: none; }
             
-            /* 1. 確保登入後顯示的電腦版資訊，在手機上絕對隱藏，不影響 NavBar */
             #desktopProfile { display: none !important; }
             
-            .mobile-header { 
-                display: flex; justify-content: space-between; align-items: center; 
-                padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); 
-                padding-top: env(safe-area-inset-top);
-                background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
-                flex-shrink: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            }
+            .mobile-header { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); background: var(--sidebar-bg); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
             .mobile-header-title { font-weight: bold; color: var(--accent); font-size: 1.2em; display:flex; align-items:center; gap:8px;}
             
             .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
@@ -196,13 +185,7 @@
             
             .main-content { flex: 1; padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
             
-            .sidebar { 
-                width: 100%; height: calc(60px + env(safe-area-inset-bottom)); 
-                padding-bottom: env(safe-area-inset-bottom); 
-                flex-direction: row; justify-content: space-around; align-items: center;
-                flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); 
-                overflow: hidden; z-index: 1000; position: fixed; bottom: 0;
-            }
+            .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
             .sidebar-header, .file-controls { display: none; }
             .nav-btn { flex: 1; display: flex; justify-content: center; font-size: 1.6em; padding: 10px 0; border: none !important; margin: 0;}
             .nav-btn span { display: none; } 
@@ -256,7 +239,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.39</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.40</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="alert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="if(confirm('目前已連接 Google Drive。確定要登出嗎？')) handleSignoutClick();">
@@ -264,7 +247,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.39</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.40</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="if(confirm('確定要登出嗎？')) handleSignoutClick();">
@@ -572,7 +555,7 @@
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
         let currentDate = new Date(2026, 3, 1); let assetChartObj = null; let stockChartObj = null;
-        let cashflowView = 'month'; let isDirty = false;
+        let cashflowView = 'month';
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
 
         /* =======================================================
@@ -710,17 +693,29 @@
             setTimeout(() => { editTx({ stopPropagation: () => {} }, txId); }, 50);
         }
 
-        document.getElementById('btnLoad').addEventListener('click', async () => {
+        // v0.40 跨瀏覽器相容：隱藏的 input 上傳檔案機制
+        document.getElementById('btnLoad').addEventListener('click', () => {
             if(!accessToken) { alert("請先登入 Google 帳號！"); return; }
-            try {
-                const [fh] = await window.showOpenFilePicker({ types: [{ accept: {'application/json': ['.json']} }] });
-                const file = await fh.getFile(); appData = JSON.parse(await file.text());
-                if(!appData.accounts) appData.accounts = []; if(!appData.assets) appData.assets = []; if(!appData.transactions) appData.transactions = []; if(!appData.loans) appData.loans = []; if(!appData.settings) appData.settings = { annualBudget: 0, emergencyMonths: 6 };
-                let cleanedAssets = []; let seenTickers = new Set();
-                appData.assets.forEach(ast => { if (ast.type === 'stock') { if (!seenTickers.has(ast.ticker)) { seenTickers.add(ast.ticker); cleanedAssets.push(ast); } } else { cleanedAssets.push(ast); } }); appData.assets = cleanedAssets;
-                
-                saveData(); alert("遷移成功！資料已覆蓋並上傳至 Google Drive。");
-            } catch (e) { alert("匯入取消或失敗。"); }
+            
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const text = await file.text();
+                    appData = JSON.parse(text);
+                    if(!appData.accounts) appData.accounts = []; if(!appData.assets) appData.assets = []; if(!appData.transactions) appData.transactions = []; if(!appData.loans) appData.loans = []; if(!appData.settings) appData.settings = { annualBudget: 0, emergencyMonths: 6 };
+                    let cleanedAssets = []; let seenTickers = new Set();
+                    appData.assets.forEach(ast => { if (ast.type === 'stock') { if (!seenTickers.has(ast.ticker)) { seenTickers.add(ast.ticker); cleanedAssets.push(ast); } } else { cleanedAssets.push(ast); } }); appData.assets = cleanedAssets;
+                    
+                    saveData(); alert("遷移成功！資料已覆蓋並上傳至 Google Drive。");
+                } catch (err) {
+                    alert("檔案讀取失敗或格式錯誤！");
+                }
+            };
+            input.click();
         });
 
         function exportData() {
