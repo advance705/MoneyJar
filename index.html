@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.30</title>
+    <title>🍯 MoneyJar v0.31</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -14,16 +14,15 @@
             --stock-sell: #ebcb8b; --loan: #81a1c1;
         }
         
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        /* v0.31 導入 100dvh 動態高度解決 Safari 卡死問題 */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
         
-        /* 電腦版側邊欄 */
         .sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-main); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border);}
         .sidebar-header { padding: 20px; font-size: 1.2em; font-weight: bold; border-bottom: 1px solid var(--border); color: var(--accent); }
         .nav-btn { padding: 15px 20px; background: none; border: none; color: var(--text-light); text-align: left; font-size: 1em; cursor: pointer; transition: 0.3s; }
         .nav-btn:hover, .nav-btn.active { background: var(--sidebar-hover); color: var(--text-main); border-left: 4px solid var(--accent); }
         .file-controls { margin-top: auto; padding: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
         
-        /* 手機版專屬頂部控制台 (預設隱藏) */
         .mobile-header { display: none; }
         
         .btn-import { width: 100%; padding: 10px; background: transparent; color: var(--text-light); border: 1px dashed var(--border); border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;}
@@ -112,7 +111,7 @@
         .bg-loan { background-color: var(--loan); color: #eceff4; border-left: 3px solid var(--stock-sell); }
 
         .modal-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); }
+        .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); max-height: 90dvh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .modal-header h3 { margin: 0; color: var(--text-main); }
         .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-light); transition: 0.2s;}
@@ -138,41 +137,69 @@
         .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
         
         /* =======================================================
-           🍯 v0.30 RWD 響應式手機版專屬 CSS (魔法從這裡開始) 
+           📱 v0.31 手機版專屬響應式 CSS (RWD) 
            ======================================================= */
         @media (max-width: 768px) {
-            /* 1. 調整主框架：從左右並排變成上下排列 */
+            /* 1. 基礎佈局改為上下 Flex 結構 */
             body { flex-direction: column; }
             
-            /* 2. 顯示手機版專屬的頂端標題列與按鈕 */
-            .mobile-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); z-index: 10; order: 1; }
+            /* 2. 啟動頂部控制台 */
+            .mobile-header { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); 
+                padding-top: env(safe-area-inset-top);
+                background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+                flex-shrink: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            }
             .mobile-header-title { font-weight: bold; color: var(--accent); font-size: 1.2em; }
             .mobile-header-controls { display: flex; gap: 8px; }
-            .mobile-header-controls button { padding: 6px 10px; font-size: 0.8em; margin: 0; }
+            .mobile-header-controls button { padding: 6px 12px; font-size: 0.85em; margin: 0; }
             
-            /* 3. 主內容區調整：塞到第二層，並在底部留空間給導覽列 */
-            .main-content { order: 2; padding: 15px; padding-bottom: 20px; }
+            /* 3. 中間主內容區：佔滿剩餘空間，啟動滑順滾動 */
+            .main-content { 
+                flex: 1; padding: 15px; overflow-y: auto; 
+                -webkit-overflow-scrolling: touch; /* 拯救 Safari 滑動 */
+            }
             
-            /* 4. 電腦版側邊欄變身成底部導覽列 (Bottom Nav) */
-            .sidebar { width: 100%; height: 65px; flex-direction: row; border-right: none; border-top: 1px solid var(--border); padding: 0; order: 3; overflow-x: auto; background: var(--sidebar-bg); z-index: 100; }
-            .sidebar-header { display: none; } /* 隱藏原本電腦版的標題 */
-            .file-controls { display: none; }  /* 隱藏原本電腦版的匯入匯出區塊 */
+            /* 4. 電腦側邊欄變形為底部 Tab Bar */
+            .sidebar { 
+                width: 100%; height: calc(65px + env(safe-area-inset-bottom)); 
+                padding-bottom: env(safe-area-inset-bottom); 
+                flex-direction: row; flex-shrink: 0; border-right: none; 
+                border-top: 1px solid var(--border); overflow: hidden; z-index: 1000;
+            }
+            .sidebar-header { display: none; }
+            .file-controls { display: none; }
             
-            /* 導覽列按鈕變身 */
-            .nav-btn { flex: 1; padding: 5px; font-size: 0.75em; text-align: center; border-left: none; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 4px; justify-content: center; }
+            /* 均分底部導覽列按鈕，避免橫向捲動 */
+            .nav-btn { 
+                flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+                padding: 5px 2px; font-size: 0.65em; text-align: center; border-left: none; 
+                min-width: 0; white-space: normal; word-break: keep-all; line-height: 1.3;
+            }
             .nav-btn.active { border-left: none; border-top: 3px solid var(--accent); background: var(--sidebar-hover); }
 
-            /* 5. 解除格線 (Grid) 佈局，讓卡片在手機上變成單行垂直排列 */
+            /* 5. 佈局解壓縮 */
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; }
             .flex-row { flex-direction: column; gap: 0; }
             
-            /* 6. 解除黏性定位 (Sticky) 防擋住手機畫面 */
-            .card[style*="position: sticky"] { position: relative !important; max-height: none !important; z-index: 1; margin-bottom: 20px; }
+            /* 6. 半屏固定的輸入表單 (Sticky Form 半版設計) */
+            .card[style*="sticky"] { 
+                position: sticky !important; top: -15px !important; /* 貼齊 main-content 頂部邊緣 */
+                max-height: 45dvh !important; z-index: 100 !important; 
+                box-shadow: 0 10px 15px rgba(0,0,0,0.4); border-bottom: 2px solid var(--accent); 
+                margin: -15px -15px 15px -15px; border-radius: 0 0 8px 8px; border-left: none; border-right: none;
+                padding: 15px;
+            }
             
-            /* 7. 卡片內部細節微調 */
-            .card-actions { position: static; justify-content: flex-end; margin-bottom: 10px; }
-            .card-title-row { padding-right: 0; }
-            .modal { width: 95%; padding: 15px; }
+            /* 7. 行事曆標題與格子縮放 */
+            .calendar-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .calendar-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+            .calendar-nav button { padding: 6px 12px; font-size: 0.9em; }
+            .calendar-cell { min-height: 60px; padding: 2px; } /* 修正狹長格子 */
+            .tx-badge { font-size: 0.65em; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            
+            .modal { width: 92%; padding: 15px; }
             .calendar-filters { flex-wrap: wrap; }
         }
     </style>
@@ -188,7 +215,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.30</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.31</div>
         <button class="nav-btn" onclick="switchPage('dashboard', this)">🏠 總覽儀表板</button>
         <button class="nav-btn active" onclick="switchPage('calendar', this)">📅 日曆與收支</button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 股票對帳單</button>
@@ -265,7 +292,7 @@
         <div id="loans" class="page">
             <h2>🏦 貸款與負債管理</h2>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
-                <div class="card" style="background: var(--sidebar-bg); position: sticky; top: 0; z-index: 10; max-height: calc(100vh - 60px); overflow-y: auto;">
+                <div class="card" style="background: var(--sidebar-bg); position: sticky; top: 0; z-index: 10; max-height: calc(100dvh - 60px); overflow-y: auto;">
                     <div class="card-title-row"><h3 class="card-title" id="loanFormTitle">➕ 新增貸款合約</h3></div>
                     <input type="hidden" id="editLoanId" value="">
                     <div class="form-group"><label>貸款名稱 (如：房屋貸款)</label><input type="text" id="loanName"></div>
@@ -330,7 +357,7 @@
         <div id="assets" class="page">
             <h2>💼 資產與自選庫存</h2>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
-                <div class="card" style="background: var(--sidebar-bg); cursor: default; position: sticky; top: 0; z-index: 10; max-height: calc(100vh - 60px); overflow-y: auto;">
+                <div class="card" style="background: var(--sidebar-bg); cursor: default; position: sticky; top: 0; z-index: 10; max-height: calc(100dvh - 60px); overflow-y: auto;">
                     <div class="card-title-row"><h3 class="card-title" id="assetFormTitle">➕ 新增帳戶/資產</h3></div>
                     <input type="hidden" id="editAssetId" value="">
                     <div class="form-group"><label>類型</label><select id="newAssetType" onchange="toggleAssetInputs()"><option value="bank">銀行帳戶 (現金)</option><option value="stock">股票 / ETF</option></select></div>
@@ -514,7 +541,6 @@
             } catch (e) { alert("匯入取消或失敗。"); }
         });
 
-        // v0.30 變更：markDirty 與 clearDirty 需同步變更手機版的備份按鈕顏色
         function markDirty() {
             isDirty = true;
             const btn = document.getElementById('btnExport');
