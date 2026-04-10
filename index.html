@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.40 (Cloud)</title>
+    <title>🍯 MoneyJar v0.41</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -20,12 +20,11 @@
         
         body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
         
-        /* 登入畫面覆蓋層 */
+        /* v0.41 登入畫面極簡化 */
         #loginOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .login-box { background: var(--sidebar-bg); padding: 40px; border-radius: 12px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 90%; width: 350px; }
         .login-logo { font-size: 3em; margin-bottom: 10px; }
-        .login-title { color: var(--accent); margin-bottom: 5px; font-size: 1.5em; font-weight: bold; }
-        .login-desc { color: var(--text-light); font-size: 0.9em; margin-bottom: 30px; line-height: 1.5; }
+        .login-title { color: var(--accent); margin-bottom: 25px; font-size: 1.5em; font-weight: bold; }
         .btn-google { background: #eceff4; color: #2e3440; border: none; padding: 12px 20px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s; width: 100%; justify-content: center; }
         .btn-google:hover { filter: brightness(0.9); transform: scale(1.02); }
         .btn-google img { width: 18px; height: 18px; }
@@ -160,7 +159,8 @@
         .tab-btn.active { background: var(--accent); color: #2e3440; }
         .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
         
-        .ledger-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        /* v0.41 修復對帳單滑動陷阱 */
+        .ledger-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
         .ledger-table { width: 100%; border-collapse: collapse; font-size: 0.9em; min-width: 1100px; color: var(--text-main); }
         .ledger-table th { background: var(--sidebar-bg); padding: 12px 10px; text-align: right; border-bottom: 2px solid var(--border); color: var(--text-light); white-space: nowrap; font-weight: normal;}
         .ledger-table th:nth-child(1), .ledger-table th:nth-child(2), .ledger-table th:nth-child(3), .ledger-table th:nth-child(4) { text-align: left; }
@@ -230,8 +230,7 @@
         <div class="login-box">
             <div class="login-logo">🍯</div>
             <div class="login-title">MoneyJar</div>
-            <div class="login-desc">SaaS 雲端財務戰情室<br><span style="font-size:0.85em; opacity:0.7;">資料安全儲存於您的 Google Drive</span></div>
-            <button class="btn-google" onclick="handleAuthClick()">
+            <button class="btn-google" onclick="handleAuthClick()" style="margin-top: 20px;">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo">
                 使用 Google 帳號登入
             </button>
@@ -239,7 +238,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.40</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.41</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="alert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="if(confirm('目前已連接 Google Drive。確定要登出嗎？')) handleSignoutClick();">
@@ -247,7 +246,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.40</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.41</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="if(confirm('確定要登出嗎？')) handleSignoutClick();">
@@ -555,7 +554,7 @@
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
         let currentDate = new Date(2026, 3, 1); let assetChartObj = null; let stockChartObj = null;
-        let cashflowView = 'month';
+        let cashflowView = 'month'; let isDirty = false;
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
 
         /* =======================================================
@@ -693,7 +692,6 @@
             setTimeout(() => { editTx({ stopPropagation: () => {} }, txId); }, 50);
         }
 
-        // v0.40 跨瀏覽器相容：隱藏的 input 上傳檔案機制
         document.getElementById('btnLoad').addEventListener('click', () => {
             if(!accessToken) { alert("請先登入 Google 帳號！"); return; }
             
