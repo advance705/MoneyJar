@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.44</title>
+    <title>🍯 MoneyJar v0.45</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -27,6 +27,15 @@
         .btn-google { background: #eceff4; color: #2e3440; border: none; padding: 12px 20px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s; width: 100%; justify-content: center; }
         .btn-google:hover { filter: brightness(0.9); transform: scale(1.02); }
         .btn-google img { width: 18px; height: 18px; }
+
+        /* v0.45 自訂確認視窗 */
+        #customConfirm { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 9999999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .confirm-card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .confirm-msg { font-size: 1.1em; font-weight: bold; color: var(--text-main); margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; border: none; }
+        .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-light); }
+        .btn-cancel:hover { background: var(--sidebar-hover); }
 
         .sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-main); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border);}
         .sidebar-header { padding: 20px; font-size: 1.2em; font-weight: bold; border-bottom: 1px solid var(--border); color: var(--accent); }
@@ -200,12 +209,7 @@
             .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
             .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
             
-            /* v0.44 終極修復：確保手機版所有頁面（包含純表格）滑到底部時，不會被 Navbar 蓋住 */
-            .main-content { 
-                flex: 1; padding: 15px; 
-                padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
-                overflow-y: auto; -webkit-overflow-scrolling: touch; 
-            }
+            .main-content { flex: 1; padding: 15px; padding-bottom: calc(90px + env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
             
             .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
             .sidebar-header, .file-controls { display: none; }
@@ -213,7 +217,6 @@
             .nav-btn span { display: none; } 
             .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
 
-            /* 移除之前寫死在部分卡片上的 80px，交給 main-content 統一管理 */
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
             
             .flex-row { flex-direction: row; gap: 10px; width: 100%; }
@@ -257,6 +260,16 @@
 </head>
 <body>
 
+    <div id="customConfirm">
+        <div class="confirm-card">
+            <div id="confirmMessage" class="confirm-msg">確認執行此操作？</div>
+            <div class="confirm-actions">
+                <button class="confirm-btn btn-cancel" onclick="document.getElementById('customConfirm').style.display='none'">取消</button>
+                <button id="confirmYesBtn" class="confirm-btn">確定</button>
+            </div>
+        </div>
+    </div>
+
     <div id="loginOverlay">
         <div class="login-box">
             <div class="login-logo">🍯</div>
@@ -269,18 +282,18 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.44</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.45</div>
         <div class="mobile-header-controls">
-            <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="alert(document.getElementById('syncStatus').innerText)">☁️</span>
-            <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="if(confirm('目前已連接 Google Drive。確定要登出嗎？')) handleSignoutClick();">
+            <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
+            <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.44</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.45</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
-            <img id="desktopAvatar" class="user-avatar" src="" onclick="if(confirm('確定要登出嗎？')) handleSignoutClick();">
+            <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
             <div class="user-info">
                 <div id="desktopName" class="user-name">載入中...</div>
                 <div id="desktopSync" class="sync-badge">☁️ 雲端已同步</div>
@@ -297,7 +310,7 @@
             <button id="btnLoad" class="btn-import">📥 從電腦載入舊檔 (遷移)</button>
             <button id="btnExport" class="btn-export" onclick="exportData()">💾 下載實體備份 (JSON)</button>
             <div id="syncStatus" class="status-text">已啟用雲端自動存檔。</div>
-            <button onclick="handleSignoutClick()" style="background:transparent; border:none; color:var(--expense); text-align:left; padding:0; cursor:pointer; font-size:0.8em; margin-top:5px; text-decoration:underline;">登出帳號</button>
+            <button onclick="confirmSignout()" style="background:transparent; border:none; color:var(--expense); text-align:left; padding:0; cursor:pointer; font-size:0.8em; margin-top:5px; text-decoration:underline;">登出帳號</button>
         </div>
     </div>
 
@@ -399,7 +412,7 @@
 
         <div id="ledger" class="page">
             <h2>📜 股票交易對帳單</h2>
-            <p style="color:var(--text-light); font-size:0.9em; margin-top:-10px; margin-bottom:20px;">資料與行事曆連動。點擊「成交日期」可直接跳轉至日曆編輯紀錄。</p>
+            <p style="color:var(--text-light); font-size:0.9em; margin-top:-10px; margin-bottom:20px;">資料與行事曆連動。點擊「成交日期」可直接跳轉至該月份行事曆。</p>
             
             <div class="ledger-tools">
                 <div class="search-box">
@@ -544,7 +557,7 @@
                 <div class="form-group"><label>金額 (元)</label><input type="number" id="cashAmount" value="0" min="0"></div>
                 <div class="modal-actions">
                     <button class="btn-save" id="btnSaveCash" onclick="saveCashTransaction()">儲存</button>
-                    <button class="btn-delete" id="btnDeleteCash" onclick="deleteTransaction()">刪除</button>
+                    <button class="btn-delete" id="btnDeleteCash" onclick="confirmDeleteTransaction()">刪除</button>
                 </div>
             </div>
 
@@ -575,7 +588,7 @@
                 </div>
                 <div class="modal-actions">
                     <button class="btn-save" id="btnSaveStock" onclick="saveStockTransaction()">儲存</button>
-                    <button class="btn-delete" id="btnDeleteStock" onclick="deleteTransaction()">刪除</button>
+                    <button class="btn-delete" id="btnDeleteStock" onclick="confirmDeleteTransaction()">刪除</button>
                 </div>
             </div>
 
@@ -588,7 +601,7 @@
                 <div class="form-group"><label>扣款帳戶</label><select id="loanExtraAccount"></select></div>
                 <div class="modal-actions">
                     <button class="btn-save" id="btnSaveLoanExtra" onclick="saveLoanExtraTransaction()">儲存並重算房貸</button>
-                    <button class="btn-delete" id="btnDeleteLoanExtra" onclick="deleteTransaction()">刪除</button>
+                    <button class="btn-delete" id="btnDeleteLoanExtra" onclick="confirmDeleteTransaction()">刪除</button>
                 </div>
             </div>
         </div>
@@ -607,6 +620,36 @@
         const CLIENT_ID = '844991618019-rr297egcrjg7d509k7nduil4l19cgdot.apps.googleusercontent.com';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
         let tokenClient; let accessToken = null; let driveFolderId = null; let driveFileId = null;
+
+        /* =======================================================
+           v0.45 自訂通用確認視窗邏輯
+           ======================================================= */
+        let confirmActionCallback = null;
+        function showCustomConfirm(msg, callback, isDanger = false) {
+            document.getElementById('confirmMessage').innerText = msg;
+            const yesBtn = document.getElementById('confirmYesBtn');
+            if (isDanger) {
+                yesBtn.style.background = 'var(--expense)';
+                yesBtn.style.color = '#eceff4';
+            } else {
+                yesBtn.style.background = 'var(--accent)';
+                yesBtn.style.color = '#2e3440';
+            }
+            confirmActionCallback = callback;
+            document.getElementById('customConfirm').style.display = 'flex';
+        }
+        document.getElementById('confirmYesBtn').addEventListener('click', () => {
+            document.getElementById('customConfirm').style.display = 'none';
+            if (confirmActionCallback) confirmActionCallback();
+        });
+        function showCustomAlert(msg) {
+            showCustomConfirm(msg, null, false);
+            document.getElementById('confirmYesBtn').innerText = '我知道了';
+            setTimeout(() => { document.getElementById('confirmYesBtn').innerText = '確定'; }, 500); // 復原按鈕文字
+        }
+        function confirmSignout() {
+            showCustomConfirm('目前已連接 Google Drive。\n確定要登出嗎？', handleSignoutClick, true);
+        }
 
         window.onload = function () {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -733,7 +776,14 @@
         function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); }
         function closeLoanForm() { document.getElementById('loanFormOverlay').classList.remove('active'); resetLoanForm(); }
 
+        // v0.45 修復：跳轉時同步更新行事曆的年月
         function jumpToTx(txId) {
+            const tx = appData.transactions.find(t => t.id === txId);
+            if (tx) {
+                const [year, month] = tx.date.split('-');
+                currentDate.setFullYear(parseInt(year));
+                currentDate.setMonth(parseInt(month) - 1);
+            }
             const calBtn = document.querySelectorAll('.nav-btn')[1];
             switchPage('calendar', calBtn);
             setTimeout(() => { editTx({ stopPropagation: () => {} }, txId); }, 50);
@@ -899,7 +949,14 @@
             closeLoanForm(); saveData(); alert("貸款合約更新成功！");
         }
         function editLoan(id) { const l = appData.loans.find(x => x.id === id); if(!l) return; document.getElementById('editLoanId').value = l.id; document.getElementById('loanFormTitle').innerText = "✏️ 編輯貸款合約"; document.getElementById('loanName').value = l.name; document.getElementById('loanPrincipal').value = l.principal; document.getElementById('loanRate').value = l.rate; document.getElementById('loanYears').value = l.years; document.getElementById('loanGrace').value = l.grace; document.getElementById('loanStartMonth').value = l.startMonth; document.getElementById('loanPayDay').value = l.payDay; document.getElementById('loanAcc').value = l.accountId; document.getElementById('btnSaveLoan').innerText = "更新合約並重算"; document.getElementById('btnCancelLoanEdit').style.display = "block"; openLoanForm(); }
-        function deleteLoan(id) { if(!confirm("確定要刪除此貸款？")) return; appData.loans = appData.loans.filter(l => l.id !== id); saveData(); }
+        
+        // v0.45 套用自訂確認視窗
+        function deleteLoan(id) {
+            showCustomConfirm('確定要刪除此貸款？', () => {
+                appData.loans = appData.loans.filter(l => l.id !== id); saveData();
+            }, true);
+        }
+        
         function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanFormTitle').innerText = "➕ 新增貸款合約"; document.getElementById('btnSaveLoan').innerText = "新增並自動產生攤還表"; document.getElementById('btnCancelLoanEdit').style.display = "none"; document.getElementById('loanName').value = ""; }
         function renderLoans() {
             const list = document.getElementById('loanList'); list.innerHTML = ''; let schedules = generateAmortizationSchedules(); let todayStr = new Date().toISOString().split('T')[0];
@@ -1184,7 +1241,13 @@
             appData.transactions.splice(txIndex, 1);
         }
 
-        function deleteTransaction() { if(!confirm("確定要刪除這筆紀錄嗎？相關帳戶餘額將自動還原。")) return; reverseTransaction(document.getElementById('editTxId').value); closeModal(); saveData(); }
+        // v0.45 套用自訂確認視窗
+        function confirmDeleteTransaction() {
+            showCustomConfirm('確定要刪除這筆紀錄嗎？\n相關帳戶餘額將自動還原。', () => {
+                reverseTransaction(document.getElementById('editTxId').value);
+                closeModal(); saveData();
+            }, true);
+        }
 
         function saveCashTransaction() {
             const amount = parseFloat(document.getElementById('cashAmount').value) || 0; const accountId = document.getElementById('cashAccount').value;
@@ -1195,17 +1258,35 @@
             closeModal(); saveData();
         }
 
+        // v0.45 套用自訂確認視窗 (交割戶餘額警告)
         function saveStockTransaction() {
             const assetId = document.getElementById('stockAsset').value; const accountId = document.getElementById('stockAccount').value;
             const price = parseFloat(document.getElementById('stockPrice').value); const shares = parseFloat(document.getElementById('stockShares').value); const fee = parseFloat(document.getElementById('stockFee').value);
             if(shares <= 0 || price <= 0) { alert("張數與價格大於 0"); return; } if(!assetId || !accountId) { alert("帳戶或股票未選擇"); return; }
-            const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
+            
             const ast = appData.assets.find(a => a.id === assetId); const acc = appData.accounts.find(a => a.id === accountId);
             const baseAmount = price * 1000 * shares; const action = document.getElementById('stockAction').value; let totalCashFlow = 0;
             let realizedPnL = 0; let linkedBuyId = null;
 
+            const finalizeTransaction = () => {
+                const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
+                
+                if(action === 'buy') acc.balance -= totalCashFlow;
+                else acc.balance += totalCashFlow;
+
+                appData.transactions.push({ 
+                    id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: action === 'buy' ? 'stock_buy' : 'stock_sell', ticker: ast.ticker, shares, price, fee, accountId, amount: totalCashFlow,
+                    linkedBuyId: action === 'sell' ? linkedBuyId : undefined, realizedPnL: action === 'sell' ? realizedPnL : undefined
+                });
+                closeModal(); saveData();
+            };
+
             if(action === 'buy') { 
-                totalCashFlow = baseAmount + fee; if(getDynamicBalance(acc.id) < totalCashFlow && !confirm("注意：交割帳戶可用餘額不足，確定扣除？")) return; acc.balance -= totalCashFlow; 
+                totalCashFlow = baseAmount + fee; 
+                if(getDynamicBalance(acc.id) < totalCashFlow) {
+                    showCustomConfirm('⚠️ 交割帳戶可用餘額不足\n確定要扣除嗎？', finalizeTransaction, true);
+                    return; // 暫停執行，等待使用者確認
+                }
             } else { 
                 if(getStockInventory(ast.ticker) < shares) { alert("總庫存張數不足無法賣出"); return; } 
                 const lotChoice = document.getElementById('stockLotSelect').value; const lots = getBuyLotStatus();
@@ -1218,13 +1299,10 @@
                 if (!selectedLot) { alert("無效的批次。"); return; }
                 if (shares > selectedLot.remaining) { alert(`選擇的批次 [${selectedLot.date} @ $${selectedLot.price}] 僅剩 ${selectedLot.remaining} 張可售。\n\n請將賣出張數改為 ${selectedLot.remaining} 張，其餘張數請新增另一筆賣出紀錄 (批次拆分)。`); return; }
                 linkedBuyId = selectedLot.id; let buyBase = selectedLot.price * 1000 * shares; let buyFee = Math.floor(buyBase * 0.001425); let totalCost = buyBase + buyFee;
-                totalCashFlow = baseAmount - fee; acc.balance += totalCashFlow; realizedPnL = totalCashFlow - totalCost;
+                totalCashFlow = baseAmount - fee; realizedPnL = totalCashFlow - totalCost;
             }
-            appData.transactions.push({ 
-                id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: action === 'buy' ? 'stock_buy' : 'stock_sell', ticker: ast.ticker, shares, price, fee, accountId, amount: totalCashFlow,
-                linkedBuyId: action === 'sell' ? linkedBuyId : undefined, realizedPnL: action === 'sell' ? realizedPnL : undefined
-            });
-            closeModal(); saveData();
+            
+            finalizeTransaction();
         }
 
         function saveLoanExtraTransaction() {
@@ -1307,7 +1385,14 @@
             });
         }
 
-        function deleteAssetItem(type, id) { if(!confirm("確定要刪除？刪除帳戶不會影響日曆紀錄，但會導致舊紀錄失去關聯。")) return; if (type === 'bank') appData.accounts = appData.accounts.filter(item => item.id !== id); if (type === 'stock') appData.assets = appData.assets.filter(item => item.id !== id); saveData(); }
+        // v0.45 套用自訂確認視窗
+        function deleteAssetItem(type, id) {
+            showCustomConfirm('確定要刪除？\n刪除帳戶不會影響日曆紀錄，但會導致舊紀錄失去關聯。', () => {
+                if (type === 'bank') appData.accounts = appData.accounts.filter(item => item.id !== id);
+                if (type === 'stock') appData.assets = appData.assets.filter(item => item.id !== id);
+                saveData();
+            }, true);
+        }
 
         function editAssetItem(type, id) {
             document.getElementById('newAssetType').value = type; document.getElementById('editAssetId').value = id; document.getElementById('btnCancelAssetEdit').style.display = "block"; toggleAssetInputs();
