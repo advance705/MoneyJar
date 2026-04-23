@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.49</title>
+    <title>🍯 MoneyJar v0.50</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -103,7 +103,9 @@
         .btn-refresh-all { background: var(--stock-sell); color: #2e3440; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; cursor: pointer; font-weight: bold; transition: 0.3s;}
 
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-        .dash-card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 1px solid var(--border); }
+        
+        /* v0.50 卡片高度與內容分布優化 */
+        .dash-card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 1px solid var(--border); display: flex; flex-direction: column; }
         .dash-card h3 { margin-top: 0; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.2em; display: flex; align-items: center; gap: 8px; justify-content: space-between;}
         
         .toggle-group { display: flex; background: var(--bg-color); border-radius: 4px; border: 1px solid var(--border); overflow: hidden; }
@@ -112,11 +114,11 @@
 
         .dash-val-main { font-size: 2.2em; font-weight: bold; color: var(--accent); margin: 15px 0 5px 0; }
         .dash-stat-row { display: flex; justify-content: space-between; font-size: 0.9em; color: var(--text-light); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; }
-        .dash-list { list-style: none; padding: 0; margin: 0; }
+        .dash-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
         .dash-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; color: var(--text-light); align-items: center;}
         .dash-list li:last-child { border-bottom: none; }
         .dash-list b { color: var(--text-main); }
-        .chart-container { position: relative; height: 220px; width: 100%; margin-top: 15px; }
+        .chart-container { position: relative; width: 100%; margin-top: auto; }
 
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
         .calendar-header h2 { margin: 0; padding-bottom: 0; border: none; }
@@ -208,7 +210,11 @@
             .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
             .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
             
-            .main-content { flex: 1; padding: 15px; padding-bottom: calc(90px + env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            .main-content { 
+                flex: 1; padding: 15px; 
+                padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
+                overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            }
             
             .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
             .sidebar-header, .file-controls { display: none; }
@@ -284,7 +290,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.49</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.50</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -292,7 +298,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.49</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.50</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -328,7 +334,7 @@
                         <span>股票: <b id="dashStockText" style="color:var(--accent);">$0</b></span>
                         <span>負債: <b id="dashDebtText" style="color:var(--expense);">-$0</b></span>
                     </div>
-                    <div class="chart-container"><canvas id="assetChart"></canvas></div>
+                    <div class="chart-container" style="height: 220px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
                 </div>
                 
                 <div class="dash-card">
@@ -666,15 +672,16 @@
     </div>
 
     <script>
+        // v0.50 安全的全域變數與 Chart.js 設定
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
-        let currentDate = new Date(2026, 3, 1); let assetChartObj = null; let dividendChartObj = null; let portfolioChartObj = null;
+        let currentDate = new Date(2026, 3, 1); 
+        let assetChartObj = null; let dividendChartObj = null; let portfolioChartObj = null;
         let cashflowView = 'month';
         
         let ledgerCurrentPage = 1; const ledgerPageSize = 20; let ledgerSearchTerm = '';
 
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
-
         const CLIENT_ID = '844991618019-rr297egcrjg7d509k7nduil4l19cgdot.apps.googleusercontent.com';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
         let tokenClient; let accessToken = null; let driveFolderId = null; let driveFileId = null;
@@ -713,12 +720,7 @@
                 callback: async (resp) => {
                     if (resp.error !== undefined) { throw (resp); }
                     accessToken = resp.access_token;
-                    
-                    localStorage.setItem('mj_g_token', JSON.stringify({
-                        token: accessToken,
-                        expiresAt: Date.now() + 3500 * 1000 
-                    }));
-                    
+                    localStorage.setItem('mj_g_token', JSON.stringify({ token: accessToken, expiresAt: Date.now() + 3500 * 1000 }));
                     document.getElementById('loginOverlay').style.display = 'none'; 
                     await fetchUserProfile();
                     await initCloudSync();
@@ -840,13 +842,7 @@
                 btnElement.classList.add('active');
             }
             document.getElementById(pageId).classList.add('active');
-            
-            if(pageId === 'ledger') {
-                ledgerCurrentPage = 1;
-                document.getElementById('ledgerSearch').value = '';
-                ledgerSearchTerm = '';
-            }
-            
+            if(pageId === 'ledger') { ledgerCurrentPage = 1; document.getElementById('ledgerSearch').value = ''; ledgerSearchTerm = ''; }
             renderAll();
         }
 
@@ -859,8 +855,7 @@
             const tx = appData.transactions.find(t => t.id === txId);
             if (tx) {
                 const [year, month] = tx.date.split('-');
-                currentDate.setFullYear(parseInt(year));
-                currentDate.setMonth(parseInt(month) - 1);
+                currentDate.setFullYear(parseInt(year)); currentDate.setMonth(parseInt(month) - 1);
             }
             const calBtn = document.querySelectorAll('.nav-btn')[1];
             switchPage('calendar', calBtn);
@@ -869,26 +864,17 @@
 
         document.getElementById('btnLoad').addEventListener('click', () => {
             if(!accessToken) { alert("請先登入 Google 帳號！"); return; }
-            
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json,application/json';
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
             input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
+                const file = e.target.files[0]; if (!file) return;
                 try {
-                    const text = await file.text();
-                    appData = JSON.parse(text);
+                    const text = await file.text(); appData = JSON.parse(text);
                     if(!appData.accounts) appData.accounts = []; if(!appData.assets) appData.assets = []; if(!appData.transactions) appData.transactions = []; if(!appData.loans) appData.loans = []; if(!appData.settings) appData.settings = { annualBudget: 0, emergencyMonths: 6 };
                     let cleanedAssets = []; let seenTickers = new Set();
                     appData.assets.forEach(ast => { if (ast.type === 'stock') { if (!seenTickers.has(ast.ticker)) { seenTickers.add(ast.ticker); cleanedAssets.push(ast); } } else { cleanedAssets.push(ast); } }); appData.assets = cleanedAssets;
-                    
                     saveData(); alert("遷移成功！資料已覆蓋並上傳至 Google Drive。");
-                } catch (err) {
-                    alert("檔案讀取失敗或格式錯誤！");
-                }
-            };
-            input.click();
+                } catch (err) { alert("檔案讀取失敗或格式錯誤！"); }
+            }; input.click();
         });
 
         function exportData() {
@@ -935,70 +921,29 @@
 
         function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
 
-        // v0.49 自定義圖表渲染函數，顯示具體金額與百分比
-        const getPieOptions = (isDoughnut = false) => {
-            return {
-                responsive: true, maintainAspectRatio: false, cutout: isDoughnut ? '65%' : 0,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: '#d8dee9', font: { size: 11 },
-                            generateLabels: function(chart) {
-                                const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                                const dataset = chart.data.datasets[0];
-                                const total = dataset.data.reduce((a, b) => a + b, 0);
-                                original.forEach(label => {
-                                    const val = dataset.data[label.index];
-                                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-                                    label.text = `${label.text} $${val.toLocaleString()} (${pct}%)`;
-                                });
-                                return original;
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || ''; let val = context.raw || 0;
-                                let total = context.dataset.data.reduce((a,b)=>a+b, 0);
-                                let pct = total > 0 ? Math.round((val/total)*100) : 0;
-                                return `${label}: $${val.toLocaleString()} (${pct}%)`;
-                            }
-                        }
-                    }
-                }
-            };
-        };
-
         function renderDashboard() {
             if(!appData) return;
             document.getElementById('settingBudget').value = appData.settings?.annualBudget || ''; document.getElementById('settingEFMonths').value = appData.settings?.emergencyMonths || '';
             let totalCash = 0; appData.accounts.forEach(a => totalCash += getDynamicBalance(a.id));
             let totalStock = 0; let yearlyDiv = 0; 
             
-            let portLabels = []; let portData = []; 
-            let divLabels = []; let divData = [];
-            let stockColors = ['#bf616a', '#d08770', '#ebcb8b', '#a3be8c', '#b48ead', '#88c0d0', '#81a1c1', '#5e81ac'];
+            let rawPortData = []; let rawDivData = [];
+            let stockColors = ['#bf616a', '#d08770', '#ebcb8b', '#a3be8c', '#b48ead', '#88c0d0', '#81a1c1', '#5e81ac', '#4c566a', '#a3be8c'];
             
             appData.assets.forEach(a => { 
                 if(a.type === 'stock') { 
                     let realShares = getStockInventory(a.ticker);
                     if (realShares > 0) {
-                        let mv = realShares * 1000 * a.price; 
-                        totalStock += mv; 
+                        let mv = realShares * 1000 * a.price; totalStock += mv; 
                         let divAmount = a.dividend !== undefined ? a.dividend * realShares * 1000 : mv * ((a.yield || 0) / 100);
                         yearlyDiv += divAmount; 
-                        
                         let nameLabel = a.name ? `${a.ticker} ${a.name}` : a.ticker;
-                        portLabels.push(nameLabel); portData.push(mv);
-                        
-                        if(divAmount > 0) {
-                            divLabels.push(nameLabel); divData.push(divAmount);
-                        }
+                        rawPortData.push({label: nameLabel, val: mv});
+                        if(divAmount > 0) rawDivData.push({label: nameLabel, val: divAmount});
                     }
                 } 
             });
+            
             let totalDebt = 0; let todayStr = new Date().toISOString().split('T')[0]; let schedules = generateAmortizationSchedules();
             let flowIncome = 0; let flowExpense = 0; let flowLoan = 0; let flowPnL = 0; 
             
@@ -1006,7 +951,7 @@
             let divPrefixMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}`;
             let divPrefixYear = `${currentDate.getFullYear()}`;
 
-            let timePrefix = cashflowView === 'month' ? `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}` : `${currentDate.getFullYear()}`;
+            let timePrefix = cashflowView === 'month' ? divPrefixMonth : divPrefixYear;
             let timeLabel = cashflowView === 'month' ? timePrefix : `${currentDate.getFullYear()} 全年`; let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
             
             appData.loans.forEach(loan => { let sch = schedules[loan.id] || []; let next = sch.find(s => s.date > todayStr); if(next) totalDebt += next.principalRemain; sch.forEach(s => { if(s.date.startsWith(timePrefix)) flowLoan += s.amount; }); });
@@ -1051,15 +996,34 @@
             document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
             document.getElementById('dashDivYear').innerText = '$' + Math.round(dividendThisYear).toLocaleString();
             
-            // v0.49 圖表套用全新選項
-            const ctxAsset = document.getElementById('assetChart').getContext('2d'); if(assetChartObj) assetChartObj.destroy();
-            assetChartObj = new Chart(ctxAsset, { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: getPieOptions(true) });
-            
-            const ctxDiv = document.getElementById('dividendChart').getContext('2d'); if(dividendChartObj) dividendChartObj.destroy();
-            dividendChartObj = new Chart(ctxDiv, { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions() });
+            // v0.50 圖表安全渲染邏輯 (預先計算字串，避免 Plugin 崩潰)
+            const pieOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#d8dee9', font: { size: 11 } } } }
+            };
 
-            const ctxPort = document.getElementById('portfolioChart').getContext('2d'); if(portfolioChartObj) portfolioChartObj.destroy();
-            portfolioChartObj = new Chart(ctxPort, { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions() });
+            let portLabels = rawPortData.map(item => { let pct = totalStock > 0 ? Math.round((item.val / totalStock) * 100) : 0; return `${item.label} - $${Math.round(item.val).toLocaleString()} (${pct}%)`; });
+            let portData = rawPortData.map(item => item.val);
+            let divLabels = rawDivData.map(item => { let pct = yearlyDiv > 0 ? Math.round((item.val / yearlyDiv) * 100) : 0; return `${item.label} - $${Math.round(item.val).toLocaleString()} (${pct}%)`; });
+            let divData = rawDivData.map(item => item.val);
+
+            const ctxAsset = document.getElementById('assetChart');
+            if(ctxAsset) {
+                if(assetChartObj) assetChartObj.destroy();
+                assetChartObj = new Chart(ctxAsset.getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: { ...pieOptions, cutout: '65%' }});
+            }
+            
+            const ctxDiv = document.getElementById('dividendChart');
+            if(ctxDiv) {
+                if(dividendChartObj) dividendChartObj.destroy();
+                dividendChartObj = new Chart(ctxDiv.getContext('2d'), { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: pieOptions });
+            }
+
+            const ctxPort = document.getElementById('portfolioChart');
+            if(ctxPort) {
+                if(portfolioChartObj) portfolioChartObj.destroy();
+                portfolioChartObj = new Chart(ctxPort.getContext('2d'), { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: pieOptions });
+            }
         }
 
         function PMT(ir, np, pv) { if (ir === 0) return pv / np; return pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1); }
@@ -1279,17 +1243,17 @@
 
         let currentDayViewDate = '';
         
-        // v0.49 三層精準點擊分流
+        // v0.50 三層點擊分流防護機制
         function handleCellClick(dateStr) {
             if (window.innerWidth <= 768) {
-                openDayView(dateStr); // 手機版防誤觸，點空白開列表
+                openDayView(dateStr); 
             } else {
-                openModal(dateStr);   // 電腦版高效新增，點空白直接開表單
+                openModal(dateStr);   
             }
         }
         function openDayViewFromCell(event, dateStr) {
-            if (event && event.stopPropagation) event.stopPropagation(); // 攔截事件，防止觸發背景的 handleCellClick
-            openDayView(dateStr); // 不管手機電腦，點「+N筆紀錄」都是開列表
+            if (event && event.stopPropagation) event.stopPropagation(); 
+            openDayView(dateStr); 
         }
 
         function openDayView(dateStr) {
@@ -1410,9 +1374,8 @@
                     }
                 });
                 
-                // v0.49 套用第二層點擊攔截
                 if (hiddenCount > 0) {
-                    badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border);">+ ${hiddenCount} 筆紀錄</div>`;
+                    badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border); cursor:pointer;">+ ${hiddenCount} 筆紀錄</div>`;
                 }
                 
                 dotsHtml += '</div>';
