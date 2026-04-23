@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.50</title>
+    <title>🍯 MoneyJar v0.51</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -75,9 +75,11 @@
         .btn-fetch { background: var(--income); color: #2e3440; padding: 8px; margin-top: 4px; font-size: 0.85em; }
         .btn-add:hover, .btn-fetch:hover { filter: brightness(1.1); }
 
-        .desktop-form-wrapper { display: block; }
+        /* v0.51 修復左側表單鎖死跟隨 (Sticky UI Fix) */
+        .desktop-form-wrapper { display: block; position: sticky; top: 0; align-self: start; z-index: 10; }
+        .sticky-form { max-height: calc(100vh - 60px); overflow-y: auto; }
+        
         .mobile-fab, .mobile-close-btn { display: none; }
-        .sticky-form { position: sticky; top: 0; z-index: 10; max-height: calc(100vh - 60px); overflow-y: auto; }
 
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid var(--border); position: relative; cursor: grab; transition: transform 0.2s, border-color 0.2s; }
@@ -104,7 +106,6 @@
 
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
         
-        /* v0.50 卡片高度與內容分布優化 */
         .dash-card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 1px solid var(--border); display: flex; flex-direction: column; }
         .dash-card h3 { margin-top: 0; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.2em; display: flex; align-items: center; gap: 8px; justify-content: space-between;}
         
@@ -290,7 +291,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.50</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.51</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -298,7 +299,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.50</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.51</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -672,7 +673,6 @@
     </div>
 
     <script>
-        // v0.50 安全的全域變數與 Chart.js 設定
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
         let currentDate = new Date(2026, 3, 1); 
@@ -921,6 +921,41 @@
 
         function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
 
+        const getPieOptions = (isDoughnut = false) => {
+            return {
+                responsive: true, maintainAspectRatio: false, cutout: isDoughnut ? '65%' : 0,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#d8dee9', font: { size: 11 },
+                            generateLabels: function(chart) {
+                                const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                const dataset = chart.data.datasets[0];
+                                const total = dataset.data.reduce((a, b) => a + b, 0);
+                                original.forEach(label => {
+                                    const val = dataset.data[label.index];
+                                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                                    label.text = `${label.text} $${val.toLocaleString()} (${pct}%)`;
+                                });
+                                return original;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || ''; let val = context.raw || 0;
+                                let total = context.dataset.data.reduce((a,b)=>a+b, 0);
+                                let pct = total > 0 ? Math.round((val/total)*100) : 0;
+                                return `${label}: $${val.toLocaleString()} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            };
+        };
+
         function renderDashboard() {
             if(!appData) return;
             document.getElementById('settingBudget').value = appData.settings?.annualBudget || ''; document.getElementById('settingEFMonths').value = appData.settings?.emergencyMonths || '';
@@ -996,7 +1031,6 @@
             document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
             document.getElementById('dashDivYear').innerText = '$' + Math.round(dividendThisYear).toLocaleString();
             
-            // v0.50 圖表安全渲染邏輯 (預先計算字串，避免 Plugin 崩潰)
             const pieOptions = {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { position: 'right', labels: { color: '#d8dee9', font: { size: 11 } } } }
@@ -1243,7 +1277,6 @@
 
         let currentDayViewDate = '';
         
-        // v0.50 三層點擊分流防護機制
         function handleCellClick(dateStr) {
             if (window.innerWidth <= 768) {
                 openDayView(dateStr); 
