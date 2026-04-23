@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.46</title>
+    <title>🍯 MoneyJar v0.47</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -220,7 +220,6 @@
             .nav-btn span { display: none; } 
             .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
 
-            /* v0.46 覆寫行內 style，讓手機版的卡片滿版置中 */
             .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
             .card-grid[style*="align-items: start"] { align-items: stretch !important; }
             
@@ -287,7 +286,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.46</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.47</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -295,7 +294,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.46</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.47</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -568,12 +567,12 @@
 
             <div id="formStock" style="display:none;">
                 <div class="flex-row">
-                    <div class="form-group"><label>交易類型</label><select id="stockAction" onchange="populateLotSelect(document.getElementById('editTxId').value)"><option value="buy">買入股票</option><option value="sell">賣出股票</option></select></div>
+                    <div class="form-group"><label>交易類型</label><select id="stockAction" onchange="populateLotSelect(document.getElementById('editTxId').value); toggleSellRow(); calcStockTotal(true);"><option value="buy">買入股票</option><option value="sell">賣出股票</option></select></div>
                     <div class="form-group"><label>選擇股票</label><select id="stockAsset" onchange="populateLotSelect(document.getElementById('editTxId').value)"></select></div>
                 </div>
                 <div class="flex-row">
-                    <div class="form-group"><label>成交價 (元)</label><input type="number" id="stockPrice" value="0" step="0.01" oninput="calcStockTotal()"></div>
-                    <div class="form-group"><label>張數</label><input type="number" id="stockShares" value="1" step="0.1" oninput="calcStockTotal()"></div>
+                    <div class="form-group"><label>成交價 (元)</label><input type="number" id="stockPrice" value="0" step="0.01" oninput="calcStockTotal(true)"></div>
+                    <div class="form-group"><label>張數</label><input type="number" id="stockShares" value="1" step="0.1" oninput="calcStockTotal(true)"></div>
                 </div>
                 
                 <div class="form-group"><label>交割帳戶</label><select id="stockAccount" onchange="populateLotSelect(document.getElementById('editTxId').value)"></select></div>
@@ -584,8 +583,19 @@
                         <select id="stockLotSelect"></select>
                     </div>
                 </div>
+                
+                <div id="sellTaxRateRow" style="display:none; margin-bottom: 12px; padding: 10px; background: rgba(235, 203, 139, 0.1); border-left: 3px solid var(--stock-sell); border-radius: 4px;">
+                    <div class="form-group" style="margin-bottom:0; width:100%;">
+                        <label style="color:var(--stock-sell);">賣出交易稅率</label>
+                        <select id="stockTaxRate" onchange="calcStockTotal(true)">
+                            <option value="0.003">一般股票 (0.3%)</option>
+                            <option value="0.0015">現股當沖 (0.15%)</option>
+                            <option value="0.001">ETF (0.1%)</option>
+                        </select>
+                    </div>
+                </div>
 
-                <div class="form-group"><label>手續費與稅金(無條件捨去)</label><input type="number" id="stockFee" value="0" oninput="calcStockTotal()"></div>
+                <div class="form-group"><label>手續費與稅金 (可手動微調)</label><input type="number" id="stockFee" value="0" oninput="calcStockTotal(false)"></div>
                 
                 <div class="form-group" style="background:var(--bg-color); padding:10px; border-radius:4px; margin-bottom:0; border:1px solid var(--border);">
                     <span style="font-size:0.85em; font-weight:bold; color:var(--text-light);">總交割金額：</span>
@@ -653,7 +663,6 @@
             showCustomConfirm('目前已連接 Google Drive。\n確定要登出嗎？', handleSignoutClick, true);
         }
 
-        /* v0.46 自動登入快取機制 */
         window.onload = function () {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
@@ -662,7 +671,6 @@
                     if (resp.error !== undefined) { throw (resp); }
                     accessToken = resp.access_token;
                     
-                    // 將 Token 存入 localStorage，設定約 58 分鐘後過期
                     localStorage.setItem('mj_g_token', JSON.stringify({
                         token: accessToken,
                         expiresAt: Date.now() + 3500 * 1000 
@@ -674,7 +682,6 @@
                 },
             });
 
-            // 檢查本機快取是否有未過期的 Token
             const cachedTokenStr = localStorage.getItem('mj_g_token');
             if (cachedTokenStr) {
                 try {
@@ -695,7 +702,7 @@
         function handleSignoutClick() {
             if (accessToken) { google.accounts.oauth2.revoke(accessToken); }
             accessToken = null; driveFolderId = null; driveFileId = null;
-            localStorage.removeItem('mj_g_token'); // 登出時清空快取
+            localStorage.removeItem('mj_g_token'); 
             document.getElementById('loginOverlay').style.display = 'flex';
             document.getElementById('desktopProfile').style.display = 'none';
             document.getElementById('mobileAvatar').style.display = 'none';
@@ -759,7 +766,7 @@
                 updateSyncStatus('☁️ 雲端已同步'); renderAll();
             } catch(e) { 
                 updateSyncStatus('⚠️ 雲端連線失敗'); 
-                if(e.status === 401) handleSignoutClick(); // Token 過期自動登出
+                if(e.status === 401) handleSignoutClick(); 
             }
         }
 
@@ -1006,6 +1013,7 @@
         function changeLedgerPage(delta) { ledgerCurrentPage += delta; renderLedger(); }
         function gotoLedgerPage(page) { ledgerCurrentPage = page; renderLedger(); }
 
+        // v0.47 同日交易排序邏輯升級：加入 ID (時間戳) 作為第二條件
         function renderLedger() {
             const tbody = document.getElementById('ledgerBody'); tbody.innerHTML = '';
             const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell');
@@ -1029,7 +1037,14 @@
                 });
             }
 
-            filteredTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // 日期新到舊為主。若日期相同，比較 tx_ 之後的時間戳 (越大代表越晚建立，排越前面)
+            filteredTxs.sort((a, b) => {
+                const dateDiff = new Date(b.date) - new Date(a.date);
+                if (dateDiff !== 0) return dateDiff;
+                const idA = parseInt(a.id.replace('tx_', '')) || 0;
+                const idB = parseInt(b.id.replace('tx_', '')) || 0;
+                return idB - idA;
+            });
 
             const totalItems = filteredTxs.length;
             const totalPages = Math.ceil(totalItems / ledgerPageSize) || 1;
@@ -1044,7 +1059,15 @@
                 const ast = appData.assets.find(a => a.ticker === tx.ticker); const name = ast ? (ast.name ? `${tx.ticker} ${ast.name}` : tx.ticker) : tx.ticker;
                 const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
                 const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
-                let fee = 0, tax = 0; if (isBuy) { fee = tx.fee || 0; } else { tax = Math.floor(baseAmt * 0.003); fee = (tx.fee || 0) - tax; if (fee < 0) fee = 0; }
+                
+                // 為了對帳單顯示歷史紀錄，如果有紀錄則讀取，否則算0
+                let fee = tx.fee || 0;
+                let tax = 0;
+                if (!isBuy) {
+                    // 如果沒有存稅金欄位(新舊版相容)，先簡單反推。目前系統的 fee 是包含手續費+稅的
+                    tax = Math.floor(baseAmt * 0.003); // 歷史紀錄統一先用 0.3% 反推顯示
+                }
+                
                 const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '未知帳戶';
                 const dateLink = `<a href="javascript:void(0)" onclick="jumpToTx('${tx.id}')" class="jump-link">${tx.date}</a>`;
                 
@@ -1060,7 +1083,7 @@
                         pnlHtml = `<span style="color:${pnlColor}; font-weight:bold;">${pnlSign}${pnl.toLocaleString()}</span>`;
                     }
                 }
-                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${fee.toLocaleString()}</td><td>${tax.toLocaleString()}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${fee.toLocaleString()}</td><td>-</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
             
             if(totalItems === 0) {
@@ -1130,6 +1153,13 @@
             if(dayTxs.length === 0 && vTxs.length === 0) {
                 list.innerHTML = '<p style="text-align:center; color:var(--text-light); padding-top:20px;">今日無任何紀錄</p>';
             } else {
+                // v0.47 Day View 裡的紀錄也應該按照時間戳排序
+                dayTxs.sort((a, b) => {
+                    const idA = parseInt(a.id.replace('tx_', '')) || 0;
+                    const idB = parseInt(b.id.replace('tx_', '')) || 0;
+                    return idA - idB; // 先輸入的在上面
+                });
+                
                 dayTxs.forEach(tx => {
                     let title = tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker);
                     let amtStr = (tx.type==='income' || tx.type.includes('sell') ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
@@ -1171,6 +1201,13 @@
                 const dayTxs = appData.transactions.filter(tx => tx.date === dateStr); const vTxs = virtualTxs.filter(t => t.date === dateStr); 
                 
                 let badgesHtml = ''; let dotsHtml = '<div class="dot-container">';
+
+                // 行事曆上的格子也是先輸入的排上面
+                dayTxs.sort((a, b) => {
+                    const idA = parseInt(a.id.replace('tx_', '')) || 0;
+                    const idB = parseInt(b.id.replace('tx_', '')) || 0;
+                    return idA - idB; 
+                });
 
                 dayTxs.forEach(tx => {
                     const clickEvent = `onclick="editTx(event, '${tx.id}')"`;
@@ -1221,14 +1258,20 @@
             html += `</optgroup>`; sel.innerHTML = html;
         }
 
-        function toggleSellRow() { const isSell = document.getElementById('stockAction').value === 'sell'; document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; }
+        // v0.47 切換買賣時，同時開關「稅率選擇選單」
+        function toggleSellRow() { 
+            const isSell = document.getElementById('stockAction').value === 'sell'; 
+            document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; 
+            document.getElementById('sellTaxRateRow').style.display = isSell ? 'block' : 'none';
+        }
 
         function openModal(dateStr) {
             document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`;
             document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
             document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; 
             document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0;
-            document.getElementById('stockAction').value = 'buy'; toggleSellRow();
+            document.getElementById('stockAction').value = 'buy'; document.getElementById('stockTaxRate').value = '0.003';
+            toggleSellRow();
             loadAccSelects(); switchFormTab('cash'); 
             document.getElementById('txModal').classList.add('active');
         }
@@ -1243,9 +1286,15 @@
                 switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; 
                 const ast = appData.assets.find(a => a.ticker === tx.ticker); if(ast) document.getElementById('stockAsset').value = ast.id; 
                 document.getElementById('stockAccount').value = tx.accountId; document.getElementById('stockPrice').value = tx.price; 
-                document.getElementById('stockShares').value = tx.shares; document.getElementById('stockFee').value = tx.fee; 
+                document.getElementById('stockShares').value = tx.shares;
+                document.getElementById('stockFee').value = tx.fee; // 先填入歷史存的稅費
+                
+                // v0.47 重載舊資料時，只算一次總交割金額，不強制覆蓋手續費
+                toggleSellRow();
                 populateLotSelect(tx.id); if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId;
-                calcStockTotal(); document.getElementById('btnDeleteStock').style.display = 'block'; 
+                calcStockTotal(false); 
+                
+                document.getElementById('btnDeleteStock').style.display = 'block'; 
             } 
             else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; }
             document.getElementById('txModal').classList.add('active');
@@ -1258,7 +1307,29 @@
             document.getElementById('formCash').style.display = type === 'cash' ? 'block' : 'none'; document.getElementById('formStock').style.display = type === 'stock' ? 'block' : 'none'; document.getElementById('formLoanExtra').style.display = type === 'loanExtra' ? 'block' : 'none';
         }
 
-        function calcStockTotal() { const action = document.getElementById('stockAction').value; const baseAmount = (parseFloat(document.getElementById('stockPrice').value) || 0) * 1000 * (parseFloat(document.getElementById('stockShares').value) || 0); let fee = Math.floor(baseAmount * 0.001425); if(action === 'sell') fee += Math.floor(baseAmount * 0.003); document.getElementById('stockFee').value = fee; const total = action === 'buy' ? baseAmount + fee : baseAmount - fee; document.getElementById('stockTotalDisplay').innerText = total.toLocaleString() + ' 元'; }
+        // v0.47 稅率計算與手動覆蓋解鎖 (傳入 autoCalcFee)
+        function calcStockTotal(autoCalcFee = false) { 
+            const action = document.getElementById('stockAction').value; 
+            const price = parseFloat(document.getElementById('stockPrice').value) || 0; 
+            const shares = parseFloat(document.getElementById('stockShares').value) || 0; 
+            const baseAmount = price * 1000 * shares; 
+            
+            let feeInput = document.getElementById('stockFee');
+            
+            // 只有在單價、張數、買賣方向、稅率改變時，才自動重新計算覆蓋。手動打字修改不會觸發這個。
+            if (autoCalcFee) {
+                let calcFee = Math.floor(baseAmount * 0.001425); 
+                if(action === 'sell') {
+                    const taxRate = parseFloat(document.getElementById('stockTaxRate').value) || 0.003;
+                    calcFee += Math.floor(baseAmount * taxRate); 
+                }
+                feeInput.value = calcFee; 
+            }
+            
+            const fee = parseFloat(feeInput.value) || 0;
+            const total = action === 'buy' ? baseAmount + fee : baseAmount - fee; 
+            document.getElementById('stockTotalDisplay').innerText = total.toLocaleString() + ' 元'; 
+        }
 
         function reverseTransaction(txId) {
             const txIndex = appData.transactions.findIndex(t => t.id === txId); if (txIndex === -1) return;
@@ -1299,6 +1370,7 @@
                 if(action === 'buy') acc.balance -= totalCashFlow;
                 else acc.balance += totalCashFlow;
 
+                // 為了保持 ID 的唯一性，編輯時還是給新的 Date.now() ID，確保排序會跑去當日最後一筆
                 appData.transactions.push({ 
                     id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: action === 'buy' ? 'stock_buy' : 'stock_sell', ticker: ast.ticker, shares, price, fee, accountId, amount: totalCashFlow,
                     linkedBuyId: action === 'sell' ? linkedBuyId : undefined, realizedPnL: action === 'sell' ? realizedPnL : undefined
@@ -1408,14 +1480,6 @@
                 const formattedDiv = typeof divPerShare === 'number' ? parseFloat(divPerShare.toFixed(2)) : divPerShare;
                 stockList.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event, 'stock', '${ast.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'stock', '${ast.id}')" ondragend="handleDragEnd(event)"><div class="card-actions">${badge}<button onclick="editAssetItem('stock', '${ast.id}')">✏️</button><button onclick="deleteAssetItem('stock', '${ast.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title" title="${titleText}">${linkedTitle}</h3></div><div style="font-size:0.8em; color:var(--text-light); margin-top:-5px; margin-bottom:12px; display:flex; align-items:center;"><span style="background:var(--bg-color); padding:3px 8px; border-radius:4px; border:1px solid var(--border);">🏦 交割戶: ${accName}</span></div><div class="card-val-row"><div class="card-val">$${priceStr}<span class="val-label">現價</span></div>${totalValueHtml}</div><div class="card-sub"><b>庫存:</b> ${realShares} 張 (@${priceStr}元)<br><b>預估現金股利:</b> ${formattedDiv} 元/股 | <b>殖利率:</b> ${calcYield}%<br><b>除息日:</b> ${formatDate(ast.exDate)} | <b>發放日:</b> ${formatDate(ast.payDate)}</div></div>`;
             });
-        }
-
-        function deleteAssetItem(type, id) {
-            showCustomConfirm('確定要刪除？\n刪除帳戶不會影響日曆紀錄，但會導致舊紀錄失去關聯。', () => {
-                if (type === 'bank') appData.accounts = appData.accounts.filter(item => item.id !== id);
-                if (type === 'stock') appData.assets = appData.assets.filter(item => item.id !== id);
-                saveData();
-            }, true);
         }
 
         function editAssetItem(type, id) {
