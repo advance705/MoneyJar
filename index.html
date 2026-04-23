@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.47</title>
+    <title>🍯 MoneyJar v0.48</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -143,14 +143,15 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
         
-        .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; min-height: 100px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; }
+        /* v0.48 行事曆高度鎖死與溢出處理 */
+        .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; min-height: 100px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
         .calendar-cell:hover { background: #434c5e; border-color: var(--accent); }
         .cell-today { border: 2px solid var(--accent) !important; }
-        .cell-date { font-weight: bold; color: var(--text-light); text-align: right; margin-bottom: 5px; font-size: 0.9em; }
+        .cell-date { font-weight: bold; color: var(--text-light); text-align: right; margin-bottom: 5px; font-size: 0.9em; flex-shrink: 0;}
         .cell-other-month { background: var(--bg-color); border-color: transparent; }
         .cell-other-month .cell-date { color: var(--border); }
         
-        .tx-badge { padding: 4px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); color: #2e3440; }
+        .tx-badge { padding: 4px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); color: #2e3440; flex-shrink: 0;}
         .tx-badge:hover { filter: brightness(1.1); transform: scale(1.02); }
         .bg-income { background-color: var(--income); } .bg-expense { background-color: var(--expense); color: #eceff4; }
         .bg-buy { background-color: var(--stock-buy); color: #eceff4; } .bg-sell { background-color: var(--stock-sell); }
@@ -246,10 +247,13 @@
             .calendar-nav button { padding: 6px 10px; font-size: 0.85em; flex: 1; }
             .month-picker-input { padding: 6px 10px; font-size: 0.9em; flex: 1; max-width: 140px; }
             
-            .calendar-cell { aspect-ratio: 1/1; min-height: 0; padding: 4px; justify-content: flex-start; }
+            /* v0.48 手機版格子防變形鎖死 */
+            .calendar-cell { aspect-ratio: 1/1; min-height: 0; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
             .cell-date { font-size: 1em; text-align: center; margin-bottom: 2px;}
             .tx-badge { display: none !important; } 
-            .dot-container { display: flex; } 
+            .dot-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; width: 100%; align-content: flex-start;}
+            .tx-dot { width: 5px; height: 5px; }
+            
             .filter-toggle-btn { display: flex; }
             .hidden-mobile { display: none !important; margin-bottom: 15px; padding: 12px; }
             .hidden-mobile.active { display: flex !important; }
@@ -286,7 +290,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.47</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.48</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -294,7 +298,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.47</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.48</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -332,12 +336,26 @@
                     </div>
                     <div class="chart-container"><canvas id="assetChart"></canvas></div>
                 </div>
+                
                 <div class="dash-card">
-                    <h3>📈 投資組合與預估年配息</h3>
-                    <div class="dash-val-main" id="dashYearlyDiv" style="color:var(--stock-buy);">$0</div>
-                    <div class="dash-stat-row" style="justify-content:flex-start;"><span>預估每年可領現金股息</span></div>
-                    <div class="chart-container"><canvas id="stockChart"></canvas></div>
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        ✨ 魔法の蜜泉 
+                        <span style="font-size:0.5em; color:var(--text-light); font-weight:normal; margin-left:auto; background:var(--sidebar-bg); padding:3px 8px; border-radius:10px; border:1px solid var(--border);">股息追蹤戰情板</span>
+                    </h3>
+                    
+                    <div class="dash-stat-row" style="border:none; padding:0; margin-top:10px;">
+                        <span>預估全年配息</span>
+                    </div>
+                    <div class="dash-val-main" id="dashYearlyDiv" style="color:var(--stock-buy); margin-top:0;">$0</div>
+                    
+                    <ul class="dash-list" style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
+                        <li><span>本月實際領取</span> <b id="dashDivMonth" style="color:var(--income); font-size:1.1em;">$0</b></li>
+                        <li><span>本年累積領取</span> <b id="dashDivYear" style="color:var(--accent); font-size:1.1em;">$0</b></li>
+                    </ul>
+                    
+                    <div class="chart-container" style="height: 140px; margin-top: 10px;"><canvas id="stockChart"></canvas></div>
                 </div>
+
                 <div class="dash-card">
                     <h3>
                         <span>📊 現金流 (<span id="dashFlowLabel"></span>)</span>
@@ -416,12 +434,12 @@
 
         <div id="ledger" class="page">
             <h2>📜 股票交易對帳單</h2>
-            <p style="color:var(--text-light); font-size:0.9em; margin-top:-10px; margin-bottom:20px;">資料與行事曆連動。點擊「成交日期」可直接跳轉至該月份行事曆。</p>
+            <p style="color:var(--text-light); font-size:0.9em; margin-top:-10px; margin-bottom:20px;">包含一般買賣與股息配發紀錄。點擊「成交日期」可跳轉至該日。</p>
             
             <div class="ledger-tools">
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="ledgerSearch" placeholder="搜尋股票、帳戶、日期、買賣..." oninput="handleLedgerSearch()">
+                    <input type="text" id="ledgerSearch" placeholder="搜尋股票、帳戶、日期、買賣、領息..." oninput="handleLedgerSearch()">
                 </div>
                 <div class="pagination" id="paginationTop"></div>
             </div>
@@ -460,7 +478,7 @@
                 <span class="filter-title" style="display:none;">👁️ 篩選：</span>
                 <label class="filter-chip income-chip">
                     <input type="checkbox" id="filterIncome" checked onchange="renderCalendar()">
-                    <span class="chip-label">現金收入</span>
+                    <span class="chip-label">現金收入/股息</span>
                 </label>
                 <label class="filter-chip expense-chip">
                     <input type="checkbox" id="filterExpense" checked onchange="renderCalendar()">
@@ -490,11 +508,32 @@
                             <button class="mobile-close-btn" onclick="closeAssetForm()">✖</button>
                         </div>
                         <input type="hidden" id="editAssetId" value="">
-                        <div class="form-group"><label>類型</label><select id="newAssetType" onchange="toggleAssetInputs()"><option value="bank">銀行帳戶 (現金)</option><option value="stock">股票 / ETF</option></select></div>
-                        <div id="assetBankInputs">
-                            <div class="form-group"><label>銀行名稱</label><input type="text" id="newBankName" placeholder="輸入銀行名稱"></div>
-                            <div class="form-group"><label>初始餘額 (元)</label><input type="number" id="newBankBalance" value="0"></div>
+                        
+                        <div class="form-group">
+                            <label>類型</label>
+                            <select id="newAssetType" onchange="toggleAssetInputs()">
+                                <option value="bank">一般銀行帳戶 (現金)</option>
+                                <option value="broker">證券交割戶 (現金)</option>
+                                <option value="stock">股票 / ETF</option>
+                            </select>
                         </div>
+                        
+                        <div id="assetBankInputs">
+                            <div class="form-group"><label>銀行 / 券商名稱</label><input type="text" id="newBankName" placeholder="輸入名稱"></div>
+                            
+                            <div id="assetBrokerInputs" style="display: none; background: rgba(136, 192, 208, 0.1); padding: 10px; border-radius: 4px; border-left: 3px solid var(--accent); margin-bottom: 12px;">
+                                <div class="flex-row" style="margin-bottom:0;">
+                                    <div class="form-group" style="margin-bottom:0;"><label style="color:var(--accent);">最低手續費 (元)</label><input type="number" id="newBrokerMinFee" value="20" min="0"></div>
+                                    <div class="form-group" style="margin-bottom:0;"><label style="color:var(--accent);">手續費折讓</label><input type="number" id="newBrokerDiscount" value="1" step="0.01" min="0" placeholder="如 0.28"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>初始餘額 (元) <span style="font-weight:normal; font-size:0.85em; color:var(--income);">※修改將自動設為今日基準</span></label>
+                                <input type="number" id="newBankBalance" value="0">
+                            </div>
+                        </div>
+
                         <div id="assetStockInputs" style="display: none;">
                             <div class="flex-row">
                                 <div class="form-group"><label>股票代號 (必填)</label><input type="text" id="newTicker" placeholder="如: 00878"></div>
@@ -515,7 +554,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="list-header" style="margin-top: 0;"><div class="card-title" style="margin:0;">🏦 現金帳戶清單</div><span style="font-size:0.8em; color:var(--text-light);">(可拖曳排序)</span></div>
+                    <div class="list-header" style="margin-top: 0;"><div class="card-title" style="margin:0;">🏦 銀行與交割帳戶清單</div><span style="font-size:0.8em; color:var(--text-light);">(可拖曳排序)</span></div>
                     <div id="bankList" class="card-grid" style="margin-top: 10px; margin-bottom: 20px;"></div>
                     <div class="list-header">
                         <div class="card-title" style="margin:0;">📈 股票與自選清單</div>
@@ -557,6 +596,14 @@
                     <div class="form-group"><label>收支類型</label><select id="cashType"><option value="expense">支出 (-)</option><option value="income">收入 (+)</option></select></div>
                     <div class="form-group"><label>類別 (自填)</label><input type="text" id="cashCategory" placeholder="如：房貸、薪水"></div>
                 </div>
+                
+                <div class="flex-row" style="align-items:center; margin-bottom:12px; background:rgba(163, 190, 140, 0.1); padding:8px; border-radius:4px; border-left:3px solid var(--income);">
+                    <label style="margin:0; display:flex; align-items:center; gap:5px; cursor:pointer; color:var(--income); font-weight:bold;">
+                        <input type="checkbox" id="cashIsDividend" onchange="toggleDividendStock()" style="width:auto; cursor:pointer;"> 配息
+                    </label>
+                    <select id="cashDividendStock" style="display:none; flex:1; margin-left:10px;"></select>
+                </div>
+
                 <div class="form-group"><label>帳戶</label><select id="cashAccount"></select></div>
                 <div class="form-group"><label>金額 (元)</label><input type="number" id="cashAmount" value="0" min="0"></div>
                 <div class="modal-actions">
@@ -575,7 +622,7 @@
                     <div class="form-group"><label>張數</label><input type="number" id="stockShares" value="1" step="0.1" oninput="calcStockTotal(true)"></div>
                 </div>
                 
-                <div class="form-group"><label>交割帳戶</label><select id="stockAccount" onchange="populateLotSelect(document.getElementById('editTxId').value)"></select></div>
+                <div class="form-group"><label>證券交割帳戶</label><select id="stockAccount" onchange="populateLotSelect(document.getElementById('editTxId').value); calcStockTotal(true);"></select></div>
                 
                 <div id="sellBuyPriceRow" style="display:none; margin-bottom: 12px; padding: 10px; background: rgba(136, 192, 208, 0.1); border-left: 3px solid var(--accent); border-radius: 4px;">
                     <div class="form-group" style="margin-bottom:0; width:100%;">
@@ -909,6 +956,12 @@
             });
             let totalDebt = 0; let todayStr = new Date().toISOString().split('T')[0]; let schedules = generateAmortizationSchedules();
             let flowIncome = 0; let flowExpense = 0; let flowLoan = 0; let flowPnL = 0; 
+            
+            // v0.48 股息統計
+            let dividendThisMonth = 0; let dividendThisYear = 0;
+            let divPrefixMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}`;
+            let divPrefixYear = `${currentDate.getFullYear()}`;
+
             let timePrefix = cashflowView === 'month' ? `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}` : `${currentDate.getFullYear()}`;
             let timeLabel = cashflowView === 'month' ? timePrefix : `${currentDate.getFullYear()} 全年`; let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
             
@@ -919,6 +972,10 @@
                     if(t.type === 'expense' || t.type === 'loan_extra') flowExpense += t.amount; 
                     if(t.type === 'stock_sell' && t.realizedPnL !== undefined) flowPnL += t.realizedPnL;
                 } 
+                if(t.isDividend) {
+                    if(t.date.startsWith(divPrefixMonth)) dividendThisMonth += t.amount;
+                    if(t.date.startsWith(divPrefixYear)) dividendThisYear += t.amount;
+                }
             });
 
             let netWorth = totalCash + totalStock - totalDebt;
@@ -944,7 +1001,12 @@
                 if(totalCash >= targetEF) { efStatusText = `✅ 滿水位 (${efMonths}個月)`; dryPowder = totalCash - targetEF; } 
                 else { efStatusText = `⚠️ 不足 (缺 $${Math.round(targetEF - totalCash).toLocaleString()})`; dryPowder = 0; }
             }
-            document.getElementById('dashEFStatus').innerText = efStatusText; document.getElementById('dashDryPowder').innerText = '$' + Math.round(dryPowder).toLocaleString(); document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
+            document.getElementById('dashEFStatus').innerText = efStatusText; document.getElementById('dashDryPowder').innerText = '$' + Math.round(dryPowder).toLocaleString(); 
+            
+            // v0.48 更新股息戰情板 UI
+            document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
+            document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
+            document.getElementById('dashDivYear').innerText = '$' + Math.round(dividendThisYear).toLocaleString();
             
             const ctxAsset = document.getElementById('assetChart').getContext('2d'); if(assetChartObj) assetChartObj.destroy();
             assetChartObj = new Chart(ctxAsset, { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }});
@@ -974,7 +1036,26 @@
             });
             return schedules;
         }
-        function getDynamicBalance(accId) { let acc = appData.accounts.find(a => a.id === accId); if(!acc) return 0; let bal = acc.balance; let todayStr = new Date().toISOString().split('T')[0]; let schedules = generateAmortizationSchedules(); for(let lId in schedules) { schedules[lId].forEach(tx => { if(tx.accountId === accId && tx.date <= todayStr) bal -= tx.amount; }); } return bal; }
+        
+        // v0.48 動態餘額計算導入「校正基準日 (Reconciliation Date)」
+        function getDynamicBalance(accId) { 
+            let acc = appData.accounts.find(a => a.id === accId); 
+            if(!acc) return 0; 
+            let bal = acc.balance; 
+            let todayStr = new Date().toISOString().split('T')[0]; 
+            let schedules = generateAmortizationSchedules(); 
+            for(let lId in schedules) { 
+                schedules[lId].forEach(tx => { 
+                    if(tx.accountId === accId && tx.date <= todayStr) {
+                        // 只扣除基準日之後的房貸，基準日之前的已反應在手動修改的本金裡
+                        if (!acc.reconciledDate || tx.date > acc.reconciledDate) {
+                            bal -= tx.amount; 
+                        }
+                    }
+                }); 
+            } 
+            return bal; 
+        }
 
         function saveLoan() {
             if(!document.getElementById('loanStartMonth').value) { alert("請輸入首期扣款年月"); return; }
@@ -1013,10 +1094,10 @@
         function changeLedgerPage(delta) { ledgerCurrentPage += delta; renderLedger(); }
         function gotoLedgerPage(page) { ledgerCurrentPage = page; renderLedger(); }
 
-        // v0.47 同日交易排序邏輯升級：加入 ID (時間戳) 作為第二條件
+        // v0.48 納入股息紀錄的對帳單
         function renderLedger() {
             const tbody = document.getElementById('ledgerBody'); tbody.innerHTML = '';
-            const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell');
+            const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell' || t.isDividend);
             const buyLots = getBuyLotStatus();
             
             let filteredTxs = stockTxs;
@@ -1025,11 +1106,11 @@
                     const ast = appData.assets.find(a => a.ticker === tx.ticker);
                     const name = ast ? (ast.name || '') : '';
                     const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '';
-                    const action = tx.type === 'stock_buy' ? '買進' : '賣出';
+                    const action = tx.isDividend ? '領息' : (tx.type === 'stock_buy' ? '買進' : '賣出');
                     const amount = Math.round(tx.amount).toString();
                     
                     return tx.date.includes(ledgerSearchTerm) ||
-                           tx.ticker.toLowerCase().includes(ledgerSearchTerm) ||
+                           (tx.ticker && tx.ticker.toLowerCase().includes(ledgerSearchTerm)) ||
                            name.toLowerCase().includes(ledgerSearchTerm) ||
                            accName.toLowerCase().includes(ledgerSearchTerm) ||
                            action.includes(ledgerSearchTerm) ||
@@ -1037,7 +1118,6 @@
                 });
             }
 
-            // 日期新到舊為主。若日期相同，比較 tx_ 之後的時間戳 (越大代表越晚建立，排越前面)
             filteredTxs.sort((a, b) => {
                 const dateDiff = new Date(b.date) - new Date(a.date);
                 if (dateDiff !== 0) return dateDiff;
@@ -1057,19 +1137,18 @@
 
             pagedTxs.forEach(tx => {
                 const ast = appData.assets.find(a => a.ticker === tx.ticker); const name = ast ? (ast.name ? `${tx.ticker} ${ast.name}` : tx.ticker) : tx.ticker;
-                const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
-                const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
-                
-                // 為了對帳單顯示歷史紀錄，如果有紀錄則讀取，否則算0
-                let fee = tx.fee || 0;
-                let tax = 0;
-                if (!isBuy) {
-                    // 如果沒有存稅金欄位(新舊版相容)，先簡單反推。目前系統的 fee 是包含手續費+稅的
-                    tax = Math.floor(baseAmt * 0.003); // 歷史紀錄統一先用 0.3% 反推顯示
-                }
-                
                 const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '未知帳戶';
                 const dateLink = `<a href="javascript:void(0)" onclick="jumpToTx('${tx.id}')" class="jump-link">${tx.date}</a>`;
+                
+                if (tx.isDividend) {
+                    tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td><span style="color:var(--income); font-weight:bold;">領息</span></td><td style="font-weight:bold;">${name}</td><td style="color:var(--text-light);">-</td><td style="color:var(--text-light);">-</td><td style="color:var(--text-light);">-</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--income);">${Math.round(tx.amount).toLocaleString()}</td><td style="color:var(--text-light);">-</td></tr>`;
+                    return;
+                }
+
+                const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
+                const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
+                let fee = tx.fee || 0; let tax = 0;
+                if (!isBuy) tax = Math.floor(baseAmt * 0.003); 
                 
                 let pnlHtml = '-';
                 if (isBuy) {
@@ -1087,7 +1166,7 @@
             });
             
             if(totalItems === 0) {
-                const msg = ledgerSearchTerm ? `找不到符合「${ledgerSearchTerm}」的交易` : '目前沒有股票交易紀錄';
+                const msg = ledgerSearchTerm ? `找不到符合「${ledgerSearchTerm}」的交易` : '目前沒有股票與配息紀錄';
                 tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:30px; color:var(--text-light);">${msg}</td></tr>`;
             }
 
@@ -1109,21 +1188,42 @@
             container.innerHTML = html;
         }
 
+        // v0.48 過濾交割戶與銀行戶
         function loadAccSelects() {
-            const accHtml = appData.accounts.map(acc => `<option value="${acc.id}">${acc.name} (可用餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('');
-            const simpleAccHtml = appData.accounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join(''); 
-            document.getElementById('cashAccount').innerHTML = accHtml; document.getElementById('stockAccount').innerHTML = accHtml; document.getElementById('loanExtraAccount').innerHTML = accHtml;
-            if(document.getElementById('loanAcc')) document.getElementById('loanAcc').innerHTML = accHtml;
+            const allAccHtml = appData.accounts.map(acc => `<option value="${acc.id}">${acc.name} (餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('');
+            
+            let brokerAccs = appData.accounts.filter(a => a.type === 'broker');
+            let stockAccHtml = '';
+            if(brokerAccs.length > 0) {
+                stockAccHtml = brokerAccs.map(acc => `<option value="${acc.id}">${acc.name} (餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('');
+            } else {
+                stockAccHtml = allAccHtml; // 防呆：如果都還沒升級證券戶，先顯示全部
+            }
+
+            document.getElementById('cashAccount').innerHTML = allAccHtml; 
+            document.getElementById('stockAccount').innerHTML = stockAccHtml; 
+            document.getElementById('loanExtraAccount').innerHTML = allAccHtml;
+            if(document.getElementById('loanAcc')) document.getElementById('loanAcc').innerHTML = allAccHtml;
             
             let uniqueStocks = [];
             appData.assets.filter(a => a.type === 'stock').forEach(a => {
                 if(!uniqueStocks.find(s => s.ticker === a.ticker)) uniqueStocks.push(a);
             });
-            document.getElementById('stockAsset').innerHTML = uniqueStocks.map(a => { 
+            const stockOptionsHtml = uniqueStocks.map(a => { 
                 let realShares = getStockInventory(a.ticker);
                 return `<option value="${a.id}">${a.ticker} ${a.name || ''} (總庫存: ${realShares}張)</option>`; 
             }).join('');
+            
+            document.getElementById('stockAsset').innerHTML = stockOptionsHtml;
+            document.getElementById('cashDividendStock').innerHTML = stockOptionsHtml; // 股息選單
+            
             document.getElementById('loanExtraTarget').innerHTML = (appData.loans || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+        }
+
+        // v0.48 股息記帳選單開關
+        function toggleDividendStock() {
+            const isChecked = document.getElementById('cashIsDividend').checked;
+            document.getElementById('cashDividendStock').style.display = isChecked ? 'block' : 'none';
         }
 
         function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
@@ -1153,15 +1253,15 @@
             if(dayTxs.length === 0 && vTxs.length === 0) {
                 list.innerHTML = '<p style="text-align:center; color:var(--text-light); padding-top:20px;">今日無任何紀錄</p>';
             } else {
-                // v0.47 Day View 裡的紀錄也應該按照時間戳排序
                 dayTxs.sort((a, b) => {
                     const idA = parseInt(a.id.replace('tx_', '')) || 0;
                     const idB = parseInt(b.id.replace('tx_', '')) || 0;
-                    return idA - idB; // 先輸入的在上面
+                    return idA - idB; 
                 });
                 
                 dayTxs.forEach(tx => {
                     let title = tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker);
+                    if (tx.isDividend) title = `領息 ${tx.ticker}`;
                     let amtStr = (tx.type==='income' || tx.type.includes('sell') ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
                     let color = (tx.type==='income' || tx.type.includes('sell')) ? 'var(--income)' : 'var(--expense)';
                     list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')">
@@ -1181,10 +1281,10 @@
         function closeDayView() { document.getElementById('dayViewModal').classList.remove('active'); }
         function openModalFromDayView() { closeDayView(); openModal(currentDayViewDate); }
 
+        // v0.48 行事曆高度鎖死折疊邏輯
         function renderCalendar() {
             const year = currentDate.getFullYear(); const month = currentDate.getMonth();
             const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}`;
-            
             document.getElementById('monthJumpSelector').value = monthPrefix;
             
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
@@ -1200,42 +1300,72 @@
                 const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const dayTxs = appData.transactions.filter(tx => tx.date === dateStr); const vTxs = virtualTxs.filter(t => t.date === dateStr); 
                 
-                let badgesHtml = ''; let dotsHtml = '<div class="dot-container">';
-
-                // 行事曆上的格子也是先輸入的排上面
-                dayTxs.sort((a, b) => {
-                    const idA = parseInt(a.id.replace('tx_', '')) || 0;
-                    const idB = parseInt(b.id.replace('tx_', '')) || 0;
+                let allItems = [];
+                dayTxs.forEach(tx => allItems.push({type: 'manual', data: tx}));
+                vTxs.forEach(vt => allItems.push({type: 'virtual', data: vt}));
+                
+                allItems.sort((a, b) => {
+                    const idA = a.type === 'manual' ? (parseInt(a.data.id.replace('tx_', '')) || 0) : 0;
+                    const idB = b.type === 'manual' ? (parseInt(b.data.id.replace('tx_', '')) || 0) : 0;
                     return idA - idB; 
                 });
 
-                dayTxs.forEach(tx => {
-                    const clickEvent = `onclick="editTx(event, '${tx.id}')"`;
-                    if (tx.type === 'income' && fInc) {
-                        badgesHtml += `<div class="tx-badge bg-income" ${clickEvent} title="收入: ${tx.category}">+$${tx.amount.toLocaleString()} ${tx.category}</div>`;
-                        dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`;
-                    }
-                    if (tx.type === 'expense' && fExp) {
-                        badgesHtml += `<div class="tx-badge bg-expense" ${clickEvent} title="支出: ${tx.category}">-$${tx.amount.toLocaleString()} ${tx.category}</div>`;
-                        dotsHtml += `<div class="tx-dot" style="background:var(--expense);"></div>`;
-                    }
-                    if (tx.type === 'loan_extra') {
-                        badgesHtml += `<div class="tx-badge" style="background:var(--stock-sell); color:#2e3440;" ${clickEvent} title="大額還款">大額還款 -$${tx.amount.toLocaleString()}</div>`;
-                        dotsHtml += `<div class="tx-dot" style="background:var(--stock-sell);"></div>`;
-                    }
-                    if ((tx.type === 'stock_buy' && fBuy) || (tx.type === 'stock_sell' && fSell)) {
-                        const ast = appData.assets.find(a => a.ticker === tx.ticker); let displayName = ast ? (ast.ticker.startsWith('00') ? ast.ticker : (ast.name || ast.ticker)) : tx.ticker;
-                        const actionStr = tx.type === 'stock_buy' ? '買' : '賣'; const badgeClass = tx.type === 'stock_buy' ? 'bg-buy' : 'bg-sell'; const fullText = `${actionStr} ${displayName} (${tx.shares}張)`;
-                        badgesHtml += `<div class="tx-badge ${badgeClass}" ${clickEvent} title="${fullText}">${fullText}</div>`;
-                        dotsHtml += `<div class="tx-dot" style="background:var(${tx.type === 'stock_buy' ? '--stock-buy' : '--stock-sell'});"></div>`;
+                let badgesHtml = ''; let dotsHtml = '<div class="dot-container">';
+                let renderedCount = 0; let hiddenCount = 0;
+
+                allItems.forEach(item => {
+                    const clickEvent = item.type === 'manual' ? `onclick="editTx(event, '${item.data.id}')"` : '';
+                    if (renderedCount < 3) {
+                        if (item.type === 'virtual') {
+                            badgesHtml += `<div class="tx-badge bg-loan" title="自動扣款: 剩餘本金 $${item.data.principalRemain.toLocaleString()}">🔄 ${item.data.loanName} -$${item.data.amount.toLocaleString()}</div>`; 
+                            dotsHtml += `<div class="tx-dot" style="background:var(--loan);"></div>`;
+                            renderedCount++;
+                        } else {
+                            const tx = item.data;
+                            if (tx.type === 'income' && !tx.isDividend && fInc) {
+                                badgesHtml += `<div class="tx-badge bg-income" ${clickEvent} title="收入: ${tx.category}">+$${tx.amount.toLocaleString()} ${tx.category}</div>`;
+                                dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`;
+                                renderedCount++;
+                            } else if (tx.type === 'income' && tx.isDividend && fInc) {
+                                badgesHtml += `<div class="tx-badge bg-income" ${clickEvent} title="領息: ${tx.ticker}">+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}</div>`;
+                                dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`;
+                                renderedCount++;
+                            } else if (tx.type === 'expense' && fExp) {
+                                badgesHtml += `<div class="tx-badge bg-expense" ${clickEvent} title="支出: ${tx.category}">-$${tx.amount.toLocaleString()} ${tx.category}</div>`;
+                                dotsHtml += `<div class="tx-dot" style="background:var(--expense);"></div>`;
+                                renderedCount++;
+                            } else if (tx.type === 'loan_extra') {
+                                badgesHtml += `<div class="tx-badge" style="background:var(--stock-sell); color:#2e3440;" ${clickEvent} title="大額還款">大額還款 -$${tx.amount.toLocaleString()}</div>`;
+                                dotsHtml += `<div class="tx-dot" style="background:var(--stock-sell);"></div>`;
+                                renderedCount++;
+                            } else if ((tx.type === 'stock_buy' && fBuy) || (tx.type === 'stock_sell' && fSell)) {
+                                const ast = appData.assets.find(a => a.ticker === tx.ticker); let displayName = ast ? (ast.ticker.startsWith('00') ? ast.ticker : (ast.name || ast.ticker)) : tx.ticker;
+                                const actionStr = tx.type === 'stock_buy' ? '買' : '賣'; const badgeClass = tx.type === 'stock_buy' ? 'bg-buy' : 'bg-sell'; const fullText = `${actionStr} ${displayName} (${tx.shares}張)`;
+                                badgesHtml += `<div class="tx-badge ${badgeClass}" ${clickEvent} title="${fullText}">${fullText}</div>`;
+                                dotsHtml += `<div class="tx-dot" style="background:var(${tx.type === 'stock_buy' ? '--stock-buy' : '--stock-sell'});"></div>`;
+                                renderedCount++;
+                            }
+                        }
+                    } else {
+                        // 超過 3 筆隱藏，但過濾條件還是要判斷是否該計入隱藏數量
+                        let shouldHideCount = false;
+                        if (item.type === 'virtual') { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--loan);"></div>`; }
+                        else {
+                            const tx = item.data;
+                            if (tx.type === 'income' && fInc) { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`; }
+                            else if (tx.type === 'expense' && fExp) { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--expense);"></div>`; }
+                            else if (tx.type === 'loan_extra') { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--stock-sell);"></div>`; }
+                            else if ((tx.type === 'stock_buy' && fBuy) || (tx.type === 'stock_sell' && fSell)) { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(${tx.type === 'stock_buy' ? '--stock-buy' : '--stock-sell'});"></div>`; }
+                        }
+                        if (shouldHideCount) hiddenCount++;
                     }
                 });
-                vTxs.forEach(vt => { 
-                    badgesHtml += `<div class="tx-badge bg-loan" title="自動扣款: 剩餘本金 $${vt.principalRemain.toLocaleString()}">🔄 ${vt.loanName} -$${vt.amount.toLocaleString()}</div>`; 
-                    dotsHtml += `<div class="tx-dot" style="background:var(--loan);"></div>`;
-                });
-                dotsHtml += '</div>';
                 
+                if (hiddenCount > 0) {
+                    badgesHtml += `<div class="tx-badge" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border);">+ ${hiddenCount} 筆紀錄</div>`;
+                }
+                
+                dotsHtml += '</div>';
                 let cellClass = dateStr === realTodayStr ? "calendar-cell cell-today" : "calendar-cell";
                 grid.innerHTML += `<div class="${cellClass}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div>`;
             }
@@ -1258,17 +1388,13 @@
             html += `</optgroup>`; sel.innerHTML = html;
         }
 
-        // v0.47 切換買賣時，同時開關「稅率選擇選單」
-        function toggleSellRow() { 
-            const isSell = document.getElementById('stockAction').value === 'sell'; 
-            document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; 
-            document.getElementById('sellTaxRateRow').style.display = isSell ? 'block' : 'none';
-        }
+        function toggleSellRow() { const isSell = document.getElementById('stockAction').value === 'sell'; document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; document.getElementById('sellTaxRateRow').style.display = isSell ? 'block' : 'none'; }
 
         function openModal(dateStr) {
             document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`;
             document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
             document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; 
+            document.getElementById('cashIsDividend').checked = false; toggleDividendStock();
             document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0;
             document.getElementById('stockAction').value = 'buy'; document.getElementById('stockTaxRate').value = '0.003';
             toggleSellRow();
@@ -1281,19 +1407,33 @@
             const tx = appData.transactions.find(t => t.id === txId); if (!tx) return;
             document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`;
             loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none';
-            if (tx.type === 'income' || tx.type === 'expense') { switchFormTab('cash'); document.getElementById('cashType').value = tx.type; document.getElementById('cashCategory').value = tx.category; document.getElementById('cashAccount').value = tx.accountId; document.getElementById('cashAmount').value = tx.amount; document.getElementById('btnDeleteCash').style.display = 'block'; } 
+            if (tx.type === 'income' || tx.type === 'expense') { 
+                switchFormTab('cash'); 
+                document.getElementById('cashType').value = tx.type; 
+                document.getElementById('cashCategory').value = tx.category; 
+                document.getElementById('cashAccount').value = tx.accountId; 
+                document.getElementById('cashAmount').value = tx.amount; 
+                
+                const isDiv = document.getElementById('cashIsDividend');
+                if (tx.isDividend) {
+                    isDiv.checked = true; toggleDividendStock();
+                    const ast = appData.assets.find(a => a.ticker === tx.ticker);
+                    if (ast) document.getElementById('cashDividendStock').value = ast.id;
+                } else {
+                    isDiv.checked = false; toggleDividendStock();
+                }
+                document.getElementById('btnDeleteCash').style.display = 'block'; 
+            } 
             else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { 
                 switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; 
                 const ast = appData.assets.find(a => a.ticker === tx.ticker); if(ast) document.getElementById('stockAsset').value = ast.id; 
                 document.getElementById('stockAccount').value = tx.accountId; document.getElementById('stockPrice').value = tx.price; 
-                document.getElementById('stockShares').value = tx.shares;
-                document.getElementById('stockFee').value = tx.fee; // 先填入歷史存的稅費
+                document.getElementById('stockShares').value = tx.shares; 
+                document.getElementById('stockFee').value = tx.fee; 
                 
-                // v0.47 重載舊資料時，只算一次總交割金額，不強制覆蓋手續費
                 toggleSellRow();
                 populateLotSelect(tx.id); if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId;
                 calcStockTotal(false); 
-                
                 document.getElementById('btnDeleteStock').style.display = 'block'; 
             } 
             else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; }
@@ -1307,7 +1447,7 @@
             document.getElementById('formCash').style.display = type === 'cash' ? 'block' : 'none'; document.getElementById('formStock').style.display = type === 'stock' ? 'block' : 'none'; document.getElementById('formLoanExtra').style.display = type === 'loanExtra' ? 'block' : 'none';
         }
 
-        // v0.47 稅率計算與手動覆蓋解鎖 (傳入 autoCalcFee)
+        // v0.48 透過證券交割戶自動抓取手續費折讓與低消
         function calcStockTotal(autoCalcFee = false) { 
             const action = document.getElementById('stockAction').value; 
             const price = parseFloat(document.getElementById('stockPrice').value) || 0; 
@@ -1316,9 +1456,13 @@
             
             let feeInput = document.getElementById('stockFee');
             
-            // 只有在單價、張數、買賣方向、稅率改變時，才自動重新計算覆蓋。手動打字修改不會觸發這個。
             if (autoCalcFee) {
-                let calcFee = Math.floor(baseAmount * 0.001425); 
+                const accId = document.getElementById('stockAccount').value;
+                const acc = appData.accounts.find(a => a.id === accId);
+                const discount = acc && acc.discount !== undefined ? acc.discount : 1;
+                const minFee = acc && acc.minFee !== undefined ? acc.minFee : 20;
+
+                let calcFee = Math.max(minFee, Math.floor(baseAmount * 0.001425 * discount)); 
                 if(action === 'sell') {
                     const taxRate = parseFloat(document.getElementById('stockTaxRate').value) || 0.003;
                     calcFee += Math.floor(baseAmount * taxRate); 
@@ -1346,11 +1490,27 @@
             }, true);
         }
 
+        // v0.48 儲存股息紀錄
         function saveCashTransaction() {
             const amount = parseFloat(document.getElementById('cashAmount').value) || 0; const accountId = document.getElementById('cashAccount').value;
             if(amount <= 0) { alert("金額必須大於 0"); return; } if(!accountId) { alert("請先建立銀行帳戶"); return; }
             const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
-            const type = document.getElementById('cashType').value; appData.transactions.push({ id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type, category: document.getElementById('cashCategory').value || '未分類', accountId, amount });
+            const type = document.getElementById('cashType').value; 
+            
+            const newItem = { id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type, category: document.getElementById('cashCategory').value || '未分類', accountId, amount };
+            
+            const isDividend = document.getElementById('cashIsDividend').checked;
+            if (isDividend && type === 'income') {
+                const astId = document.getElementById('cashDividendStock').value;
+                const ast = appData.assets.find(a => a.id === astId);
+                if (ast) {
+                    newItem.isDividend = true;
+                    newItem.ticker = ast.ticker;
+                    if (!document.getElementById('cashCategory').value) newItem.category = "股票配息";
+                }
+            }
+            
+            appData.transactions.push(newItem);
             const acc = appData.accounts.find(a => a.id === accountId); if (acc) type === 'income' ? acc.balance += amount : acc.balance -= amount;
             closeModal(); saveData();
         }
@@ -1370,7 +1530,6 @@
                 if(action === 'buy') acc.balance -= totalCashFlow;
                 else acc.balance += totalCashFlow;
 
-                // 為了保持 ID 的唯一性，編輯時還是給新的 Date.now() ID，確保排序會跑去當日最後一筆
                 appData.transactions.push({ 
                     id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: action === 'buy' ? 'stock_buy' : 'stock_sell', ticker: ast.ticker, shares, price, fee, accountId, amount: totalCashFlow,
                     linkedBuyId: action === 'sell' ? linkedBuyId : undefined, realizedPnL: action === 'sell' ? realizedPnL : undefined
@@ -1423,8 +1582,14 @@
             const srcIdx = list.findIndex(item => item.id === dragSrcId); const tgtIdx = list.findIndex(item => item.id === targetId);
             if (srcIdx > -1 && tgtIdx > -1) { const [moved] = list.splice(srcIdx, 1); list.splice(tgtIdx, 0, moved); saveData(); }
         }
-        function handleDragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.card').forEach(c => { c.style.transform = ''; c.style.borderColor = 'var(--border)'; }); }
-        function toggleAssetInputs() { const type = document.getElementById('newAssetType').value; document.getElementById('assetBankInputs').style.display = type === 'bank' ? 'block' : 'none'; document.getElementById('assetStockInputs').style.display = type === 'stock' ? 'block' : 'none'; }
+        
+        // v0.48 證券交割戶欄位顯示切換
+        function toggleAssetInputs() { 
+            const type = document.getElementById('newAssetType').value; 
+            document.getElementById('assetBankInputs').style.display = (type === 'bank' || type === 'broker') ? 'block' : 'none'; 
+            document.getElementById('assetBrokerInputs').style.display = type === 'broker' ? 'block' : 'none';
+            document.getElementById('assetStockInputs').style.display = type === 'stock' ? 'block' : 'none'; 
+        }
 
         async function fetchRealApiData() {
             const ticker = document.getElementById('newTicker').value.trim(); if (!ticker) { alert("請先輸入股票代號！"); return; }
@@ -1467,7 +1632,8 @@
             const bankList = document.getElementById('bankList'); const stockList = document.getElementById('stockList');
             bankList.innerHTML = ''; stockList.innerHTML = '';
             appData.accounts.forEach(acc => {
-                bankList.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event, 'bank', '${acc.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'bank', '${acc.id}')" ondragend="handleDragEnd(event)"><div class="card-actions"><button onclick="editAssetItem('bank', '${acc.id}')">✏️</button><button onclick="deleteAssetItem('bank', '${acc.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${acc.name}</h3></div><div class="card-val-row"><div class="card-val" style="color:var(--income);">$${formatMoney(getDynamicBalance(acc.id))}</div></div></div>`;
+                let badgeHtml = acc.type === 'broker' ? `<span style="background:var(--accent); color:#2e3440; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:8px;">交割戶</span>` : '';
+                bankList.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event, 'bank', '${acc.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'bank', '${acc.id}')" ondragend="handleDragEnd(event)"><div class="card-actions"><button onclick="editAssetItem('bank', '${acc.id}')">✏️</button><button onclick="deleteAssetItem('bank', '${acc.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title" style="display:flex; align-items:center;">${acc.name} ${badgeHtml}</h3></div><div class="card-val-row"><div class="card-val" style="color:var(--income);">$${formatMoney(getDynamicBalance(acc.id))}</div></div></div>`;
             });
             appData.assets.forEach(ast => {
                 let realShares = getStockInventory(ast.ticker); const totalValue = realShares * 1000 * ast.price; 
@@ -1482,10 +1648,30 @@
             });
         }
 
+        function deleteAssetItem(type, id) {
+            showCustomConfirm('確定要刪除？\n刪除帳戶不會影響日曆紀錄，但會導致舊紀錄失去關聯。', () => {
+                if (type === 'bank') appData.accounts = appData.accounts.filter(item => item.id !== id);
+                if (type === 'stock') appData.assets = appData.assets.filter(item => item.id !== id);
+                saveData();
+            }, true);
+        }
+
         function editAssetItem(type, id) {
-            document.getElementById('newAssetType').value = type; document.getElementById('editAssetId').value = id; document.getElementById('btnCancelAssetEdit').style.display = "block"; toggleAssetInputs();
-            if (type === 'bank') { let item = appData.accounts.find(x => x.id === id); document.getElementById('newBankName').value = item.name; document.getElementById('newBankBalance').value = item.balance; } 
-            else { let item = appData.assets.find(x => x.id === id); document.getElementById('newTicker').value = item.ticker || item.name; document.getElementById('newName').value = item.name !== item.ticker ? (item.name || '') : ''; document.getElementById('newShares').value = item.shares || 0; document.getElementById('newPrice').value = item.price; document.getElementById('newDividend').value = item.dividend || 0; document.getElementById('newExDate').value = item.exDate || ''; document.getElementById('newPayDate').value = item.payDate || ''; }
+            document.getElementById('editAssetId').value = id; document.getElementById('btnCancelAssetEdit').style.display = "block"; 
+            if (type === 'bank') { 
+                let item = appData.accounts.find(x => x.id === id); 
+                document.getElementById('newAssetType').value = item.type || 'bank'; 
+                document.getElementById('newBankName').value = item.name; 
+                document.getElementById('newBankBalance').value = item.balance; 
+                document.getElementById('newBrokerMinFee').value = item.minFee || 20;
+                document.getElementById('newBrokerDiscount').value = item.discount || 1;
+            } 
+            else { 
+                document.getElementById('newAssetType').value = 'stock';
+                let item = appData.assets.find(x => x.id === id); 
+                document.getElementById('newTicker').value = item.ticker || item.name; document.getElementById('newName').value = item.name !== item.ticker ? (item.name || '') : ''; document.getElementById('newShares').value = item.shares || 0; document.getElementById('newPrice').value = item.price; document.getElementById('newDividend').value = item.dividend || 0; document.getElementById('newExDate').value = item.exDate || ''; document.getElementById('newPayDate').value = item.payDate || ''; 
+            }
+            toggleAssetInputs();
             openAssetForm();
         }
 
@@ -1493,8 +1679,22 @@
 
         function saveAssetForm() {
             const id = document.getElementById('editAssetId').value || 'id_' + Date.now(); const type = document.getElementById('newAssetType').value; const newItem = { id, type };
-            if (type === 'bank') { const name = document.getElementById('newBankName').value.trim(); if (!name) { alert("請輸入銀行名稱"); return; } newItem.name = name; newItem.balance = parseFloat(document.getElementById('newBankBalance').value) || 0; const idx = appData.accounts.findIndex(x => x.id === id); if(idx > -1) appData.accounts[idx] = newItem; else appData.accounts.push(newItem); } 
-            else { const ticker = document.getElementById('newTicker').value.trim(); if (!ticker) { alert("請輸入股票代號"); return; } newItem.ticker = ticker; newItem.name = document.getElementById('newName').value.trim(); newItem.shares = parseFloat(document.getElementById('newShares').value) || 0; newItem.price = parseFloat(document.getElementById('newPrice').value) || 0; newItem.dividend = parseFloat(document.getElementById('newDividend').value) || 0; newItem.exDate = document.getElementById('newExDate').value; newItem.payDate = document.getElementById('newPayDate').value; const idx = appData.assets.findIndex(x => x.id === id); if(idx > -1) appData.assets[idx] = newItem; else appData.assets.push(newItem); }
+            if (type === 'bank' || type === 'broker') { 
+                const name = document.getElementById('newBankName').value.trim(); if (!name) { alert("請輸入銀行名稱"); return; } 
+                newItem.name = name; 
+                newItem.balance = parseFloat(document.getElementById('newBankBalance').value) || 0; 
+                newItem.reconciledDate = new Date().toISOString().split('T')[0]; // v0.48 儲存餘額時壓上校正基準日
+                if (type === 'broker') {
+                    newItem.minFee = parseFloat(document.getElementById('newBrokerMinFee').value) || 0;
+                    newItem.discount = parseFloat(document.getElementById('newBrokerDiscount').value) || 1;
+                }
+                const idx = appData.accounts.findIndex(x => x.id === id); 
+                if(idx > -1) appData.accounts[idx] = newItem; else appData.accounts.push(newItem); 
+            } 
+            else { 
+                const ticker = document.getElementById('newTicker').value.trim(); if (!ticker) { alert("請輸入股票代號"); return; } 
+                newItem.ticker = ticker; newItem.name = document.getElementById('newName').value.trim(); newItem.shares = parseFloat(document.getElementById('newShares').value) || 0; newItem.price = parseFloat(document.getElementById('newPrice').value) || 0; newItem.dividend = parseFloat(document.getElementById('newDividend').value) || 0; newItem.exDate = document.getElementById('newExDate').value; newItem.payDate = document.getElementById('newPayDate').value; const idx = appData.assets.findIndex(x => x.id === id); if(idx > -1) appData.assets[idx] = newItem; else appData.assets.push(newItem); 
+            }
             closeAssetForm(); saveData();
         }
     </script>
