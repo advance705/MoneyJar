@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.51</title>
+    <title>🍯 MoneyJar v0.52</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -75,7 +75,6 @@
         .btn-fetch { background: var(--income); color: #2e3440; padding: 8px; margin-top: 4px; font-size: 0.85em; }
         .btn-add:hover, .btn-fetch:hover { filter: brightness(1.1); }
 
-        /* v0.51 修復左側表單鎖死跟隨 (Sticky UI Fix) */
         .desktop-form-wrapper { display: block; position: sticky; top: 0; align-self: start; z-index: 10; }
         .sticky-form { max-height: calc(100vh - 60px); overflow-y: auto; }
         
@@ -104,7 +103,7 @@
         .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
         .btn-refresh-all { background: var(--stock-sell); color: #2e3440; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; cursor: pointer; font-weight: bold; transition: 0.3s;}
 
-        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
         
         .dash-card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 1px solid var(--border); display: flex; flex-direction: column; }
         .dash-card h3 { margin-top: 0; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.2em; display: flex; align-items: center; gap: 8px; justify-content: space-between;}
@@ -211,11 +210,7 @@
             .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
             .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
             
-            .main-content { 
-                flex: 1; padding: 15px; 
-                padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
-                overflow-y: auto; -webkit-overflow-scrolling: touch; 
-            }
+            .main-content { flex: 1; padding: 15px; padding-bottom: calc(90px + env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
             
             .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
             .sidebar-header, .file-controls { display: none; }
@@ -291,7 +286,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.51</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.52</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -299,7 +294,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.51</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.52</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -326,7 +321,8 @@
     <div class="main-content">
         <div id="dashboard" class="page active">
             <h2>🏠 總覽儀表板</h2>
-            <div class="dash-grid">
+            <div class="dash-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+                
                 <div class="dash-card">
                     <h3>💰 淨身價與資產配置</h3>
                     <div class="dash-val-main" id="dashNetWorth">$0</div>
@@ -335,7 +331,7 @@
                         <span>股票: <b id="dashStockText" style="color:var(--accent);">$0</b></span>
                         <span>負債: <b id="dashDebtText" style="color:var(--expense);">-$0</b></span>
                     </div>
-                    <div class="chart-container" style="height: 220px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
+                    <div class="chart-container" style="height: 250px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
                 </div>
                 
                 <div class="dash-card">
@@ -350,14 +346,17 @@
                         <li><span>本年累積領取</span> <b id="dashDivYear" style="color:var(--accent); font-size:1.1em;">$0</b></li>
                     </ul>
                     
-                    <div class="chart-container" style="height: 220px; margin-top: 15px;"><canvas id="dividendChart"></canvas></div>
+                    <div class="chart-container" style="height: 200px; margin-top: 15px;"><canvas id="dividendChart"></canvas></div>
                 </div>
                 
                 <div class="dash-card">
                     <h3>📊 股票庫存配置比例</h3>
-                    <div class="chart-container" style="height: 250px; margin-top: 15px;"><canvas id="portfolioChart"></canvas></div>
+                    <div class="chart-container" style="height: 280px; margin-top: 15px;"><canvas id="portfolioChart"></canvas></div>
                 </div>
+            </div>
 
+            <div class="dash-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 20px;">
+                
                 <div class="dash-card">
                     <h3>
                         <span>📊 現金流 (<span id="dashFlowLabel"></span>)</span>
@@ -379,23 +378,46 @@
                 </div>
                 
                 <div class="dash-card">
-                    <h3>🛡️ 防禦與攻擊籌碼指標</h3>
-                    <div style="display:flex; gap:10px; margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed var(--border);">
-                        <div class="form-group" style="margin-bottom:0; flex:2;">
-                            <label>年度生活預算 (元)</label>
-                            <input type="number" id="settingBudget" onchange="saveSettings()" placeholder="如 1200000">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0; flex:1;">
-                            <label>預備金(月)</label>
-                            <input type="number" id="settingEFMonths" onchange="saveSettings()" placeholder="如 6">
-                        </div>
+                    <h3>🛡️ 戰略籌碼</h3>
+                    <div class="form-group" style="margin-bottom:15px;">
+                        <label>預備金設定 (月)</label>
+                        <input type="number" id="settingEFMonths" onchange="saveSettings()" placeholder="如 6">
                     </div>
                     <ul class="dash-list">
-                        <li><span title="預估年股息 / 年度預算">FIRE 財富自由度</span><b id="dashFIRE" style="font-size:1.2em; color:var(--accent);">N/A</b></li>
-                        <li><span title="總現金是否大於目標">緊急預備金狀態</span><b id="dashEFStatus" style="font-size:1.1em;">請先設定預算</b></li>
-                        <li><span title="總現金扣除預備金後，可隨時加碼股市的閒錢">可動用攻擊籌碼 (Dry Powder)</span><b id="dashDryPowder" style="font-size:1.2em; color:var(--income);">$0</b></li>
+                        <li style="flex-direction:column; align-items:flex-start; gap:5px;">
+                            <span>🛡️ <b>緊急預備金</b></span>
+                            <span id="dashEFStatus" style="font-size:0.9em;"></span>
+                        </li>
+                        <li style="flex-direction:column; align-items:flex-start; gap:5px; border-top:1px dashed var(--border); margin-top:5px; padding-top:15px;">
+                            <span>⚔️ <b>攻擊籌碼</b></span>
+                            <b id="dashDryPowder" style="font-size:1.4em; color:var(--income);">$0</b>
+                            <span style="font-size:0.85em; color:var(--text-light);">目前現金水位：<span id="dashDryPowderPct" style="font-weight:bold;">0%</span> / 戰略目標 30.0%</span>
+                            <span id="dashDryPowderStatus" style="font-size:0.85em;"></span>
+                        </li>
                     </ul>
                 </div>
+
+                <div class="dash-card">
+                    <h3>🔥 FIRE 財富自由度</h3>
+                    <div class="form-group" style="margin-bottom:5px;">
+                        <label>年度生活預算 (元) 不含房貸</label>
+                        <input type="number" id="settingBudget" onchange="saveSettings()" placeholder="如 600000">
+                    </div>
+                    <div style="font-size:0.8em; color:var(--text-light); margin-bottom:15px; background:var(--sidebar-bg); padding:8px; border-radius:4px; border-left:3px solid var(--accent); line-height:1.4;">
+                        💡 真實年度總支出：<b id="dashRealExpense" style="color:var(--text-main);">$0</b><br>(已自動計入未來一年房貸 $<span id="dashFutureLoan">0</span>)
+                    </div>
+                    <ul class="dash-list">
+                        <li><span>💧 股息覆蓋率</span> <b id="dashDivCoverage" style="color:var(--income); font-size:1.1em;">0%</b></li>
+                        <li style="flex-direction:column; align-items:flex-start; gap:5px; border-top:1px dashed var(--border); margin-top:5px; padding-top:15px;">
+                            <span>📈 <b>4% 法則</b></span>
+                            <span style="font-size:0.9em; display:flex; justify-content:space-between; width:100%;"><span>FIRE 終極目標：</span><b id="dashFireTarget">$0</b></span>
+                            <span style="font-size:0.9em; display:flex; justify-content:space-between; width:100%;"><span>總資產達成率：</span><b id="dashFirePct">0%</b></span>
+                            <span style="font-size:0.85em; color:var(--text-light); text-align:right; width:100%; margin-top:-5px;">(尚差 $<span id="dashFireDiff">0</span>)</span>
+                            <span style="font-size:0.9em; color:var(--stock-sell); display:flex; justify-content:space-between; width:100%; margin-top:5px;"><span>本年安全提領上限：</span><b id="dashSafeWithdrawal">$0</b></span>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
         </div>
 
@@ -540,7 +562,7 @@
                         <div id="assetStockInputs" style="display: none;">
                             <div class="flex-row">
                                 <div class="form-group"><label>股票代號 (必填)</label><input type="text" id="newTicker" placeholder="如: 00878"></div>
-                                <div class="form-group"><label>中文名稱</label><input type="text" id="newName" placeholder="自動帶入或手動"></div>
+                                <div class="form-group"><label>中文名稱</label><input type="text" id="newName" placeholder="自動帶入或手持"></div>
                             </div>
                             <button id="btnApiFetch" class="btn-fetch" onclick="fetchRealApiData()">🔄 雲端抓取即時報價與名稱</button>
                             
@@ -691,11 +713,9 @@
             document.getElementById('confirmMessage').innerText = msg;
             const yesBtn = document.getElementById('confirmYesBtn');
             if (isDanger) {
-                yesBtn.style.background = 'var(--expense)';
-                yesBtn.style.color = '#eceff4';
+                yesBtn.style.background = 'var(--expense)'; yesBtn.style.color = '#eceff4';
             } else {
-                yesBtn.style.background = 'var(--accent)';
-                yesBtn.style.color = '#2e3440';
+                yesBtn.style.background = 'var(--accent)'; yesBtn.style.color = '#2e3440';
             }
             confirmActionCallback = callback;
             document.getElementById('customConfirm').style.display = 'flex';
@@ -760,14 +780,11 @@
             document.getElementById('desktopSync').innerText = msg;
             const mobileIcon = document.getElementById('mobileSyncIcon');
             if (isSyncing) {
-                mobileIcon.innerText = '⏳';
-                mobileIcon.style.opacity = '0.5';
+                mobileIcon.innerText = '⏳'; mobileIcon.style.opacity = '0.5';
             } else if (msg.includes('失敗')) {
-                mobileIcon.innerText = '⚠️';
-                mobileIcon.style.opacity = '1';
+                mobileIcon.innerText = '⚠️'; mobileIcon.style.opacity = '1';
             } else {
-                mobileIcon.innerText = '☁️';
-                mobileIcon.style.opacity = '1';
+                mobileIcon.innerText = '☁️'; mobileIcon.style.opacity = '1';
             }
             document.getElementById('desktopSync').style.color = isSyncing ? 'var(--stock-sell)' : 'var(--income)';
         }
@@ -921,33 +938,22 @@
 
         function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
 
-        const getPieOptions = (isDoughnut = false) => {
+        // v0.52 純淨版 Chart 渲染設定 (取消 Legend 百分比，強化 Tooltip)
+        const getPieOptions = (pos = 'right') => {
             return {
-                responsive: true, maintainAspectRatio: false, cutout: isDoughnut ? '65%' : 0,
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: '#d8dee9', font: { size: 11 },
-                            generateLabels: function(chart) {
-                                const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                                const dataset = chart.data.datasets[0];
-                                const total = dataset.data.reduce((a, b) => a + b, 0);
-                                original.forEach(label => {
-                                    const val = dataset.data[label.index];
-                                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-                                    label.text = `${label.text} $${val.toLocaleString()} (${pct}%)`;
-                                });
-                                return original;
-                            }
-                        }
+                    legend: { 
+                        position: pos, 
+                        labels: { color: '#d8dee9', font: { size: 11 }, boxWidth: 20 } 
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                let label = context.label || ''; let val = context.raw || 0;
+                                let label = context.label || '';
+                                let val = context.raw || 0;
                                 let total = context.dataset.data.reduce((a,b)=>a+b, 0);
-                                let pct = total > 0 ? Math.round((val/total)*100) : 0;
+                                let pct = total > 0 ? ((val/total)*100).toFixed(1) : 0;
                                 return `${label}: $${val.toLocaleString()} (${pct}%)`;
                             }
                         }
@@ -989,7 +995,29 @@
             let timePrefix = cashflowView === 'month' ? divPrefixMonth : divPrefixYear;
             let timeLabel = cashflowView === 'month' ? timePrefix : `${currentDate.getFullYear()} 全年`; let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
             
-            appData.loans.forEach(loan => { let sch = schedules[loan.id] || []; let next = sch.find(s => s.date > todayStr); if(next) totalDebt += next.principalRemain; sch.forEach(s => { if(s.date.startsWith(timePrefix)) flowLoan += s.amount; }); });
+            // v0.52 精算未來一年房貸 (供 FIRE 指標使用)
+            let future12MonthsLoan = 0;
+            let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
+            let next12Str = next12Date.toISOString().split('T')[0];
+            let todayStrForLoanCalc = new Date().toISOString().split('T')[0];
+            
+            for(let lId in schedules) { 
+                schedules[lId].forEach(tx => { 
+                    // 計算現有債務
+                    if(tx.date === schedules[lId].find(s => s.date > todayStr)?.date) {
+                        totalDebt += tx.principalRemain;
+                    }
+                    // 計算本月/年現金流
+                    if(tx.date.startsWith(timePrefix)) {
+                        flowLoan += tx.amount; 
+                    }
+                    // 計算未來 12 個月房貸總和
+                    if(tx.date >= todayStrForLoanCalc && tx.date < next12Str) {
+                        future12MonthsLoan += tx.amount;
+                    }
+                }); 
+            }
+
             appData.transactions.forEach(t => { 
                 if(t.date.startsWith(timePrefix)) { 
                     if(t.type === 'income') flowIncome += t.amount; 
@@ -1002,8 +1030,11 @@
                 }
             });
 
-            let netWorth = totalCash + totalStock - totalDebt;
-            document.getElementById('dashNetWorth').innerText = '$' + Math.round(netWorth).toLocaleString(); document.getElementById('dashCashText').innerText = '$' + Math.round(totalCash).toLocaleString(); document.getElementById('dashStockText').innerText = '$' + Math.round(totalStock).toLocaleString(); document.getElementById('dashDebtText').innerText = '-$' + Math.round(totalDebt).toLocaleString();
+            // 更新儀表板 UI
+            document.getElementById('dashNetWorth').innerText = '$' + Math.round(totalCash + totalStock - totalDebt).toLocaleString(); 
+            document.getElementById('dashCashText').innerText = '$' + Math.round(totalCash).toLocaleString(); 
+            document.getElementById('dashStockText').innerText = '$' + Math.round(totalStock).toLocaleString(); 
+            document.getElementById('dashDebtText').innerText = '-$' + Math.round(totalDebt).toLocaleString();
             
             document.getElementById('dashFlowLabel').innerText = timeLabel; 
             document.getElementById('labelFlowIncome').innerText = `${txtLabel}總收入 (不含賣股)`; document.getElementById('labelFlowExpense').innerText = `${txtLabel}總支出 (含手動紀錄)`; document.getElementById('labelFlowLoan').innerText = `${txtLabel}房貸扣款 (自動計算)`;
@@ -1016,47 +1047,75 @@
             let alertEl = document.getElementById('dashAlert');
             if(cashflow < 0) { alertEl.innerHTML = `<span style="color:var(--expense);">⚠️ 警告：${txtLabel}支出與房貸已超過收入，現金流呈現赤字。</span>`; } else { alertEl.innerHTML = `<span style="color:var(--income);">✅ 安全：${txtLabel}收入足以涵蓋所有開銷與房貸。</span>`; }
             
-            let budget = appData.settings?.annualBudget || 0; let efMonths = appData.settings?.emergencyMonths || 0; let fireRate = budget > 0 ? (yearlyDiv / budget * 100).toFixed(1) : 'N/A';
-            document.getElementById('dashFIRE').innerText = fireRate !== 'N/A' ? fireRate + '%' : '請先設定預算';
-
-            let efStatusText = '請先設定目標'; let dryPowder = 0;
-            if(budget > 0 && efMonths > 0) {
-                let monthlyBudget = budget / 12; let targetEF = monthlyBudget * efMonths;
-                if(totalCash >= targetEF) { efStatusText = `✅ 滿水位 (${efMonths}個月)`; dryPowder = totalCash - targetEF; } 
-                else { efStatusText = `⚠️ 不足 (缺 $${Math.round(targetEF - totalCash).toLocaleString()})`; dryPowder = 0; }
-            }
-            document.getElementById('dashEFStatus').innerText = efStatusText; document.getElementById('dashDryPowder').innerText = '$' + Math.round(dryPowder).toLocaleString(); 
-            
             document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
             document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
             document.getElementById('dashDivYear').innerText = '$' + Math.round(dividendThisYear).toLocaleString();
             
-            const pieOptions = {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'right', labels: { color: '#d8dee9', font: { size: 11 } } } }
-            };
+            // v0.52 FIRE 與籌碼精算
+            let budget = appData.settings?.annualBudget || 0; 
+            let efMonths = appData.settings?.emergencyMonths || 0; 
+            let realAnnualExpense = budget + future12MonthsLoan;
+            
+            document.getElementById('dashRealExpense').innerText = '$' + Math.round(realAnnualExpense).toLocaleString();
+            document.getElementById('dashFutureLoan').innerText = Math.round(future12MonthsLoan).toLocaleString();
 
-            let portLabels = rawPortData.map(item => { let pct = totalStock > 0 ? Math.round((item.val / totalStock) * 100) : 0; return `${item.label} - $${Math.round(item.val).toLocaleString()} (${pct}%)`; });
+            let efTarget = (realAnnualExpense / 12) * efMonths;
+            let efStatusText = ''; let dryPowder = 0;
+            if(totalCash >= efTarget && efTarget > 0) {
+                efStatusText = `✅ 滿水位<br>目前 $${Math.round(totalCash).toLocaleString()} / 目標 $${Math.round(efTarget).toLocaleString()}`;
+                dryPowder = totalCash - efTarget;
+            } else if (efTarget > 0) {
+                efStatusText = `⚠️ 需補足<br>目前 $${Math.round(totalCash).toLocaleString()} / 目標 $${Math.round(efTarget).toLocaleString()}`;
+                dryPowder = 0;
+            } else {
+                efStatusText = '請先設定預算與預備金月份';
+            }
+            
+            document.getElementById('dashEFStatus').innerHTML = efStatusText; 
+            document.getElementById('dashDryPowder').innerText = '$' + Math.round(dryPowder).toLocaleString(); 
+
+            let totalInvestable = dryPowder + totalStock;
+            let dryPowderPct = totalInvestable > 0 ? (dryPowder / totalInvestable * 100).toFixed(1) : '0.0';
+            document.getElementById('dashDryPowderPct').innerText = dryPowderPct + '%';
+            document.getElementById('dashDryPowderStatus').innerHTML = dryPowderPct >= 30 ? '<span style="color:var(--income); font-weight:bold;">✅ 籌碼充足</span>' : '<span style="color:var(--stock-sell); font-weight:bold;">⚠️ 子彈偏低</span>';
+
+            let divCoverage = realAnnualExpense > 0 ? ((yearlyDiv / realAnnualExpense) * 100).toFixed(1) : '0.0';
+            document.getElementById('dashDivCoverage').innerText = divCoverage + '%';
+
+            let fireTarget = realAnnualExpense * 25;
+            let fireAchievedPct = fireTarget > 0 ? ((totalStock / fireTarget) * 100).toFixed(1) : '0.0';
+            let fireDiff = fireTarget - totalStock > 0 ? fireTarget - totalStock : 0;
+            let safeWithdrawal = totalStock * 0.04;
+
+            document.getElementById('dashFireTarget').innerText = '$' + Math.round(fireTarget).toLocaleString();
+            document.getElementById('dashFirePct').innerText = fireAchievedPct + '%';
+            document.getElementById('dashFireDiff').innerText = Math.round(fireDiff).toLocaleString();
+            document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(safeWithdrawal).toLocaleString();
+
+            // v0.52 純淨標籤渲染
+            let portLabels = rawPortData.map(item => item.label);
             let portData = rawPortData.map(item => item.val);
-            let divLabels = rawDivData.map(item => { let pct = yearlyDiv > 0 ? Math.round((item.val / yearlyDiv) * 100) : 0; return `${item.label} - $${Math.round(item.val).toLocaleString()} (${pct}%)`; });
+            let divLabels = rawDivData.map(item => item.label);
             let divData = rawDivData.map(item => item.val);
 
             const ctxAsset = document.getElementById('assetChart');
             if(ctxAsset) {
                 if(assetChartObj) assetChartObj.destroy();
-                assetChartObj = new Chart(ctxAsset.getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: { ...pieOptions, cutout: '65%' }});
+                let donutOptions = getPieOptions('bottom');
+                donutOptions.cutout = '65%';
+                assetChartObj = new Chart(ctxAsset.getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: donutOptions });
             }
             
             const ctxDiv = document.getElementById('dividendChart');
             if(ctxDiv) {
                 if(dividendChartObj) dividendChartObj.destroy();
-                dividendChartObj = new Chart(ctxDiv.getContext('2d'), { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: pieOptions });
+                dividendChartObj = new Chart(ctxDiv.getContext('2d'), { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions('right') });
             }
 
             const ctxPort = document.getElementById('portfolioChart');
             if(ctxPort) {
                 if(portfolioChartObj) portfolioChartObj.destroy();
-                portfolioChartObj = new Chart(ctxPort.getContext('2d'), { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: pieOptions });
+                portfolioChartObj = new Chart(ctxPort.getContext('2d'), { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions('right') });
             }
         }
 
@@ -1115,11 +1174,13 @@
         }
         
         function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanFormTitle').innerText = "➕ 新增貸款合約"; document.getElementById('btnSaveLoan').innerText = "新增並自動產生攤還表"; document.getElementById('btnCancelLoanEdit').style.display = "none"; document.getElementById('loanName').value = ""; }
+        
+        // v0.52 在貸款卡片明確顯示首期扣款年月防呆
         function renderLoans() {
             const list = document.getElementById('loanList'); list.innerHTML = ''; let schedules = generateAmortizationSchedules(); let todayStr = new Date().toISOString().split('T')[0];
             appData.loans.forEach(loan => {
                 let sch = schedules[loan.id] || []; let nextPayment = sch.find(s => s.date > todayStr); let currentBal = nextPayment ? nextPayment.principalRemain : 0; let nextAmt = nextPayment ? nextPayment.amount : 0; let isGrace = nextPayment ? nextPayment.isGrace : false; let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
-                list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);"><div class="card-actions"><button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div><div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div><div class="card-sub"><b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br><b>下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br><b>自動扣款帳戶:</b> ${accName} (每月 ${loan.payDay} 號)</div></div>`;
+                list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);"><div class="card-actions"><button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div><div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div><div class="card-sub"><b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br><b>首期扣款年月:</b> <span style="color:var(--accent); font-weight:bold;">${loan.startMonth}</span> (每月 ${loan.payDay} 號)<br><b>最新/下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br><b>自動扣款帳戶:</b> ${accName}</div></div>`;
             });
         }
 
