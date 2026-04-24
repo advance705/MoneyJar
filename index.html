@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.52</title>
+    <title>🍯 MoneyJar v0.53</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-
         :root {
             --bg-color: #2e3440; --sidebar-bg: #242933; --sidebar-hover: #3b4252;
             --text-main: #eceff4; --text-light: #d8dee9; --accent: #88c0d0;
@@ -17,248 +16,70 @@
             --income: #a3be8c; --expense: #bf616a; --stock-buy: #b48ead;
             --stock-sell: #ebcb8b; --loan: #81a1c1;
         }
-        
         body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
         
-        #loginOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        .login-box { background: var(--sidebar-bg); padding: 40px; border-radius: 12px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 90%; width: 350px; }
-        .login-logo { font-size: 3em; margin-bottom: 10px; }
-        .login-title { color: var(--accent); margin-bottom: 25px; font-size: 1.5em; font-weight: bold; }
-        .btn-google { background: #eceff4; color: #2e3440; border: none; padding: 12px 20px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s; width: 100%; justify-content: center; }
-        .btn-google:hover { filter: brightness(0.9); transform: scale(1.02); }
-        .btn-google img { width: 18px; height: 18px; }
-
+        /* 登入與確認視窗 */
+        #loginOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-box { background: var(--sidebar-bg); padding: 40px; border-radius: 12px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 350px; }
         #customConfirm { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 9999999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .confirm-card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .confirm-msg { font-size: 1.1em; font-weight: bold; color: var(--text-main); margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
-        .confirm-actions { display: flex; gap: 10px; }
-        .confirm-btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; border: none; }
-        .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-light); }
-        .btn-cancel:hover { background: var(--sidebar-hover); }
+        .confirm-card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; }
+        .confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .confirm-btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
 
+        /* 側邊欄 */
         .sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-main); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border);}
         .sidebar-header { padding: 20px; font-size: 1.2em; font-weight: bold; border-bottom: 1px solid var(--border); color: var(--accent); }
-        
-        .user-profile { padding: 15px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px dashed var(--border); }
-        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--border); cursor: pointer; transition: 0.2s; }
-        .user-avatar:hover { filter: brightness(1.1); }
-        .user-info { flex: 1; min-width: 0; }
-        .user-name { font-size: 0.85em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sync-badge { font-size: 0.7em; color: var(--income); display: flex; align-items: center; gap: 4px; margin-top: 2px;}
-        
         .nav-btn { padding: 15px 20px; background: none; border: none; color: var(--text-light); text-align: left; font-size: 1em; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 10px;}
         .nav-btn:hover, .nav-btn.active { background: var(--sidebar-hover); color: var(--text-main); border-left: 4px solid var(--accent); }
         .file-controls { margin-top: auto; padding: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-        
-        .mobile-header { display: none; }
-        .btn-import, .btn-export { width: 100%; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85em; }
-        .btn-import { background: transparent; color: var(--text-light); border: 1px dashed var(--border); }
-        .btn-import:hover { background: var(--sidebar-hover); border-color: var(--text-light); color: var(--text-main); }
-        .btn-export { background: var(--accent); color: #2e3440; border: none; }
-        .btn-export:hover { filter: brightness(1.1); }
-        
-        .status-text { font-size: 0.75em; color: var(--text-light); word-break: break-all; margin-top: -5px; line-height: 1.4;}
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+
+        /* 主畫面與卡片系統 */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
         .page { display: none; }
         .page.active { display: block; }
-        h2 { margin-top: 0; color: var(--text-main); border-bottom: 2px solid var(--accent); padding-bottom: 10px; display: inline-block; margin-bottom: 20px; }
-
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 0.85em; color: var(--text-light); margin-bottom: 4px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; color-scheme: dark; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
-        .flex-row { display: flex; gap: 10px; width: 100%; }
-        .flex-row .form-group { flex: 1 1 0%; min-width: 0; }
-        
-        .btn-add, .btn-fetch { border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s;}
-        .btn-add { background: var(--accent); color: #2e3440; margin-top: 10px; }
-        .btn-fetch { background: var(--income); color: #2e3440; padding: 8px; margin-top: 4px; font-size: 0.85em; }
-        .btn-add:hover, .btn-fetch:hover { filter: brightness(1.1); }
-
-        .desktop-form-wrapper { display: block; position: sticky; top: 0; align-self: start; z-index: 10; }
-        .sticky-form { max-height: calc(100vh - 60px); overflow-y: auto; }
-        
-        .mobile-fab, .mobile-close-btn { display: none; }
-
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid var(--border); position: relative; cursor: grab; transition: transform 0.2s, border-color 0.2s; }
-        .card:active { cursor: grabbing; }
-        .card.dragging { opacity: 0.5; border: 2px dashed var(--accent); }
-        
-        .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-right: 70px; }
-        .card-title { font-size: 1.1em; font-weight: bold; color: var(--accent); line-height: 1.4; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .title-link { color: var(--accent); text-decoration: none; transition: 0.2s; cursor: pointer; }
-        .title-link:hover { text-decoration: underline; color: #8fbcbb; }
-        
-        .badge-watch { background: var(--stock-sell); color: #2e3440; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.9em; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.2); margin-right: 2px; }
-        .card-val-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: baseline; margin-bottom: 8px; }
-        .card-val { font-size: 1.5em; font-weight: bold; color: var(--text-main); }
-        .val-label { font-size: 0.45em; color: var(--text-light); font-weight: normal; margin-left: 4px; }
-        .card-sub { font-size: 0.9em; color: var(--text-light); background: var(--bg-color); padding: 8px; border-radius: 4px; border-left: 3px solid var(--accent); line-height: 1.6;}
-        
-        .card-actions { position: absolute; top: 18px; right: 15px; display: flex; gap: 5px; align-items: center;}
-        .card-actions button { background: var(--bg-color); border: 1px solid var(--border); color: var(--text-main); border-radius: 4px; cursor: pointer; padding: 4px 8px; font-size: 0.85em; transition: 0.2s; }
-        .card-actions button:hover { background: var(--sidebar-hover); border-color: var(--accent); }
-        
-        .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
-        .btn-refresh-all { background: var(--stock-sell); color: #2e3440; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; cursor: pointer; font-weight: bold; transition: 0.3s;}
-
-        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        
-        .dash-card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 1px solid var(--border); display: flex; flex-direction: column; }
-        .dash-card h3 { margin-top: 0; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.2em; display: flex; align-items: center; gap: 8px; justify-content: space-between;}
-        
-        .toggle-group { display: flex; background: var(--bg-color); border-radius: 4px; border: 1px solid var(--border); overflow: hidden; }
-        .toggle-btn { background: transparent; border: none; color: var(--text-light); padding: 4px 10px; cursor: pointer; font-size: 0.7em; font-weight: bold; transition: 0.2s; }
-        .toggle-btn.active { background: var(--accent); color: #2e3440; }
-
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .dash-card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; min-height: 420px; }
+        .dash-card h3 { margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.1em; display: flex; align-items: center; justify-content: space-between; }
         .dash-val-main { font-size: 2.2em; font-weight: bold; color: var(--accent); margin: 15px 0 5px 0; }
         .dash-stat-row { display: flex; justify-content: space-between; font-size: 0.9em; color: var(--text-light); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; }
         .dash-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
-        .dash-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; color: var(--text-light); align-items: center;}
-        .dash-list li:last-child { border-bottom: none; }
-        .dash-list b { color: var(--text-main); }
-        .chart-container { position: relative; width: 100%; margin-top: auto; }
+        .dash-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; }
 
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
-        .calendar-header h2 { margin: 0; padding-bottom: 0; border: none; }
-        .calendar-nav { display: flex; flex-direction: row; align-items: center; gap: 10px; }
-        .calendar-nav button { padding: 8px 15px; cursor: pointer; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; font-weight: bold; transition: 0.2s;}
-        .calendar-nav button:hover { background: var(--sidebar-hover); }
-        
-        .month-picker-input { background: var(--sidebar-bg); border: 1px solid var(--border); color: var(--accent); padding: 8px 15px; border-radius: 20px; font-size: 1.05em; font-weight: bold; cursor: pointer; color-scheme: dark; outline: none; transition: 0.2s; font-family: inherit; text-align: center; }
-        .month-picker-input:hover { background: var(--sidebar-hover); border-color: var(--text-main); color: var(--text-main); }
+        /* v0.51 Sticky UI Fix */
+        .desktop-form-wrapper { display: block; position: sticky; top: 0; align-self: start; z-index: 10; }
+        .sticky-form { max-height: calc(100vh - 60px); overflow-y: auto; }
 
-        .filter-toggle-btn { display: none; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; width: 100%; text-align: left; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; font-weight: bold; justify-content: space-between; align-items: center; transition: 0.2s; }
-        .filter-toggle-btn:hover { background: var(--sidebar-hover); }
-        .calendar-filters { background: var(--card-bg); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
-        .filter-title { color:var(--text-main); font-weight:bold; margin-right:4px; display:inline-flex; align-items:center; font-size: 0.9em; }
-        .filter-chip { cursor: pointer; display: inline-flex; align-items: center; margin: 0;}
-        .filter-chip input { display: none; }
-        .chip-label { padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: bold; border: 1px solid var(--border); background: transparent; color: var(--text-light); transition: 0.2s; user-select: none; white-space: nowrap;}
-        
-        .income-chip input:checked + .chip-label { background: var(--income); border-color: var(--income); color: #2e3440; }
-        .expense-chip input:checked + .chip-label { background: var(--expense); border-color: var(--expense); color: #eceff4; }
-        .buy-chip input:checked + .chip-label { background: var(--stock-buy); border-color: var(--stock-buy); color: #eceff4; }
-        .sell-chip input:checked + .chip-label { background: var(--stock-sell); border-color: var(--stock-sell); color: #2e3440; }
-        
+        /* v0.53 圖表容器集權化 (對齊 Layout) */
+        .chart-wrapper { width: 100%; max-width: 450px; margin: auto; height: 220px; position: relative; }
+
+        /* 日曆 */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-        .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
-        
-        .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; min-height: 100px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
-        .calendar-cell:hover { background: #434c5e; border-color: var(--accent); }
-        .cell-today { border: 2px solid var(--accent) !important; }
-        .cell-date { font-weight: bold; color: var(--text-light); text-align: right; margin-bottom: 5px; font-size: 0.9em; flex-shrink: 0;}
-        .cell-other-month { background: var(--bg-color); border-color: transparent; }
-        .cell-other-month .cell-date { color: var(--border); }
-        
-        .tx-badge { padding: 4px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); color: #2e3440; flex-shrink: 0;}
-        .tx-badge:hover { filter: brightness(1.1); transform: scale(1.02); }
-        .bg-income { background-color: var(--income); } .bg-expense { background-color: var(--expense); color: #eceff4; }
-        .bg-buy { background-color: var(--stock-buy); color: #eceff4; } .bg-sell { background-color: var(--stock-sell); }
-        .bg-loan { background-color: var(--loan); color: #eceff4; border-left: 3px solid var(--stock-sell); }
+        .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; min-height: 100px; padding: 5px; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; }
+        .cell-date { font-weight: bold; text-align: right; font-size: 0.9em; margin-bottom: 5px; }
+        .tx-badge { padding: 4px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2e3440; }
 
-        .dot-container { display: none; flex-wrap: wrap; justify-content: flex-end; gap: 3px; padding-right: 2px; }
-        .tx-dot { width: 6px; height: 6px; border-radius: 50%; }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-start; justify-content: center; backdrop-filter: blur(2px); overflow-y: auto; padding-top: 5dvh; padding-bottom: 5dvh;}
-        .modal-overlay.active { display: flex; } 
-        
-        .modal { background: var(--card-bg); width: 450px; padding: 25px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); margin: 0 auto; max-height: none; }
-        
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .modal-header h3 { margin: 0; color: var(--text-main); }
-        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-light); transition: 0.2s;}
-        .close-btn:hover { color: var(--expense); }
-        .tab-group { display: flex; margin-bottom: 15px; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-color); }
-        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-light); cursor: pointer; font-weight: bold; transition: 0.2s;}
-        .tab-btn.active { background: var(--accent); color: #2e3440; }
-        .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
-        
-        .ledger-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
-        .ledger-table { width: 100%; border-collapse: collapse; font-size: 0.9em; min-width: 1100px; color: var(--text-main); }
-        .ledger-table th { background: var(--sidebar-bg); padding: 12px 10px; text-align: right; border-bottom: 2px solid var(--border); color: var(--text-light); white-space: nowrap; font-weight: normal;}
-        .ledger-table th:nth-child(1), .ledger-table th:nth-child(2), .ledger-table th:nth-child(3), .ledger-table th:nth-child(4) { text-align: left; }
-        .ledger-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
-        .ledger-table td:nth-child(1), .ledger-table td:nth-child(2), .ledger-table td:nth-child(3), .ledger-table td:nth-child(4) { text-align: left; }
-        .ledger-table tbody tr:hover { background-color: var(--sidebar-hover); }
-        .text-buy { color: var(--stock-buy); font-weight: bold; } .text-sell { color: var(--stock-sell); font-weight: bold; }
-        .jump-link { color: var(--accent); text-decoration: none; font-weight: bold; transition: 0.2s; }
-        .jump-link:hover { text-decoration: underline; color: #8fbcbb; }
-        
-        .ledger-tools { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; flex-wrap: wrap;}
-        .search-box { position: relative; flex: 1; min-width: 250px;}
-        .search-box input { width: 100%; padding: 10px 15px 10px 40px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; color: var(--text-main); transition: 0.2s; }
-        .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 5px rgba(136, 192, 208, 0.3); }
-        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); opacity: 0.7; }
-        
-        .pagination { display: flex; align-items: center; gap: 5px; background: var(--card-bg); padding: 5px; border-radius: 20px; border: 1px solid var(--border); }
-        .page-btn { background: transparent; border: none; color: var(--text-light); padding: 6px 12px; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85em; }
-        .page-btn:hover:not(:disabled) { background: var(--sidebar-hover); color: var(--text-main); }
-        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .page-info { font-size: 0.85em; color: var(--text-main); margin: 0 10px; font-weight: bold; }
+        /* 表單元素 */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.85em; color: var(--text-light); margin-bottom: 4px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; color-scheme: dark; }
+        .flex-row { display: flex; gap: 10px; width: 100%; }
+        .btn-add { background: var(--accent); color: #2e3440; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            .page > h2, .calendar-header h2 { display: none; }
-            
-            #desktopProfile { display: none !important; }
-            
-            .mobile-header { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; height: calc(60px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); background: var(--sidebar-bg); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-            .mobile-header-title { font-weight: bold; color: var(--accent); font-size: 1.2em; display:flex; align-items:center; gap:8px;}
-            
-            .mobile-header-controls { display: flex; gap: 12px; align-items: center;}
-            .mobile-header-controls .user-avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);}
-            
-            .main-content { flex: 1; padding: 15px; padding-bottom: calc(90px + env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-            
-            .sidebar { width: 100%; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex-direction: row; justify-content: space-around; align-items: center; flex-shrink: 0; border-right: none; border-top: 1px solid var(--border); overflow: hidden; z-index: 1000; position: fixed; bottom: 0; }
-            .sidebar-header, .file-controls { display: none; }
-            .nav-btn { flex: 1; display: flex; justify-content: center; font-size: 1.6em; padding: 10px 0; border: none !important; margin: 0;}
-            .nav-btn span { display: none; } 
-            .nav-btn.active { background: transparent; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(136, 192, 208, 0.5)); }
-
-            .dash-grid, .card-grid, #assets .card-grid, #loans .card-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
-            .card-grid[style*="align-items: start"] { align-items: stretch !important; }
-            
-            .flex-row { flex-direction: row; gap: 10px; width: 100%; }
-            .card { padding: 15px !important; }
-            .form-group { margin-bottom: 8px; }
-            .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
-            .form-group input, .form-group select { font-size: 16px !important; min-height: 36px !important; padding: 6px 8px !important; -webkit-appearance: none; appearance: none; background-color: var(--bg-color); min-width: 0 !important; width: 100% !important; box-sizing: border-box !important;}
-            .btn-add, .btn-fetch { padding: 8px 12px; margin-top: 5px; font-size: 0.9em; }
-            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
-
-            .desktop-form-wrapper, .modal-overlay { display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.75) !important; z-index: 99999 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding: calc(env(safe-area-inset-top) + 70px) 15px calc(env(safe-area-inset-bottom) + 85px) 15px !important; }
-            .desktop-form-wrapper.active, .modal-overlay.active { display: block !important; }
-            .desktop-form-wrapper .card, .modal { position: relative !important; top: auto !important; bottom: auto !important; width: 100% !important; max-width: 400px !important; margin: 0 auto !important; height: auto !important; max-height: none !important; border-radius: 12px !important; border: 1px solid var(--border) !important; padding-top: 15px; cursor: default !important; transform: none !important; }
-            
-            .mobile-fab { display: flex; position: fixed; bottom: 85px; right: 20px; z-index: 900; background: var(--accent); color: #2e3440; border: none; width: 55px; height: 55px; border-radius: 50%; font-size: 1.8em; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: 0.2s; }
-            .mobile-fab:active { transform: scale(0.9); }
-            
-            .mobile-close-btn { display: block; background: none; border: none; font-size: 1.5em; color: var(--text-light); padding: 0; margin-left: 10px; margin-top:-5px;}
-            .card-title-row { padding-right: 0; }
-            
-            .calendar-header { flex-direction: row; margin-bottom: 10px; justify-content: space-between; gap: 5px;}
-            .calendar-nav { width: 100%; justify-content: space-between; gap: 5px; }
-            .calendar-nav button { padding: 6px 10px; font-size: 0.85em; flex: 1; }
-            .month-picker-input { padding: 6px 10px; font-size: 0.9em; flex: 1; max-width: 140px; }
-            
-            .calendar-cell { aspect-ratio: 1/1; min-height: 0; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
-            .cell-date { font-size: 1em; text-align: center; margin-bottom: 2px;}
-            .tx-badge { display: none !important; } 
-            .dot-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; width: 100%; align-content: flex-start;}
-            .tx-dot { width: 5px; height: 5px; }
-            
-            .filter-toggle-btn { display: flex; }
-            .hidden-mobile { display: none !important; margin-bottom: 15px; padding: 12px; }
-            .hidden-mobile.active { display: flex !important; }
-            
-            .ledger-tools { flex-direction: column; align-items: stretch; gap: 10px;}
-            .search-box { min-width: 0; width: 100%;}
-            .pagination { justify-content: center; width: 100%;}
-            .page-info { margin: 0 5px; font-size: 0.8em;}
-            .page-btn { padding: 5px 10px; font-size: 0.8em;}
+            .sidebar { width: 100%; height: 60px; flex-direction: row; position: fixed; bottom: 0; z-index: 1000; border-right: none; border-top: 1px solid var(--border); }
+            .nav-btn span, .sidebar-header, .file-controls { display: none; }
+            .nav-btn { flex: 1; justify-content: center; font-size: 1.5em; }
+            .main-content { padding: 15px; padding-bottom: 100px; }
+            .calendar-cell { aspect-ratio: 1/1; min-height: 0; }
+            .tx-badge { display: none; }
+            .dot-container { display: flex; flex-wrap: wrap; gap: 2px; }
+            .tx-dot { width: 5px; height: 5px; border-radius: 50%; }
+            .desktop-form-wrapper { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: rgba(0,0,0,0.8); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; }
+            .desktop-form-wrapper.active { display: flex; }
+            .sticky-form { width: 100%; max-width: 400px; max-height: 90vh; }
+            .mobile-fab { display: flex; position: fixed; bottom: 80px; right: 20px; background: var(--accent); color: #2e3440; width: 55px; height: 55px; border-radius: 50%; align-items: center; justify-content: center; font-size: 1.5em; z-index: 900; }
+            .mobile-header { display: flex; justify-content: space-between; padding: 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); }
         }
     </style>
 </head>
@@ -269,7 +90,7 @@
             <div id="confirmMessage" class="confirm-msg">確認執行此操作？</div>
             <div class="confirm-actions">
                 <button class="confirm-btn btn-cancel" onclick="document.getElementById('customConfirm').style.display='none'">取消</button>
-                <button id="confirmYesBtn" class="confirm-btn">確定</button>
+                <button id="confirmYesBtn" class="confirm-btn" style="background: var(--accent); color:#2e3440;">確定</button>
             </div>
         </div>
     </div>
@@ -278,51 +99,32 @@
         <div class="login-box">
             <div class="login-logo">🍯</div>
             <div class="login-title">MoneyJar</div>
-            <button class="btn-google" onclick="handleAuthClick()" style="margin-top: 20px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo">
+            <button class="btn-google" onclick="handleAuthClick()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" style="width:18px;">
                 使用 Google 帳號登入
             </button>
         </div>
     </div>
 
-    <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.52</div>
-        <div class="mobile-header-controls">
-            <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
-            <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
-        </div>
-    </div>
-
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.52</div>
-        
-        <div class="user-profile" id="desktopProfile" style="display:none;">
-            <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
-            <div class="user-info">
-                <div id="desktopName" class="user-name">載入中...</div>
-                <div id="desktopSync" class="sync-badge">☁️ 雲端已同步</div>
-            </div>
-        </div>
-
+        <div class="sidebar-header">🍯 MoneyJar v0.53</div>
         <button class="nav-btn active" onclick="switchPage('dashboard', this)">🏠 <span>總覽儀表板</span></button>
         <button class="nav-btn" onclick="switchPage('calendar', this)">📅 <span>日曆與收支</span></button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 <span>股票對帳單</span></button>
         <button class="nav-btn" onclick="switchPage('assets', this)">💼 <span>資產與帳戶</span></button>
         <button class="nav-btn" onclick="switchPage('loans', this)">🏦 <span>貸款與負債</span></button>
-        
         <div class="file-controls">
-            <button id="btnLoad" class="btn-import">📥 從電腦載入舊檔 (遷移)</button>
-            <button id="btnExport" class="btn-export" onclick="exportData()">💾 下載實體備份 (JSON)</button>
-            <div id="syncStatus" class="status-text">已啟用雲端自動存檔。</div>
-            <button onclick="confirmSignout()" style="background:transparent; border:none; color:var(--expense); text-align:left; padding:0; cursor:pointer; font-size:0.8em; margin-top:5px; text-decoration:underline;">登出帳號</button>
+            <button id="btnLoad" class="btn-import">📥 載入舊檔 (JSON)</button>
+            <button class="btn-export" onclick="exportData()">💾 下載備份 (JSON)</button>
+            <div id="syncStatus" style="font-size:0.75em; color:var(--text-light);">雲端自動存檔中...</div>
+            <button onclick="confirmSignout()" style="color:var(--expense); border:none; background:none; text-align:left; cursor:pointer; text-decoration:underline; font-size:0.8em;">登出帳號</button>
         </div>
     </div>
 
     <div class="main-content">
         <div id="dashboard" class="page active">
             <h2>🏠 總覽儀表板</h2>
-            <div class="dash-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-                
+            <div class="dash-grid">
                 <div class="dash-card">
                     <h3>💰 淨身價與資產配置</h3>
                     <div class="dash-val-main" id="dashNetWorth">$0</div>
@@ -331,93 +133,73 @@
                         <span>股票: <b id="dashStockText" style="color:var(--accent);">$0</b></span>
                         <span>負債: <b id="dashDebtText" style="color:var(--expense);">-$0</b></span>
                     </div>
-                    <div class="chart-container" style="height: 250px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
+                    <div class="chart-wrapper"><canvas id="assetChart"></canvas></div>
                 </div>
                 
                 <div class="dash-card">
                     <h3>✨ 魔法の蜜泉</h3>
-                    <div class="dash-stat-row" style="border:none; padding:0; margin-top:10px;">
-                        <span>預估全年配息</span>
-                    </div>
+                    <div class="dash-stat-row" style="border:none; margin-top:10px;"><span>預估全年配息</span></div>
                     <div class="dash-val-main" id="dashYearlyDiv" style="color:var(--stock-buy); margin-top:0;">$0</div>
-                    
-                    <ul class="dash-list" style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
-                        <li><span>本月實際領取</span> <b id="dashDivMonth" style="color:var(--income); font-size:1.1em;">$0</b></li>
-                        <li><span>本年累積領取</span> <b id="dashDivYear" style="color:var(--accent); font-size:1.1em;">$0</b></li>
+                    <ul class="dash-list">
+                        <li><span>本月實際領取</span> <b id="dashDivMonth" style="color:var(--income);">$0</b></li>
+                        <li><span>本年累積領取</span> <b id="dashDivYear" style="color:var(--accent);">$0</b></li>
                     </ul>
-                    
-                    <div class="chart-container" style="height: 200px; margin-top: 15px;"><canvas id="dividendChart"></canvas></div>
+                    <div class="chart-wrapper"><canvas id="dividendChart"></canvas></div>
                 </div>
                 
                 <div class="dash-card">
                     <h3>📊 股票庫存配置比例</h3>
-                    <div class="chart-container" style="height: 280px; margin-top: 15px;"><canvas id="portfolioChart"></canvas></div>
+                    <div class="chart-wrapper" style="height: 280px;"><canvas id="portfolioChart"></canvas></div>
                 </div>
-            </div>
 
-            <div class="dash-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 20px;">
-                
                 <div class="dash-card">
-                    <h3>
-                        <span>📊 現金流 (<span id="dashFlowLabel"></span>)</span>
+                    <h3><span>📊 現金流 (<span id="dashFlowLabel"></span>)</span>
                         <div class="toggle-group">
                             <button class="toggle-btn active" id="btnViewMonth" onclick="setCashflowView('month')">本月</button>
                             <button class="toggle-btn" id="btnViewYear" onclick="setCashflowView('year')">本年</button>
                         </div>
                     </h3>
                     <div class="dash-val-main" id="dashCashflow">$0</div>
-                    <div id="dashAlert" style="font-size:0.9em; margin-bottom:15px; font-weight:bold;"></div>
                     <ul class="dash-list">
-                        <li><span id="labelFlowIncome">本月總收入 (不含賣股)</span> <b id="dashFlowIncome" style="color:var(--income);">$0</b></li>
-                        <li><span id="labelFlowExpense">本月總支出 (含手動紀錄)</span> <b id="dashFlowExpense" style="color:var(--expense);">-$0</b></li>
-                        <li><span id="labelFlowLoan">本月房貸扣款 (自動計算)</span> <b id="dashFlowLoan" style="color:var(--expense);">-$0</b></li>
-                        <li style="border-top: 1px dashed var(--border); margin-top: 5px; padding-top: 15px;">
-                            <span>💰 股票已實現損益 (資本利得)</span> <b id="dashFlowPnL" style="font-size:1.1em;">$0</b>
+                        <li><span>總收入 (不含賣股)</span> <b id="dashFlowIncome" style="color:var(--income);">$0</b></li>
+                        <li><span>總支出 (含手動紀錄)</span> <b id="dashFlowExpense" style="color:var(--expense);">-$0</b></li>
+                        <li><span>房貸扣款 (自動計算)</span> <b id="dashFlowLoan" style="color:var(--expense);">-$0</b></li>
+                        <li style="border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 10px;">
+                            <span>💰 股票已實現損益</span> <b id="dashFlowPnL">$0</b>
                         </li>
                     </ul>
                 </div>
                 
                 <div class="dash-card">
                     <h3>🛡️ 戰略籌碼</h3>
-                    <div class="form-group" style="margin-bottom:15px;">
-                        <label>預備金設定 (月)</label>
-                        <input type="number" id="settingEFMonths" onchange="saveSettings()" placeholder="如 6">
-                    </div>
+                    <div class="form-group"><label>預備金設定 (月)</label><input type="number" id="settingEFMonths" onchange="saveSettings()"></div>
                     <ul class="dash-list">
-                        <li style="flex-direction:column; align-items:flex-start; gap:5px;">
-                            <span>🛡️ <b>緊急預備金</b></span>
-                            <span id="dashEFStatus" style="font-size:0.9em;"></span>
-                        </li>
-                        <li style="flex-direction:column; align-items:flex-start; gap:5px; border-top:1px dashed var(--border); margin-top:5px; padding-top:15px;">
+                        <li style="flex-direction:column; align-items:flex-start;"><span>🛡️ <b>緊急預備金</b></span><span id="dashEFStatus"></span></li>
+                        <li style="flex-direction:column; align-items:flex-start; border-top:1px dashed var(--border); margin-top:10px; padding-top:15px;">
                             <span>⚔️ <b>攻擊籌碼</b></span>
                             <b id="dashDryPowder" style="font-size:1.4em; color:var(--income);">$0</b>
-                            <span style="font-size:0.85em; color:var(--text-light);">目前現金水位：<span id="dashDryPowderPct" style="font-weight:bold;">0%</span> / 戰略目標 30.0%</span>
-                            <span id="dashDryPowderStatus" style="font-size:0.85em;"></span>
+                            <span style="font-size:0.85em; color:var(--text-light);">目前現金水位：<span id="dashDryPowderPct">0%</span> / 戰略目標 30%</span>
+                            <span id="dashDryPowderStatus"></span>
                         </li>
                     </ul>
                 </div>
 
                 <div class="dash-card">
                     <h3>🔥 FIRE 財富自由度</h3>
-                    <div class="form-group" style="margin-bottom:5px;">
-                        <label>年度生活預算 (元) 不含房貸</label>
-                        <input type="number" id="settingBudget" onchange="saveSettings()" placeholder="如 600000">
-                    </div>
-                    <div style="font-size:0.8em; color:var(--text-light); margin-bottom:15px; background:var(--sidebar-bg); padding:8px; border-radius:4px; border-left:3px solid var(--accent); line-height:1.4;">
-                        💡 真實年度總支出：<b id="dashRealExpense" style="color:var(--text-main);">$0</b><br>(已自動計入未來一年房貸 $<span id="dashFutureLoan">0</span>)
+                    <div class="form-group"><label>年度生活預算 (元)</label><input type="number" id="settingBudget" onchange="saveSettings()"></div>
+                    <div style="font-size:0.8em; color:var(--text-light); margin-bottom:15px; background:var(--sidebar-bg); padding:8px; border-radius:4px; border-left:3px solid var(--accent);">
+                        💡 真實年度總支出：<b id="dashRealExpense">$0</b> (已計入未來一年房貸 $<span id="dashFutureLoan">0</span>)
                     </div>
                     <ul class="dash-list">
-                        <li><span>💧 股息覆蓋率</span> <b id="dashDivCoverage" style="color:var(--income); font-size:1.1em;">0%</b></li>
-                        <li style="flex-direction:column; align-items:flex-start; gap:5px; border-top:1px dashed var(--border); margin-top:5px; padding-top:15px;">
+                        <li><span>💧 股息覆蓋率</span> <b id="dashDivCoverage">0%</b></li>
+                        <li style="flex-direction:column; align-items:flex-start; border-top:1px dashed var(--border); margin-top:10px; padding-top:15px;">
                             <span>📈 <b>4% 法則</b></span>
-                            <span style="font-size:0.9em; display:flex; justify-content:space-between; width:100%;"><span>FIRE 終極目標：</span><b id="dashFireTarget">$0</b></span>
-                            <span style="font-size:0.9em; display:flex; justify-content:space-between; width:100%;"><span>總資產達成率：</span><b id="dashFirePct">0%</b></span>
-                            <span style="font-size:0.85em; color:var(--text-light); text-align:right; width:100%; margin-top:-5px;">(尚差 $<span id="dashFireDiff">0</span>)</span>
-                            <span style="font-size:0.9em; color:var(--stock-sell); display:flex; justify-content:space-between; width:100%; margin-top:5px;"><span>本年安全提領上限：</span><b id="dashSafeWithdrawal">$0</b></span>
+                            <span style="width:100%; display:flex; justify-content:space-between;"><span>FIRE 終極目標：</span><b id="dashFireTarget">$0</b></span>
+                            <span style="width:100%; display:flex; justify-content:space-between;"><span>目前達成率：</span><b id="dashFirePct">0%</b></span>
+                            <span style="width:100%; color:var(--stock-sell); display:flex; justify-content:space-between; margin-top:5px;"><span>年安全提領上限：</span><b id="dashSafeWithdrawal">$0</b></span>
                         </li>
                     </ul>
                 </div>
-
             </div>
         </div>
 
@@ -425,1381 +207,711 @@
             <h2>🏦 貸款與負債管理</h2>
             <button class="mobile-fab" onclick="openLoanForm()">➕</button>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
-                <div id="loanFormOverlay" class="desktop-form-wrapper" onclick="closeLoanForm()">
+                <div id="loanFormOverlay" class="desktop-form-wrapper" onclick="this.classList.remove('active')">
                     <div class="card sticky-form" style="background: var(--sidebar-bg);" onclick="event.stopPropagation()">
-                        <div class="card-title-row">
-                            <h3 class="card-title" id="loanFormTitle">➕ 新增貸款合約</h3>
-                            <button class="mobile-close-btn" onclick="closeLoanForm()">✖</button>
-                        </div>
-                        <input type="hidden" id="editLoanId" value="">
-                        <div class="form-group"><label>貸款名稱 (如：房屋貸款)</label><input type="text" id="loanName"></div>
+                        <h3 id="loanFormTitle">➕ 新增貸款合約</h3>
+                        <input type="hidden" id="editLoanId">
+                        <div class="form-group"><label>貸款名稱</label><input type="text" id="loanName"></div>
                         <div class="flex-row">
-                            <div class="form-group"><label>貸款本金 (元)</label><input type="number" id="loanPrincipal" value="10000000"></div>
-                            <div class="form-group"><label>年利率 (%)</label><input type="number" id="loanRate" value="2.1" step="0.01"></div>
+                            <div class="form-group"><label>貸款本金</label><input type="number" id="loanPrincipal"></div>
+                            <div class="form-group"><label>年利率 (%)</label><input type="number" id="loanRate" step="0.01"></div>
                         </div>
                         <div class="flex-row">
-                            <div class="form-group"><label>期數 (年)</label><input type="number" id="loanYears" value="30"></div>
-                            <div class="form-group"><label>寬限期 (月)</label><input type="number" id="loanGrace" value="36"></div>
+                            <div class="form-group"><label>期數 (年)</label><input type="number" id="loanYears"></div>
+                            <div class="form-group"><label>寬限期 (月)</label><input type="number" id="loanGrace"></div>
                         </div>
-                        <div class="flex-row">
-                            <div class="form-group"><label>首期扣款年月</label><input type="month" id="loanStartMonth"></div>
-                            <div class="form-group"><label>每月扣款日</label><input type="number" id="loanPayDay" value="10" min="1" max="31"></div>
-                        </div>
+                        <div class="form-group"><label>首期扣款日</label><input type="date" id="loanStartDate"></div>
                         <div class="form-group"><label>自動扣款帳戶</label><select id="loanAcc"></select></div>
-                        <button id="btnSaveLoan" class="btn-add" onclick="saveLoan()">新增並自動產生攤還表</button>
-                        <button id="btnCancelLoanEdit" class="btn-add" style="display:none; background:var(--border); color:var(--text-main); margin-top:5px;" onclick="closeLoanForm()">取消編輯</button>
+                        <button class="btn-add" onclick="saveLoan()">儲存並產生攤還表</button>
                     </div>
                 </div>
-                <div>
-                    <div class="list-header" style="margin-top: 0;"><div class="card-title" style="margin:0;">📉 執行中貸款狀態</div></div>
-                    <div id="loanList" class="card-grid" style="margin-top: 10px;"></div>
-                </div>
+                <div id="loanList" class="card-grid"></div>
             </div>
         </div>
 
         <div id="ledger" class="page">
             <h2>📜 股票交易對帳單</h2>
-            <p style="color:var(--text-light); font-size:0.9em; margin-top:-10px; margin-bottom:20px;">包含一般買賣與股息配發紀錄。點擊「成交日期」可跳轉至該日。</p>
-            
-            <div class="ledger-tools">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="ledgerSearch" placeholder="搜尋股票、帳戶、日期、買賣、領息..." oninput="handleLedgerSearch()">
-                </div>
+            <div class="ledger-tools" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
+                <input type="text" id="ledgerSearch" placeholder="🔍 搜尋股票、日期..." oninput="handleLedgerSearch()" style="flex:1; padding:10px; border-radius:20px; background:var(--card-bg); border:1px solid var(--border); color:white;">
                 <div class="pagination" id="paginationTop"></div>
             </div>
-
             <div class="ledger-container">
-                <table class="ledger-table">
-                    <thead>
-                        <tr>
-                            <th>成交日期</th><th>帳戶</th><th>買/賣</th><th>股票名稱</th><th>股數</th><th>成交單價</th><th>成交價金</th>
-                            <th>手續費</th><th>交易稅</th><th>利息</th><th>健保費</th><th>稅款</th><th>淨收付金額</th><th>狀態 / 已實現損益</th>
-                        </tr>
+                <table class="ledger-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
+                    <thead style="background:var(--sidebar-bg);">
+                        <tr><th style="padding:10px; text-align:left;">日期</th><th style="text-align:left;">帳戶</th><th>買賣</th><th style="text-align:left;">名稱</th><th>股數</th><th>成交價</th><th>總額</th><th>稅費</th><th>淨收付</th><th>損益</th></tr>
                     </thead>
                     <tbody id="ledgerBody"></tbody>
                 </table>
             </div>
-            
-            <div class="ledger-tools" style="margin-top: 15px; justify-content: flex-end;">
-                <div class="pagination" id="paginationBottom"></div>
-            </div>
+            <div class="pagination" id="paginationBottom" style="margin-top:15px; display:flex; justify-content:flex-end;"></div>
         </div>
 
         <div id="calendar" class="page">
             <div class="calendar-header">
-                <h2>📅 日曆與收支總覽</h2>
+                <h2>📅 日曆收支</h2>
                 <div class="calendar-nav">
-                    <button onclick="changeMonth(-1)">◀ 上個月</button>
+                    <button onclick="changeMonth(-1)">◀</button>
                     <input type="month" id="monthJumpSelector" class="month-picker-input" onchange="jumpToMonth(this.value)">
-                    <button onclick="changeMonth(1)">下個月 ▶</button>
+                    <button onclick="changeMonth(1)">▶</button>
                 </div>
             </div>
-            
-            <button class="filter-toggle-btn" onclick="document.getElementById('filterContainer').classList.toggle('active')">
-                <span>👁️ 篩選顯示項目</span> <span>▾</span>
-            </button>
-            <div id="filterContainer" class="calendar-filters hidden-mobile">
-                <span class="filter-title" style="display:none;">👁️ 篩選：</span>
-                <label class="filter-chip income-chip">
-                    <input type="checkbox" id="filterIncome" checked onchange="renderCalendar()">
-                    <span class="chip-label">現金收入/配息</span>
-                </label>
-                <label class="filter-chip expense-chip">
-                    <input type="checkbox" id="filterExpense" checked onchange="renderCalendar()">
-                    <span class="chip-label">現金支出</span>
-                </label>
-                <label class="filter-chip buy-chip">
-                    <input type="checkbox" id="filterBuy" checked onchange="renderCalendar()">
-                    <span class="chip-label">股票買入</span>
-                </label>
-                <label class="filter-chip sell-chip">
-                    <input type="checkbox" id="filterSell" checked onchange="renderCalendar()">
-                    <span class="chip-label">股票賣出</span>
-                </label>
-            </div>
-            
             <div class="calendar-grid" id="calendarGrid"></div>
         </div>
 
         <div id="assets" class="page">
-            <h2>💼 資產與自選庫存</h2>
+            <h2>💼 資產與帳戶</h2>
             <button class="mobile-fab" onclick="openAssetForm()">➕</button>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
-                <div id="assetFormOverlay" class="desktop-form-wrapper" onclick="closeAssetForm()">
-                    <div class="card sticky-form" style="background: var(--sidebar-bg); cursor: default;" onclick="event.stopPropagation()">
-                        <div class="card-title-row">
-                            <h3 class="card-title" id="assetFormTitle">➕ 新增帳戶/資產</h3>
-                            <button class="mobile-close-btn" onclick="closeAssetForm()">✖</button>
-                        </div>
-                        <input type="hidden" id="editAssetId" value="">
-                        
-                        <div class="form-group">
-                            <label>類型</label>
+                <div id="assetFormOverlay" class="desktop-form-wrapper" onclick="this.classList.remove('active')">
+                    <div class="card sticky-form" style="background: var(--sidebar-bg);" onclick="event.stopPropagation()">
+                        <h3 id="assetFormTitle">➕ 新增帳戶/資產</h3>
+                        <input type="hidden" id="editAssetId">
+                        <div class="form-group"><label>類型</label>
                             <select id="newAssetType" onchange="toggleAssetInputs()">
-                                <option value="bank">一般銀行帳戶 (現金)</option>
-                                <option value="broker">證券交割戶 (現金)</option>
+                                <option value="bank">一般銀行帳戶</option>
+                                <option value="broker">證券交割戶</option>
                                 <option value="stock">股票 / ETF</option>
                             </select>
                         </div>
-                        
                         <div id="assetBankInputs">
-                            <div class="form-group"><label>銀行 / 券商名稱</label><input type="text" id="newBankName" placeholder="輸入名稱"></div>
-                            
-                            <div id="assetBrokerInputs" style="display: none; background: rgba(136, 192, 208, 0.1); padding: 10px; border-radius: 4px; border-left: 3px solid var(--accent); margin-bottom: 12px;">
-                                <div class="flex-row" style="margin-bottom:0;">
-                                    <div class="form-group" style="margin-bottom:0;"><label style="color:var(--accent);">最低手續費 (元)</label><input type="number" id="newBrokerMinFee" value="20" min="0"></div>
-                                    <div class="form-group" style="margin-bottom:0;"><label style="color:var(--accent);">手續費折讓</label><input type="number" id="newBrokerDiscount" value="1" step="0.01" min="0" placeholder="如 0.28"></div>
+                            <div class="form-group"><label>銀行名稱</label><input type="text" id="newBankName"></div>
+                            <div id="assetBrokerInputs" style="display:none; padding:10px; background:rgba(0,0,0,0.2); border-radius:4px; margin-bottom:10px;">
+                                <div class="flex-row">
+                                    <div class="form-group"><label>手續費低消</label><input type="number" id="newBrokerMinFee" value="20"></div>
+                                    <div class="form-group"><label>折讓(如0.28)</label><input type="number" id="newBrokerDiscount" step="0.01" value="1"></div>
                                 </div>
                             </div>
-                            
-                            <div class="form-group">
-                                <label>初始餘額 (元) <span style="font-weight:normal; font-size:0.85em; color:var(--income);">※修改將自動設為今日基準</span></label>
-                                <input type="number" id="newBankBalance" value="0">
-                            </div>
+                            <div class="form-group"><label>目前餘額</label><input type="number" id="newBankBalance"></div>
                         </div>
-
-                        <div id="assetStockInputs" style="display: none;">
+                        <div id="assetStockInputs" style="display:none;">
                             <div class="flex-row">
-                                <div class="form-group"><label>股票代號 (必填)</label><input type="text" id="newTicker" placeholder="如: 00878"></div>
-                                <div class="form-group"><label>中文名稱</label><input type="text" id="newName" placeholder="自動帶入或手持"></div>
+                                <div class="form-group"><label>代號</label><input type="text" id="newTicker"></div>
+                                <div class="form-group"><label>名稱</label><input type="text" id="newName"></div>
                             </div>
-                            <button id="btnApiFetch" class="btn-fetch" onclick="fetchRealApiData()">🔄 雲端抓取即時報價與名稱</button>
-                            
-                            <div class="flex-row" style="margin-top: 12px;">
-                                <div class="form-group"><label>初始庫存 (補登設0)</label><input type="number" id="newShares" value="0" step="0.1" min="0"></div>
-                                <div class="form-group"><label>現價 (元)</label><input type="number" id="newPrice" value="0" step="0.01"></div>
+                            <div class="flex-row">
+                                <div class="form-group"><label>庫存張數</label><input type="number" id="newShares" step="0.1"></div>
+                                <div class="form-group"><label>現價</label><input type="number" id="newPrice" step="0.01"></div>
                             </div>
-                            
-                            <div class="form-group"><label>預估現金股利 (元/股)</label><input type="number" id="newDividend" value="0" step="0.01"></div>
-                            <div class="flex-row"><div class="form-group"><label>除息日</label><input type="date" id="newExDate"></div><div class="form-group"><label>發放日</label><input type="date" id="newPayDate"></div></div>
+                            <div class="form-group"><label>預估股利/股</label><input type="number" id="newDividend" step="0.01"></div>
                         </div>
-                        <button class="btn-add" onclick="saveAssetForm()">儲存並自動存檔</button>
-                        <button id="btnCancelAssetEdit" class="btn-add" style="display:none; background:var(--border); color:var(--text-main); margin-top:5px;" onclick="closeAssetForm()">取消編輯</button>
+                        <button class="btn-add" onclick="saveAssetForm()">儲存資產</button>
                     </div>
                 </div>
                 <div>
-                    <div class="list-header" style="margin-top: 0;"><div class="card-title" style="margin:0;">🏦 銀行與交割帳戶清單</div><span style="font-size:0.8em; color:var(--text-light);">(可拖曳排序)</span></div>
-                    <div id="bankList" class="card-grid" style="margin-top: 10px; margin-bottom: 20px;"></div>
-                    <div class="list-header">
-                        <div class="card-title" style="margin:0;">📈 股票與自選清單</div>
-                        <div><span style="font-size:0.8em; color:var(--text-light); margin-right:10px;">(可拖曳排序)</span><button class="btn-refresh-all" onclick="refreshAllPrices()">🔄 一鍵更新所有報價</button></div>
-                    </div>
-                    <div id="stockList" class="card-grid" style="margin-top: 10px;"></div>
+                    <div id="bankList" class="card-grid"></div>
+                    <div id="stockList" class="card-grid" style="margin-top:20px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="dayViewModal" class="modal-overlay" onclick="closeDayView()">
-        <div class="modal" style="display:flex; flex-direction:column;" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3 id="dayViewTitle">2026-04-10 明細</h3>
-                <button class="close-btn" onclick="closeDayView()">×</button>
-            </div>
-            <div id="dayViewList" style="flex:1; overflow-y:auto; margin-bottom: 15px;"></div>
-            <button class="btn-add" onclick="openModalFromDayView()">➕ 新增今日紀錄</button>
+    <div id="dayViewModal" class="modal-overlay" onclick="this.classList.remove('active')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header"><h3>今日明細</h3><button onclick="document.getElementById('dayViewModal').classList.remove('active')">×</button></div>
+            <div id="dayViewList"></div>
+            <button class="btn-add" onclick="openModalFromDayView()">➕ 新增紀錄</button>
         </div>
     </div>
 
     <div id="txModal" class="modal-overlay" onclick="closeModal()">
         <div class="modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3 id="modalDateLabel">新增紀錄</h3>
-                <button class="close-btn" onclick="closeModal()">×</button>
+            <h3 id="modalDateLabel">新增紀錄</h3>
+            <input type="hidden" id="txDate"><input type="hidden" id="editTxId">
+            <div class="tab-group" id="modalTabGroup" style="display:flex; margin-bottom:15px; background:rgba(0,0,0,0.2); border-radius:4px; overflow:hidden;">
+                <button id="tabCash" style="flex:1; padding:10px; border:none; background:var(--accent);" onclick="switchFormTab('cash')">一般收支</button>
+                <button id="tabStock" style="flex:1; padding:10px; border:none; background:none; color:white;" onclick="switchFormTab('stock')">股票交易</button>
             </div>
-            <input type="hidden" id="txDate">
-            <input type="hidden" id="editTxId">
-            <div class="tab-group" id="modalTabGroup">
-                <button id="tabCash" class="tab-btn active" onclick="switchFormTab('cash')">💵 一般現金收支</button>
-                <button id="tabStock" class="tab-btn" onclick="switchFormTab('stock')">📈 股市交易</button>
-                <button id="tabLoanExtra" class="tab-btn" onclick="switchFormTab('loanExtra')" style="color:var(--expense);">💰 大額還款</button>
-            </div>
-
             <div id="formCash">
                 <div class="flex-row">
-                    <div class="form-group"><label>收支類型</label><select id="cashType"><option value="expense">支出 (-)</option><option value="income">收入 (+)</option></select></div>
-                    <div class="form-group"><label>類別 (自填)</label><input type="text" id="cashCategory" placeholder="如：房貸、薪水"></div>
+                    <div class="form-group"><label>類型</label><select id="cashType"><option value="expense">支出</option><option value="income">收入</option></select></div>
+                    <div class="form-group"><label>類別</label><input type="text" id="cashCategory"></div>
                 </div>
-                
-                <div class="flex-row" style="align-items:center; margin-bottom:12px; background:rgba(163, 190, 140, 0.1); padding:8px; border-radius:4px; border-left:3px solid var(--income);">
-                    <label style="margin:0; display:flex; align-items:center; gap:5px; cursor:pointer; color:var(--income); font-weight:bold;">
-                        <input type="checkbox" id="cashIsDividend" onchange="toggleDividendStock()" style="width:auto; cursor:pointer;"> 配息
-                    </label>
+                <div class="flex-row" style="align-items:center; margin-bottom:10px; background:rgba(163,190,140,0.1); padding:8px; border-radius:4px;">
+                    <label><input type="checkbox" id="cashIsDividend" onchange="toggleDivStock()"> 配息</label>
                     <select id="cashDividendStock" style="display:none; flex:1; margin-left:10px;"></select>
                 </div>
-
                 <div class="form-group"><label>帳戶</label><select id="cashAccount"></select></div>
-                <div class="form-group"><label>金額 (元)</label><input type="number" id="cashAmount" value="0" min="0"></div>
-                <div class="modal-actions">
-                    <button class="btn-save" id="btnSaveCash" onclick="saveCashTransaction()">儲存</button>
-                    <button class="btn-delete" id="btnDeleteCash" onclick="confirmDeleteTransaction()">刪除</button>
-                </div>
+                <div class="form-group"><label>金額</label><input type="number" id="cashAmount"></div>
+                <button class="btn-add" onclick="saveCashTransaction()">儲存紀錄</button>
+                <button id="btnDeleteCash" style="display:none; background:var(--expense); color:white; border:none; padding:10px; width:100%; border-radius:4px; margin-top:5px;" onclick="confirmDeleteTransaction()">刪除</button>
             </div>
-
             <div id="formStock" style="display:none;">
                 <div class="flex-row">
-                    <div class="form-group"><label>交易類型</label><select id="stockAction" onchange="populateLotSelect(document.getElementById('editTxId').value); toggleSellRow(); calcStockTotal(true);"><option value="buy">買入股票</option><option value="sell">賣出股票</option></select></div>
-                    <div class="form-group"><label>選擇股票</label><select id="stockAsset" onchange="populateLotSelect(document.getElementById('editTxId').value)"></select></div>
+                    <div class="form-group"><label>買賣</label><select id="stockAction" onchange="toggleSellRow(); calcStockTotal(true);"><option value="buy">買入</option><option value="sell">賣出</option></select></div>
+                    <div class="form-group"><label>選擇股票</label><select id="stockAsset"></select></div>
                 </div>
                 <div class="flex-row">
-                    <div class="form-group"><label>成交價 (元)</label><input type="number" id="stockPrice" value="0" step="0.01" oninput="calcStockTotal(true)"></div>
-                    <div class="form-group"><label>張數</label><input type="number" id="stockShares" value="1" step="0.1" oninput="calcStockTotal(true)"></div>
+                    <div class="form-group"><label>成交價</label><input type="number" id="stockPrice" step="0.01" oninput="calcStockTotal(true)"></div>
+                    <div class="form-group"><label>張數</label><input type="number" id="stockShares" step="0.1" oninput="calcStockTotal(true)"></div>
                 </div>
-                
-                <div class="form-group"><label>證券交割帳戶</label><select id="stockAccount" onchange="populateLotSelect(document.getElementById('editTxId').value); calcStockTotal(true);"></select></div>
-                
-                <div id="sellBuyPriceRow" style="display:none; margin-bottom: 12px; padding: 10px; background: rgba(136, 192, 208, 0.1); border-left: 3px solid var(--accent); border-radius: 4px;">
-                    <div class="form-group" style="margin-bottom:0; width:100%;">
-                        <label style="color:var(--accent);">指定買入成本批次</label>
-                        <select id="stockLotSelect"></select>
-                    </div>
+                <div class="form-group"><label>交割帳戶</label><select id="stockAccount" onchange="calcStockTotal(true)"></select></div>
+                <div id="sellTaxRateRow" style="display:none; background:rgba(235, 203, 139, 0.1); padding:10px; border-radius:4px; margin-bottom:10px;">
+                    <label>賣出稅率</label>
+                    <select id="stockTaxRate" onchange="calcStockTotal(true)">
+                        <option value="0.003">一般股票 (0.3%)</option>
+                        <option value="0.0015">現股當沖 (0.15%)</option>
+                        <option value="0.001">ETF (0.1%)</option>
+                    </select>
                 </div>
-                
-                <div id="sellTaxRateRow" style="display:none; margin-bottom: 12px; padding: 10px; background: rgba(235, 203, 139, 0.1); border-left: 3px solid var(--stock-sell); border-radius: 4px;">
-                    <div class="form-group" style="margin-bottom:0; width:100%;">
-                        <label style="color:var(--stock-sell);">賣出交易稅率</label>
-                        <select id="stockTaxRate" onchange="calcStockTotal(true)">
-                            <option value="0.003">一般股票 (0.3%)</option>
-                            <option value="0.0015">現股當沖 (0.15%)</option>
-                            <option value="0.001">ETF (0.1%)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group"><label>手續費與稅金 (可手動微調)</label><input type="number" id="stockFee" value="0" oninput="calcStockTotal(false)"></div>
-                
-                <div class="form-group" style="background:var(--bg-color); padding:10px; border-radius:4px; margin-bottom:0; border:1px solid var(--border);">
-                    <span style="font-size:0.85em; font-weight:bold; color:var(--text-light);">總交割金額：</span>
-                    <span id="stockTotalDisplay" style="font-size:1.2em; font-weight:bold; color:var(--accent);">0 元</span>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn-save" id="btnSaveStock" onclick="saveStockTransaction()">儲存</button>
-                    <button class="btn-delete" id="btnDeleteStock" onclick="confirmDeleteTransaction()">刪除</button>
-                </div>
-            </div>
-
-            <div id="formLoanExtra" style="display:none;">
-                <div style="background:rgba(208, 135, 112, 0.1); padding:12px; border-radius:5px; border:1px solid var(--stock-sell); margin-bottom:15px;">
-                    <span style="font-size:0.85em; color:var(--stock-sell);">此筆還款將直接扣除本金，並自動重新計算下個月起的房貸月付金。</span>
-                </div>
-                <div class="form-group"><label>選擇欲還款之貸款合約</label><select id="loanExtraTarget"></select></div>
-                <div class="form-group"><label>額外還款金額 (元)</label><input type="number" id="loanExtraAmount" value="0" min="1"></div>
-                <div class="form-group"><label>扣款帳戶</label><select id="loanExtraAccount"></select></div>
-                <div class="modal-actions">
-                    <button class="btn-save" id="btnSaveLoanExtra" onclick="saveLoanExtraTransaction()">儲存並重算房貸</button>
-                    <button class="btn-delete" id="btnDeleteLoanExtra" onclick="confirmDeleteTransaction()">刪除</button>
-                </div>
+                <div class="form-group"><label>稅費 (可手動)</label><input type="number" id="stockFee" oninput="calcStockTotal(false)"></div>
+                <div id="stockTotalDisplay" style="font-weight:bold; color:var(--accent); text-align:right;">0 元</div>
+                <button class="btn-add" onclick="saveStockTransaction()">儲存股票交易</button>
+                <button id="btnDeleteStock" style="display:none; background:var(--expense); color:white; border:none; padding:10px; width:100%; border-radius:4px; margin-top:5px;" onclick="confirmDeleteTransaction()">刪除</button>
             </div>
         </div>
     </div>
 
     <script>
-        Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
-        let currentDate = new Date(2026, 3, 1); 
-        let assetChartObj = null; let dividendChartObj = null; let portfolioChartObj = null;
+        let currentDate = new Date(2026, 3, 1);
+        let charts = { asset: null, dividend: null, portfolio: null };
         let cashflowView = 'month';
-        
         let ledgerCurrentPage = 1; const ledgerPageSize = 20; let ledgerSearchTerm = '';
 
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
         const CLIENT_ID = '844991618019-rr297egcrjg7d509k7nduil4l19cgdot.apps.googleusercontent.com';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
-        let tokenClient; let accessToken = null; let driveFolderId = null; let driveFileId = null;
-
-        let confirmActionCallback = null;
-        function showCustomConfirm(msg, callback, isDanger = false) {
-            document.getElementById('confirmMessage').innerText = msg;
-            const yesBtn = document.getElementById('confirmYesBtn');
-            if (isDanger) {
-                yesBtn.style.background = 'var(--expense)'; yesBtn.style.color = '#eceff4';
-            } else {
-                yesBtn.style.background = 'var(--accent)'; yesBtn.style.color = '#2e3440';
-            }
-            confirmActionCallback = callback;
-            document.getElementById('customConfirm').style.display = 'flex';
-        }
-        document.getElementById('confirmYesBtn').addEventListener('click', () => {
-            document.getElementById('customConfirm').style.display = 'none';
-            if (confirmActionCallback) confirmActionCallback();
-        });
-        function showCustomAlert(msg) {
-            showCustomConfirm(msg, null, false);
-            document.getElementById('confirmYesBtn').innerText = '我知道了';
-            setTimeout(() => { document.getElementById('confirmYesBtn').innerText = '確定'; }, 500); 
-        }
-        function confirmSignout() {
-            showCustomConfirm('目前已連接 Google Drive。\n確定要登出嗎？', handleSignoutClick, true);
-        }
+        let tokenClient, accessToken, driveFolderId, driveFileId;
 
         window.onload = function () {
             tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
+                client_id: CLIENT_ID, scope: SCOPES,
                 callback: async (resp) => {
-                    if (resp.error !== undefined) { throw (resp); }
                     accessToken = resp.access_token;
-                    localStorage.setItem('mj_g_token', JSON.stringify({ token: accessToken, expiresAt: Date.now() + 3500 * 1000 }));
-                    document.getElementById('loginOverlay').style.display = 'none'; 
-                    await fetchUserProfile();
+                    localStorage.setItem('mj_token_v53', JSON.stringify({t: accessToken, e: Date.now() + 3500*1000}));
+                    document.getElementById('loginOverlay').style.display = 'none';
                     await initCloudSync();
-                },
+                }
             });
-
-            const cachedTokenStr = localStorage.getItem('mj_g_token');
-            if (cachedTokenStr) {
-                try {
-                    const cachedToken = JSON.parse(cachedTokenStr);
-                    if (Date.now() < cachedToken.expiresAt) {
-                        accessToken = cachedToken.token;
-                        document.getElementById('loginOverlay').style.display = 'none';
-                        fetchUserProfile().then(() => initCloudSync());
-                    } else {
-                        localStorage.removeItem('mj_g_token');
-                    }
-                } catch(e) { localStorage.removeItem('mj_g_token'); }
+            const cached = JSON.parse(localStorage.getItem('mj_token_v53') || 'null');
+            if (cached && Date.now() < cached.e) {
+                accessToken = cached.t;
+                document.getElementById('loginOverlay').style.display = 'none';
+                initCloudSync();
             }
         };
 
         function handleAuthClick() { tokenClient.requestAccessToken(); }
-
-        function handleSignoutClick() {
-            if (accessToken) { google.accounts.oauth2.revoke(accessToken); }
-            accessToken = null; driveFolderId = null; driveFileId = null;
-            localStorage.removeItem('mj_g_token'); 
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('desktopProfile').style.display = 'none';
-            document.getElementById('mobileAvatar').style.display = 'none';
-            appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
-            renderAll();
-        }
-
-        function updateSyncStatus(msg, isSyncing = false) {
-            document.getElementById('syncStatus').innerText = msg;
-            document.getElementById('desktopSync').innerText = msg;
-            const mobileIcon = document.getElementById('mobileSyncIcon');
-            if (isSyncing) {
-                mobileIcon.innerText = '⏳'; mobileIcon.style.opacity = '0.5';
-            } else if (msg.includes('失敗')) {
-                mobileIcon.innerText = '⚠️'; mobileIcon.style.opacity = '1';
-            } else {
-                mobileIcon.innerText = '☁️'; mobileIcon.style.opacity = '1';
-            }
-            document.getElementById('desktopSync').style.color = isSyncing ? 'var(--stock-sell)' : 'var(--income)';
-        }
-
-        async function fetchUserProfile() {
-            try {
-                let res = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                let profile = await res.json();
-                document.getElementById('desktopProfile').style.display = 'flex';
-                document.getElementById('desktopAvatar').src = profile.picture;
-                document.getElementById('desktopName').innerText = profile.name;
-                document.getElementById('mobileAvatar').src = profile.picture;
-                document.getElementById('mobileAvatar').style.display = 'block';
-            } catch(e) { console.error("取得個人資料失敗", e); }
-        }
+        function confirmSignout() { showCustomConfirm('確定要登出？', () => { 
+            localStorage.removeItem('mj_token_v53'); location.reload(); 
+        }, true); }
 
         async function initCloudSync() {
-            updateSyncStatus('正在連接 Google Drive...', true);
             try {
-                let query = encodeURIComponent("name='MoneyJar_Data' and mimeType='application/vnd.google-apps.folder' and trashed=false");
-                let res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                let res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='MoneyJar_Data'")}`, { headers: { Authorization: `Bearer ${accessToken}` } });
                 let data = await res.json();
-                
-                if (data.files && data.files.length > 0) { driveFolderId = data.files[0].id; } 
-                else {
-                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'MoneyJar_Data', mimeType: 'application/vnd.google-apps.folder' }) });
-                    let createData = await createRes.json(); driveFolderId = createData.id;
+                if (data.files.length > 0) {
+                    driveFolderId = data.files[0].id;
+                    let fRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='data.json' and '${driveFolderId}' in parents`)}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+                    let fData = await fRes.json();
+                    if (fData.files.length > 0) {
+                        driveFileId = fData.files[0].id;
+                        let cRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } });
+                        appData = await cRes.json();
+                    }
                 }
-
-                let fileQuery = encodeURIComponent(`name='data.json' and '${driveFolderId}' in parents and trashed=false`);
-                let fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                let fileData = await fileRes.json();
-
-                if (fileData.files && fileData.files.length > 0) {
-                    driveFileId = fileData.files[0].id;
-                    updateSyncStatus('正在下載雲端資料...', true);
-                    let contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                    let cloudData = await contentRes.json();
-                    if(cloudData && cloudData.accounts) { appData = cloudData; }
-                }
-                updateSyncStatus('☁️ 雲端已同步'); renderAll();
-            } catch(e) { 
-                updateSyncStatus('⚠️ 雲端連線失敗'); 
-                if(e.status === 401) handleSignoutClick(); 
-            }
+                renderAll();
+            } catch(e) { document.getElementById('syncStatus').innerText = '☁️ 離線模式'; renderAll(); }
         }
 
         async function saveData() {
-            renderAll(); 
-            if (!accessToken || !driveFolderId) { alert("未連接 Google Drive，無法儲存。"); return; }
-            updateSyncStatus('⏳ 儲存至雲端中...', true);
-            const contentString = JSON.stringify(appData);
-
+            if (!accessToken) return;
+            document.getElementById('syncStatus').innerText = '⏳ 儲存中...';
             try {
+                if (!driveFolderId) {
+                    let res = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'MoneyJar_Data', mimeType: 'application/vnd.google-apps.folder' }) });
+                    let d = await res.json(); driveFolderId = d.id;
+                }
+                const body = JSON.stringify(appData);
                 if (driveFileId) {
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}` }, body });
                 } else {
-                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'data.json', parents: [driveFolderId] }) });
-                    let createData = await createRes.json(); driveFileId = createData.id;
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
+                    let res = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'data.json', parents: [driveFolderId] }) });
+                    let d = await res.json(); driveFileId = d.id;
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}` }, body });
                 }
-                updateSyncStatus('☁️ 雲端已同步 (' + new Date().toLocaleTimeString() + ')');
-            } catch(e) { alert("上傳雲端失敗，請稍後重試。"); updateSyncStatus('⚠️ 雲端同步失敗'); }
+                document.getElementById('syncStatus').innerText = '☁️ 已同步 ' + new Date().toLocaleTimeString();
+            } catch(e) { document.getElementById('syncStatus').innerText = '⚠️ 儲存失敗'; }
         }
 
-        function renderAll() { loadAccSelects(); renderCalendar(); renderDashboard(); renderAssets(); renderLedger(); renderLoans(); }
-
-        function switchPage(pageId, btnElement) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            if(btnElement) {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                btnElement.classList.add('active');
-            }
-            document.getElementById(pageId).classList.add('active');
-            if(pageId === 'ledger') { ledgerCurrentPage = 1; document.getElementById('ledgerSearch').value = ''; ledgerSearchTerm = ''; }
-            renderAll();
-        }
-
-        function openAssetForm() { document.getElementById('assetFormOverlay').classList.add('active'); }
-        function closeAssetForm() { document.getElementById('assetFormOverlay').classList.remove('active'); resetAssetForm(); }
-        function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); }
-        function closeLoanForm() { document.getElementById('loanFormOverlay').classList.remove('active'); resetLoanForm(); }
-
-        function jumpToTx(txId) {
-            const tx = appData.transactions.find(t => t.id === txId);
-            if (tx) {
-                const [year, month] = tx.date.split('-');
-                currentDate.setFullYear(parseInt(year)); currentDate.setMonth(parseInt(month) - 1);
-            }
-            const calBtn = document.querySelectorAll('.nav-btn')[1];
-            switchPage('calendar', calBtn);
-            setTimeout(() => { editTx({ stopPropagation: () => {} }, txId); }, 50);
-        }
-
-        document.getElementById('btnLoad').addEventListener('click', () => {
-            if(!accessToken) { alert("請先登入 Google 帳號！"); return; }
-            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
-            input.onchange = async (e) => {
-                const file = e.target.files[0]; if (!file) return;
-                try {
-                    const text = await file.text(); appData = JSON.parse(text);
-                    if(!appData.accounts) appData.accounts = []; if(!appData.assets) appData.assets = []; if(!appData.transactions) appData.transactions = []; if(!appData.loans) appData.loans = []; if(!appData.settings) appData.settings = { annualBudget: 0, emergencyMonths: 6 };
-                    let cleanedAssets = []; let seenTickers = new Set();
-                    appData.assets.forEach(ast => { if (ast.type === 'stock') { if (!seenTickers.has(ast.ticker)) { seenTickers.add(ast.ticker); cleanedAssets.push(ast); } } else { cleanedAssets.push(ast); } }); appData.assets = cleanedAssets;
-                    saveData(); alert("遷移成功！資料已覆蓋並上傳至 Google Drive。");
-                } catch (err) { alert("檔案讀取失敗或格式錯誤！"); }
-            }; input.click();
-        });
-
-        function exportData() {
-            const dataStr = JSON.stringify(appData, null, 2); const blob = new Blob([dataStr], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
-            const date = new Date(); const dateString = date.getFullYear() + String(date.getMonth() + 1).padStart(2, '0') + String(date.getDate()).padStart(2, '0');
-            a.download = `MoneyJar_Backup_${dateString}.json`; a.click(); URL.revokeObjectURL(url);
-        }
-
-        function getBuyLotStatus(excludeSellId = null) {
-            let buyLots = {};
-            appData.transactions.forEach(t => { if (t.type === 'stock_buy') { buyLots[t.id] = { ...t, remaining: t.shares }; } });
-            appData.transactions.forEach(t => {
-                if (t.type === 'stock_sell' && t.linkedBuyId && buyLots[t.linkedBuyId]) {
-                    if (t.id !== excludeSellId) { buyLots[t.linkedBuyId].remaining -= t.shares; buyLots[t.linkedBuyId].remaining = Math.round(buyLots[t.linkedBuyId].remaining * 100) / 100; }
-                }
-            }); return buyLots;
-        }
-
-        function getStockInventory(ticker) {
-            let ast = appData.assets.find(a => a.ticker === ticker); if (!ast) return 0;
-            let base = ast.shares || 0; let net = 0;
-            appData.transactions.forEach(t => { if (t.ticker === ticker) { if (t.type === 'stock_buy') net += t.shares; if (t.type === 'stock_sell') net -= t.shares; } });
-            return Math.round((base + net) * 100) / 100;
-        }
-
-        function getStockAccounts(ticker) {
-            let netSharesPerAcc = {};
-            appData.transactions.forEach(t => {
-                if(t.ticker === ticker && (t.type === 'stock_buy' || t.type === 'stock_sell')) {
-                    if(!netSharesPerAcc[t.accountId]) netSharesPerAcc[t.accountId] = 0;
-                    if(t.type === 'stock_buy') netSharesPerAcc[t.accountId] += t.shares;
-                    if(t.type === 'stock_sell') netSharesPerAcc[t.accountId] -= t.shares;
-                }
-            });
-            let activeAccs = Object.keys(netSharesPerAcc).filter(id => netSharesPerAcc[id] > 0);
-            if(activeAccs.length === 0) return '無'; return activeAccs.map(id => appData.accounts.find(a => a.id === id)?.name || '未知').join(', ');
-        }
-
-        function saveSettings() {
-            if(!appData.settings) appData.settings = {};
-            appData.settings.annualBudget = parseFloat(document.getElementById('settingBudget').value) || 0; appData.settings.emergencyMonths = parseFloat(document.getElementById('settingEFMonths').value) || 0;
-            saveData();
-        }
-
-        function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
-
-        // v0.52 純淨版 Chart 渲染設定 (取消 Legend 百分比，強化 Tooltip)
-        const getPieOptions = (pos = 'right') => {
-            return {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { 
-                        position: pos, 
-                        labels: { color: '#d8dee9', font: { size: 11 }, boxWidth: 20 } 
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                let val = context.raw || 0;
-                                let total = context.dataset.data.reduce((a,b)=>a+b, 0);
-                                let pct = total > 0 ? ((val/total)*100).toFixed(1) : 0;
-                                return `${label}: $${val.toLocaleString()} (${pct}%)`;
-                            }
-                        }
-                    }
-                }
-            };
-        };
-
-        function renderDashboard() {
-            if(!appData) return;
-            document.getElementById('settingBudget').value = appData.settings?.annualBudget || ''; document.getElementById('settingEFMonths').value = appData.settings?.emergencyMonths || '';
-            let totalCash = 0; appData.accounts.forEach(a => totalCash += getDynamicBalance(a.id));
-            let totalStock = 0; let yearlyDiv = 0; 
-            
-            let rawPortData = []; let rawDivData = [];
-            let stockColors = ['#bf616a', '#d08770', '#ebcb8b', '#a3be8c', '#b48ead', '#88c0d0', '#81a1c1', '#5e81ac', '#4c566a', '#a3be8c'];
-            
-            appData.assets.forEach(a => { 
-                if(a.type === 'stock') { 
-                    let realShares = getStockInventory(a.ticker);
-                    if (realShares > 0) {
-                        let mv = realShares * 1000 * a.price; totalStock += mv; 
-                        let divAmount = a.dividend !== undefined ? a.dividend * realShares * 1000 : mv * ((a.yield || 0) / 100);
-                        yearlyDiv += divAmount; 
-                        let nameLabel = a.name ? `${a.ticker} ${a.name}` : a.ticker;
-                        rawPortData.push({label: nameLabel, val: mv});
-                        if(divAmount > 0) rawDivData.push({label: nameLabel, val: divAmount});
-                    }
-                } 
-            });
-            
-            let totalDebt = 0; let todayStr = new Date().toISOString().split('T')[0]; let schedules = generateAmortizationSchedules();
-            let flowIncome = 0; let flowExpense = 0; let flowLoan = 0; let flowPnL = 0; 
-            
-            let dividendThisMonth = 0; let dividendThisYear = 0;
-            let divPrefixMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}`;
-            let divPrefixYear = `${currentDate.getFullYear()}`;
-
-            let timePrefix = cashflowView === 'month' ? divPrefixMonth : divPrefixYear;
-            let timeLabel = cashflowView === 'month' ? timePrefix : `${currentDate.getFullYear()} 全年`; let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
-            
-            // v0.52 精算未來一年房貸 (供 FIRE 指標使用)
-            let future12MonthsLoan = 0;
-            let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
-            let next12Str = next12Date.toISOString().split('T')[0];
-            let todayStrForLoanCalc = new Date().toISOString().split('T')[0];
-            
-            for(let lId in schedules) { 
-                schedules[lId].forEach(tx => { 
-                    // 計算現有債務
-                    if(tx.date === schedules[lId].find(s => s.date > todayStr)?.date) {
-                        totalDebt += tx.principalRemain;
-                    }
-                    // 計算本月/年現金流
-                    if(tx.date.startsWith(timePrefix)) {
-                        flowLoan += tx.amount; 
-                    }
-                    // 計算未來 12 個月房貸總和
-                    if(tx.date >= todayStrForLoanCalc && tx.date < next12Str) {
-                        future12MonthsLoan += tx.amount;
-                    }
-                }); 
-            }
-
-            appData.transactions.forEach(t => { 
-                if(t.date.startsWith(timePrefix)) { 
-                    if(t.type === 'income') flowIncome += t.amount; 
-                    if(t.type === 'expense' || t.type === 'loan_extra') flowExpense += t.amount; 
-                    if(t.type === 'stock_sell' && t.realizedPnL !== undefined) flowPnL += t.realizedPnL;
-                } 
-                if(t.isDividend) {
-                    if(t.date.startsWith(divPrefixMonth)) dividendThisMonth += t.amount;
-                    if(t.date.startsWith(divPrefixYear)) dividendThisYear += t.amount;
-                }
-            });
-
-            // 更新儀表板 UI
-            document.getElementById('dashNetWorth').innerText = '$' + Math.round(totalCash + totalStock - totalDebt).toLocaleString(); 
-            document.getElementById('dashCashText').innerText = '$' + Math.round(totalCash).toLocaleString(); 
-            document.getElementById('dashStockText').innerText = '$' + Math.round(totalStock).toLocaleString(); 
-            document.getElementById('dashDebtText').innerText = '-$' + Math.round(totalDebt).toLocaleString();
-            
-            document.getElementById('dashFlowLabel').innerText = timeLabel; 
-            document.getElementById('labelFlowIncome').innerText = `${txtLabel}總收入 (不含賣股)`; document.getElementById('labelFlowExpense').innerText = `${txtLabel}總支出 (含手動紀錄)`; document.getElementById('labelFlowLoan').innerText = `${txtLabel}房貸扣款 (自動計算)`;
-
-            let totalFlowOutflow = flowExpense + flowLoan; let cashflow = flowIncome - totalFlowOutflow;
-            let cfEl = document.getElementById('dashCashflow'); cfEl.innerText = (cashflow >= 0 ? '+' : '') + '$' + Math.round(cashflow).toLocaleString(); cfEl.style.color = cashflow >= 0 ? 'var(--income)' : 'var(--expense)';
-            document.getElementById('dashFlowIncome').innerText = '$' + Math.round(flowIncome).toLocaleString(); document.getElementById('dashFlowExpense').innerText = '-$' + Math.round(flowExpense).toLocaleString(); document.getElementById('dashFlowLoan').innerText = '-$' + Math.round(flowLoan).toLocaleString();
-            
-            let elPnL = document.getElementById('dashFlowPnL'); elPnL.innerText = (flowPnL >= 0 ? '+' : '') + '$' + Math.round(flowPnL).toLocaleString(); elPnL.style.color = flowPnL >= 0 ? 'var(--income)' : 'var(--expense)';
-            let alertEl = document.getElementById('dashAlert');
-            if(cashflow < 0) { alertEl.innerHTML = `<span style="color:var(--expense);">⚠️ 警告：${txtLabel}支出與房貸已超過收入，現金流呈現赤字。</span>`; } else { alertEl.innerHTML = `<span style="color:var(--income);">✅ 安全：${txtLabel}收入足以涵蓋所有開銷與房貸。</span>`; }
-            
-            document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
-            document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
-            document.getElementById('dashDivYear').innerText = '$' + Math.round(dividendThisYear).toLocaleString();
-            
-            // v0.52 FIRE 與籌碼精算
-            let budget = appData.settings?.annualBudget || 0; 
-            let efMonths = appData.settings?.emergencyMonths || 0; 
-            let realAnnualExpense = budget + future12MonthsLoan;
-            
-            document.getElementById('dashRealExpense').innerText = '$' + Math.round(realAnnualExpense).toLocaleString();
-            document.getElementById('dashFutureLoan').innerText = Math.round(future12MonthsLoan).toLocaleString();
-
-            let efTarget = (realAnnualExpense / 12) * efMonths;
-            let efStatusText = ''; let dryPowder = 0;
-            if(totalCash >= efTarget && efTarget > 0) {
-                efStatusText = `✅ 滿水位<br>目前 $${Math.round(totalCash).toLocaleString()} / 目標 $${Math.round(efTarget).toLocaleString()}`;
-                dryPowder = totalCash - efTarget;
-            } else if (efTarget > 0) {
-                efStatusText = `⚠️ 需補足<br>目前 $${Math.round(totalCash).toLocaleString()} / 目標 $${Math.round(efTarget).toLocaleString()}`;
-                dryPowder = 0;
-            } else {
-                efStatusText = '請先設定預算與預備金月份';
-            }
-            
-            document.getElementById('dashEFStatus').innerHTML = efStatusText; 
-            document.getElementById('dashDryPowder').innerText = '$' + Math.round(dryPowder).toLocaleString(); 
-
-            let totalInvestable = dryPowder + totalStock;
-            let dryPowderPct = totalInvestable > 0 ? (dryPowder / totalInvestable * 100).toFixed(1) : '0.0';
-            document.getElementById('dashDryPowderPct').innerText = dryPowderPct + '%';
-            document.getElementById('dashDryPowderStatus').innerHTML = dryPowderPct >= 30 ? '<span style="color:var(--income); font-weight:bold;">✅ 籌碼充足</span>' : '<span style="color:var(--stock-sell); font-weight:bold;">⚠️ 子彈偏低</span>';
-
-            let divCoverage = realAnnualExpense > 0 ? ((yearlyDiv / realAnnualExpense) * 100).toFixed(1) : '0.0';
-            document.getElementById('dashDivCoverage').innerText = divCoverage + '%';
-
-            let fireTarget = realAnnualExpense * 25;
-            let fireAchievedPct = fireTarget > 0 ? ((totalStock / fireTarget) * 100).toFixed(1) : '0.0';
-            let fireDiff = fireTarget - totalStock > 0 ? fireTarget - totalStock : 0;
-            let safeWithdrawal = totalStock * 0.04;
-
-            document.getElementById('dashFireTarget').innerText = '$' + Math.round(fireTarget).toLocaleString();
-            document.getElementById('dashFirePct').innerText = fireAchievedPct + '%';
-            document.getElementById('dashFireDiff').innerText = Math.round(fireDiff).toLocaleString();
-            document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(safeWithdrawal).toLocaleString();
-
-            // v0.52 純淨標籤渲染
-            let portLabels = rawPortData.map(item => item.label);
-            let portData = rawPortData.map(item => item.val);
-            let divLabels = rawDivData.map(item => item.label);
-            let divData = rawDivData.map(item => item.val);
-
-            const ctxAsset = document.getElementById('assetChart');
-            if(ctxAsset) {
-                if(assetChartObj) assetChartObj.destroy();
-                let donutOptions = getPieOptions('bottom');
-                donutOptions.cutout = '65%';
-                assetChartObj = new Chart(ctxAsset.getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: donutOptions });
-            }
-            
-            const ctxDiv = document.getElementById('dividendChart');
-            if(ctxDiv) {
-                if(dividendChartObj) dividendChartObj.destroy();
-                dividendChartObj = new Chart(ctxDiv.getContext('2d'), { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions('right') });
-            }
-
-            const ctxPort = document.getElementById('portfolioChart');
-            if(ctxPort) {
-                if(portfolioChartObj) portfolioChartObj.destroy();
-                portfolioChartObj = new Chart(ctxPort.getContext('2d'), { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions('right') });
-            }
-        }
-
-        function PMT(ir, np, pv) { if (ir === 0) return pv / np; return pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1); }
+        // v0.53 房貸攤還邏輯重構 (Safari 相容)
         function generateAmortizationSchedules() {
             let schedules = {};
             (appData.loans || []).forEach(loan => {
-                let currentPrincipal = loan.principal; let monthlyRate = loan.rate / 100 / 12; if(!loan.startMonth) return;
-                let [sYear, sMonth] = loan.startMonth.split('-'); let startY = parseInt(sYear); let startM = parseInt(sMonth) - 1;
-                let extras = appData.transactions.filter(t => t.type === 'loan_extra' && t.loanId === loan.id); let schedule = [];
+                if (!loan.startDate) return;
+                let currentPrincipal = loan.principal;
+                let monthlyRate = loan.rate / 100 / 12;
+                let [y, m, d] = loan.startDate.split('-').map(Number);
+                let cursor = new Date(y, m - 1, d);
+                let extras = appData.transactions.filter(t => t.type === 'loan_extra' && t.loanId === loan.id);
+                
+                let sch = [];
                 for (let i = 1; i <= loan.years * 12; i++) {
                     if (currentPrincipal <= 0) break;
-                    let mIdx = startM + i - 1; let y = startY + Math.floor(mIdx / 12); let m = mIdx % 12;
-                    let dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(loan.payDay).padStart(2,'0')}`; let monthPrefix = `${y}-${String(m+1).padStart(2,'0')}`;
+                    let dateStr = cursor.toISOString().split('T')[0];
+                    let monthPrefix = dateStr.substring(0, 7);
                     let extraThisMonth = extras.filter(ex => ex.date.startsWith(monthPrefix)).reduce((s, ex) => s + ex.amount, 0);
-                    currentPrincipal -= extraThisMonth; if (currentPrincipal <= 0) { currentPrincipal = 0; break; }
-                    let payment = 0; let isGrace = i <= loan.grace;
-                    if (isGrace) payment = currentPrincipal * monthlyRate; else payment = PMT(monthlyRate, (loan.years * 12) - i + 1, currentPrincipal);
-                    schedule.push({ date: dStr, loanId: loan.id, loanName: loan.name, accountId: loan.accountId, amount: Math.round(payment), principalRemain: Math.round(currentPrincipal), isGrace });
+                    currentPrincipal -= extraThisMonth;
+                    if (currentPrincipal <= 0) break;
+                    
+                    let payment = 0;
+                    let isGrace = i <= loan.grace;
+                    if (isGrace) payment = currentPrincipal * monthlyRate;
+                    else payment = PMT(monthlyRate, (loan.years * 12) - i + 1, currentPrincipal);
+                    
+                    sch.push({ date: dateStr, amount: Math.round(payment), principalRemain: Math.round(currentPrincipal), loanName: loan.name, accountId: loan.accountId });
                     if (!isGrace) currentPrincipal -= (payment - (currentPrincipal * monthlyRate));
+                    cursor.setMonth(cursor.getMonth() + 1);
                 }
-                schedules[loan.id] = schedule;
+                schedules[loan.id] = sch;
             });
             return schedules;
         }
+
+        function PMT(ir, np, pv) { return ir === 0 ? pv / np : pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1); }
         
-        function getDynamicBalance(accId) { 
-            let acc = appData.accounts.find(a => a.id === accId); 
-            if(!acc) return 0; 
-            let bal = acc.balance; 
-            let todayStr = new Date().toISOString().split('T')[0]; 
-            let schedules = generateAmortizationSchedules(); 
-            for(let lId in schedules) { 
-                schedules[lId].forEach(tx => { 
-                    if(tx.accountId === accId && tx.date <= todayStr) {
-                        if (!acc.reconciledDate || tx.date > acc.reconciledDate) { bal -= tx.amount; }
+        function getDynamicBalance(accId) {
+            let acc = appData.accounts.find(a => a.id === accId);
+            if (!acc) return 0;
+            let bal = acc.balance;
+            let todayStr = new Date().toISOString().split('T')[0];
+            let schedules = generateAmortizationSchedules();
+            for (let lId in schedules) {
+                schedules[lId].forEach(tx => {
+                    if (tx.accountId === accId && tx.date <= todayStr) {
+                        if (!acc.reconciledDate || tx.date > acc.reconciledDate) bal -= tx.amount;
                     }
-                }); 
-            } 
-            return bal; 
+                });
+            }
+            return bal;
         }
 
-        function saveLoan() {
-            if(!document.getElementById('loanStartMonth').value) { alert("請輸入首期扣款年月"); return; }
-            const editId = document.getElementById('editLoanId').value;
-            const newLoan = { id: editId || 'loan_' + Date.now(), name: document.getElementById('loanName').value || '未命名貸款', principal: parseFloat(document.getElementById('loanPrincipal').value), rate: parseFloat(document.getElementById('loanRate').value), years: parseInt(document.getElementById('loanYears').value), grace: parseInt(document.getElementById('loanGrace').value), startMonth: document.getElementById('loanStartMonth').value, payDay: parseInt(document.getElementById('loanPayDay').value), accountId: document.getElementById('loanAcc').value };
-            if (editId) { const idx = appData.loans.findIndex(l => l.id === editId); if(idx > -1) appData.loans[idx] = newLoan; } else { appData.loans.push(newLoan); }
-            closeLoanForm(); saveData(); alert("貸款合約更新成功！");
-        }
-        function editLoan(id) { const l = appData.loans.find(x => x.id === id); if(!l) return; document.getElementById('editLoanId').value = l.id; document.getElementById('loanFormTitle').innerText = "✏️ 編輯貸款合約"; document.getElementById('loanName').value = l.name; document.getElementById('loanPrincipal').value = l.principal; document.getElementById('loanRate').value = l.rate; document.getElementById('loanYears').value = l.years; document.getElementById('loanGrace').value = l.grace; document.getElementById('loanStartMonth').value = l.startMonth; document.getElementById('loanPayDay').value = l.payDay; document.getElementById('loanAcc').value = l.accountId; document.getElementById('btnSaveLoan').innerText = "更新合約並重算"; document.getElementById('btnCancelLoanEdit').style.display = "block"; openLoanForm(); }
-        
-        function deleteLoan(id) {
-            showCustomConfirm('確定要刪除此貸款？', () => {
-                appData.loans = appData.loans.filter(l => l.id !== id); saveData();
-            }, true);
-        }
-        
-        function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanFormTitle').innerText = "➕ 新增貸款合約"; document.getElementById('btnSaveLoan').innerText = "新增並自動產生攤還表"; document.getElementById('btnCancelLoanEdit').style.display = "none"; document.getElementById('loanName').value = ""; }
-        
-        // v0.52 在貸款卡片明確顯示首期扣款年月防呆
-        function renderLoans() {
-            const list = document.getElementById('loanList'); list.innerHTML = ''; let schedules = generateAmortizationSchedules(); let todayStr = new Date().toISOString().split('T')[0];
-            appData.loans.forEach(loan => {
-                let sch = schedules[loan.id] || []; let nextPayment = sch.find(s => s.date > todayStr); let currentBal = nextPayment ? nextPayment.principalRemain : 0; let nextAmt = nextPayment ? nextPayment.amount : 0; let isGrace = nextPayment ? nextPayment.isGrace : false; let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
-                list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);"><div class="card-actions"><button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div><div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div><div class="card-sub"><b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br><b>首期扣款年月:</b> <span style="color:var(--accent); font-weight:bold;">${loan.startMonth}</span> (每月 ${loan.payDay} 號)<br><b>最新/下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br><b>自動扣款帳戶:</b> ${accName}</div></div>`;
+        function renderDashboard() {
+            let totalCash = 0; appData.accounts.forEach(a => totalCash += getDynamicBalance(a.id));
+            let totalStock = 0, yearlyDiv = 0;
+            let rawPort = [], rawDiv = [];
+            appData.assets.forEach(a => {
+                if (a.type === 'stock') {
+                    let sh = getStockInventory(a.ticker);
+                    if (sh > 0) {
+                        let mv = sh * 1000 * a.price; totalStock += mv;
+                        let div = a.dividend !== undefined ? a.dividend * sh * 1000 : mv * ((a.yield || 0) / 100);
+                        yearlyDiv += div;
+                        let label = (a.name ? `${a.ticker} ${a.name}` : a.ticker);
+                        rawPort.push({l: label, v: mv});
+                        if (div > 0) rawDiv.push({l: label, v: div});
+                    }
+                }
             });
-        }
 
-        let searchTimeout;
-        function handleLedgerSearch() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                ledgerSearchTerm = document.getElementById('ledgerSearch').value.trim().toLowerCase();
-                ledgerCurrentPage = 1; 
-                renderLedger();
-            }, 300); 
-        }
+            let schedules = generateAmortizationSchedules();
+            let totalDebt = 0, flowLoan = 0, futureLoan = 0;
+            let today = new Date().toISOString().split('T')[0];
+            let nextYear = new Date(); nextYear.setFullYear(nextYear.getFullYear() + 1);
+            let nextYearStr = nextYear.toISOString().split('T')[0];
+            let timePrefix = cashflowView === 'month' ? today.substring(0, 7) : today.substring(0, 4);
 
-        function changeLedgerPage(delta) { ledgerCurrentPage += delta; renderLedger(); }
-        function gotoLedgerPage(page) { ledgerCurrentPage = page; renderLedger(); }
-
-        function renderLedger() {
-            const tbody = document.getElementById('ledgerBody'); tbody.innerHTML = '';
-            const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell' || t.isDividend);
-            const buyLots = getBuyLotStatus();
-            
-            let filteredTxs = stockTxs;
-            if (ledgerSearchTerm) {
-                filteredTxs = stockTxs.filter(tx => {
-                    const ast = appData.assets.find(a => a.ticker === tx.ticker);
-                    const name = ast ? (ast.name || '') : '';
-                    const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '';
-                    const action = tx.isDividend ? '領息' : (tx.type === 'stock_buy' ? '買進' : '賣出');
-                    const amount = Math.round(tx.amount).toString();
-                    
-                    return tx.date.includes(ledgerSearchTerm) ||
-                           (tx.ticker && tx.ticker.toLowerCase().includes(ledgerSearchTerm)) ||
-                           name.toLowerCase().includes(ledgerSearchTerm) ||
-                           accName.toLowerCase().includes(ledgerSearchTerm) ||
-                           action.includes(ledgerSearchTerm) ||
-                           amount.includes(ledgerSearchTerm);
+            for (let lid in schedules) {
+                let sch = schedules[lid];
+                let next = sch.find(s => s.date > today);
+                if (next) totalDebt += next.principalRemain;
+                sch.forEach(s => {
+                    if (s.date.startsWith(timePrefix)) flowLoan += s.amount;
+                    if (s.date >= today && s.date < nextYearStr) futureLoan += s.amount;
                 });
             }
 
-            filteredTxs.sort((a, b) => {
-                const dateDiff = new Date(b.date) - new Date(a.date);
-                if (dateDiff !== 0) return dateDiff;
-                const idA = parseInt(a.id.replace('tx_', '')) || 0;
-                const idB = parseInt(b.id.replace('tx_', '')) || 0;
-                return idB - idA;
-            });
-
-            const totalItems = filteredTxs.length;
-            const totalPages = Math.ceil(totalItems / ledgerPageSize) || 1;
-            if (ledgerCurrentPage > totalPages) ledgerCurrentPage = totalPages;
-            if (ledgerCurrentPage < 1) ledgerCurrentPage = 1;
-            
-            const startIdx = (ledgerCurrentPage - 1) * ledgerPageSize;
-            const endIdx = startIdx + ledgerPageSize;
-            const pagedTxs = filteredTxs.slice(startIdx, endIdx);
-
-            pagedTxs.forEach(tx => {
-                const ast = appData.assets.find(a => a.ticker === tx.ticker); const name = ast ? (ast.name ? `${tx.ticker} ${ast.name}` : tx.ticker) : tx.ticker;
-                const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '未知帳戶';
-                const dateLink = `<a href="javascript:void(0)" onclick="jumpToTx('${tx.id}')" class="jump-link">${tx.date}</a>`;
-                
-                if (tx.isDividend) {
-                    tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td><span style="color:var(--income); font-weight:bold;">領息</span></td><td style="font-weight:bold;">${name}</td><td style="color:var(--text-light);">-</td><td style="color:var(--text-light);">-</td><td style="color:var(--text-light);">-</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--income);">${Math.round(tx.amount).toLocaleString()}</td><td style="color:var(--text-light);">-</td></tr>`;
-                    return;
+            let flowInc = 0, flowExp = 0, flowPnL = 0, divM = 0, divY = 0;
+            appData.transactions.forEach(t => {
+                if (t.date.startsWith(timePrefix)) {
+                    if (t.type === 'income') flowInc += t.amount;
+                    if (t.type === 'expense' || t.type === 'loan_extra') flowExp += t.amount;
+                    if (t.type === 'stock_sell' && t.realizedPnL) flowPnL += t.realizedPnL;
                 }
-
-                const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
-                const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
-                let fee = tx.fee || 0; let tax = 0;
-                if (!isBuy) tax = Math.floor(baseAmt * 0.003); 
-                
-                let pnlHtml = '-';
-                if (isBuy) {
-                    let lot = buyLots[tx.id];
-                    if (lot) {
-                        if (lot.remaining === lot.shares) pnlHtml = '庫存中'; else if (lot.remaining === 0) pnlHtml = '已結清'; else pnlHtml = `剩 ${lot.remaining} 張`;
-                    }
-                } else {
-                    if (tx.realizedPnL !== undefined) {
-                        let pnl = Math.round(tx.realizedPnL); let pnlSign = pnl >= 0 ? '+' : ''; let pnlColor = pnl >= 0 ? 'var(--income)' : 'var(--expense)';
-                        pnlHtml = `<span style="color:${pnlColor}; font-weight:bold;">${pnlSign}${pnl.toLocaleString()}</span>`;
-                    }
+                if (t.isDividend) {
+                    if (t.date.startsWith(today.substring(0,7))) divM += t.amount;
+                    if (t.date.startsWith(today.substring(0,4))) divY += t.amount;
                 }
-                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${fee.toLocaleString()}</td><td>-</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
+
+            document.getElementById('dashNetWorth').innerText = '$' + Math.round(totalCash + totalStock - totalDebt).toLocaleString();
+            document.getElementById('dashCashText').innerText = '$' + Math.round(totalCash).toLocaleString();
+            document.getElementById('dashStockText').innerText = '$' + Math.round(totalStock).toLocaleString();
+            document.getElementById('dashDebtText').innerText = '-$' + Math.round(totalDebt).toLocaleString();
+            document.getElementById('dashCashflow').innerText = '$' + Math.round(flowInc - flowExp - flowLoan).toLocaleString();
+            document.getElementById('dashFlowIncome').innerText = '$' + Math.round(flowInc).toLocaleString();
+            document.getElementById('dashFlowExpense').innerText = '-$' + Math.round(flowExp).toLocaleString();
+            document.getElementById('dashFlowLoan').innerText = '-$' + Math.round(flowLoan).toLocaleString();
+            document.getElementById('dashFlowPnL').innerText = (flowPnL >= 0 ? '+' : '') + '$' + Math.round(flowPnL).toLocaleString();
             
-            if(totalItems === 0) {
-                const msg = ledgerSearchTerm ? `找不到符合「${ledgerSearchTerm}」的交易` : '目前沒有股票與配息紀錄';
-                tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:30px; color:var(--text-light);">${msg}</td></tr>`;
-            }
+            document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
+            document.getElementById('dashDivMonth').innerText = '$' + Math.round(divM).toLocaleString();
+            document.getElementById('dashDivYear').innerText = '$' + Math.round(divY).toLocaleString();
 
-            renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
-            renderPaginationControls('paginationBottom', ledgerCurrentPage, totalPages);
-        }
+            let budget = appData.settings.annualBudget || 0;
+            let realExp = budget + futureLoan;
+            document.getElementById('dashRealExpense').innerText = '$' + Math.round(realExp).toLocaleString();
+            document.getElementById('dashFutureLoan').innerText = Math.round(futureLoan).toLocaleString();
+            document.getElementById('dashDivCoverage').innerText = realExp > 0 ? Math.round(yearlyDiv/realExp*100) + '%' : '0%';
 
-        function renderPaginationControls(containerId, current, total) {
-            const container = document.getElementById(containerId);
-            if (total <= 1) { container.innerHTML = ''; return; } 
-
-            let html = `
-                <button class="page-btn" onclick="gotoLedgerPage(1)" ${current === 1 ? 'disabled' : ''} title="首頁">⏮</button>
-                <button class="page-btn" onclick="changeLedgerPage(-1)" ${current === 1 ? 'disabled' : ''}>◀</button>
-                <span class="page-info">${current} / ${total}</span>
-                <button class="page-btn" onclick="changeLedgerPage(1)" ${current === total ? 'disabled' : ''}>▶</button>
-                <button class="page-btn" onclick="gotoLedgerPage(${total})" ${current === total ? 'disabled' : ''} title="末頁">⏭</button>
-            `;
-            container.innerHTML = html;
-        }
-
-        function loadAccSelects() {
-            const allAccHtml = appData.accounts.map(acc => `<option value="${acc.id}">${acc.name} (餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('');
+            let efM = appData.settings.emergencyMonths || 6;
+            let efTarget = (realExp / 12) * efM;
+            document.getElementById('dashEFStatus').innerHTML = totalCash >= efTarget ? `✅ 滿水位 ($${Math.round(totalCash).toLocaleString()} / 目標 $${Math.round(efTarget).toLocaleString()})` : `⚠️ 需補足 (尚缺 $${Math.round(efTarget-totalCash).toLocaleString()})`;
             
-            let brokerAccs = appData.accounts.filter(a => a.type === 'broker');
-            let stockAccHtml = '';
-            if(brokerAccs.length > 0) {
-                stockAccHtml = brokerAccs.map(acc => `<option value="${acc.id}">${acc.name} (餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('');
-            } else {
-                stockAccHtml = allAccHtml; 
-            }
+            let dry = Math.max(0, totalCash - efTarget);
+            let dryPct = (dry + totalStock) > 0 ? (dry / (dry + totalStock) * 100).toFixed(1) : '0';
+            document.getElementById('dashDryPowder').innerText = '$' + Math.round(dry).toLocaleString();
+            document.getElementById('dashDryPowderPct').innerText = dryPct + '%';
+            document.getElementById('dashDryPowderStatus').innerHTML = dryPct >= 30 ? '✅ 籌碼充足' : '⚠️ 子彈偏低';
 
-            document.getElementById('cashAccount').innerHTML = allAccHtml; 
-            document.getElementById('stockAccount').innerHTML = stockAccHtml; 
-            document.getElementById('loanExtraAccount').innerHTML = allAccHtml;
-            if(document.getElementById('loanAcc')) document.getElementById('loanAcc').innerHTML = allAccHtml;
-            
-            let uniqueStocks = [];
-            appData.assets.filter(a => a.type === 'stock').forEach(a => {
-                if(!uniqueStocks.find(s => s.ticker === a.ticker)) uniqueStocks.push(a);
+            let fireTarget = realExp * 25;
+            document.getElementById('dashFireTarget').innerText = '$' + Math.round(fireTarget).toLocaleString();
+            document.getElementById('dashFirePct').innerText = fireTarget > 0 ? Math.round(totalStock/fireTarget*100) + '%' : '0%';
+            document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(totalStock * 0.04).toLocaleString();
+
+            // v0.53 純淨版圖表渲染
+            const commonPie = (pos = 'right') => ({
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: pos, labels: { color: '#d8dee9', font: { size: 11 }, boxWidth: 15 } },
+                    tooltip: { callbacks: { label: (ctx) => {
+                        let total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        let pct = Math.round(ctx.raw / total * 100);
+                        return `${ctx.label}: $${Math.round(ctx.raw).toLocaleString()} (${pct}%)`;
+                    }}}
+                }
             });
-            const stockOptionsHtml = uniqueStocks.map(a => { 
-                let realShares = getStockInventory(a.ticker);
-                return `<option value="${a.id}">${a.ticker} ${a.name || ''} (總庫存: ${realShares}張)</option>`; 
-            }).join('');
-            
-            document.getElementById('stockAsset').innerHTML = stockOptionsHtml;
-            document.getElementById('cashDividendStock').innerHTML = stockOptionsHtml; 
-            
-            document.getElementById('loanExtraTarget').innerHTML = (appData.loans || []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+
+            if (charts.asset) charts.asset.destroy();
+            charts.asset = new Chart(document.getElementById('assetChart'), { type: 'doughnut', data: { labels: ['現金', '股票'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'] }] }, options: {...commonPie('bottom'), cutout: '65%'} });
+
+            if (charts.dividend) charts.dividend.destroy();
+            charts.dividend = new Chart(document.getElementById('dividendChart'), { type: 'pie', data: { labels: rawDiv.map(d => d.l), datasets: [{ data: rawDiv.map(d => d.v), backgroundColor: ['#bf616a', '#d08770', '#ebcb8b', '#a3be8c', '#b48ead', '#88c0d0', '#81a1c1'] }] }, options: commonPie('right') });
+
+            if (charts.portfolio) charts.portfolio.destroy();
+            charts.portfolio = new Chart(document.getElementById('portfolioChart'), { type: 'pie', data: { labels: rawPort.map(p => p.l), datasets: [{ data: rawPort.map(p => p.v), backgroundColor: ['#bf616a', '#d08770', '#ebcb8b', '#a3be8c', '#b48ead', '#88c0d0', '#81a1c1'] }] }, options: commonPie('bottom') });
         }
 
-        function toggleDividendStock() {
-            const isChecked = document.getElementById('cashIsDividend').checked;
-            document.getElementById('cashDividendStock').style.display = isChecked ? 'block' : 'none';
-        }
-
-        function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
-        
-        function jumpToMonth(monthInput) {
-            if(!monthInput) return;
-            const [year, month] = monthInput.split('-');
-            currentDate.setFullYear(parseInt(year));
-            currentDate.setMonth(parseInt(month) - 1);
-            renderCalendar();
-        }
-
-        let currentDayViewDate = '';
-        
+        // v0.53 三層點擊分流事件 (修正 Bug)
         function handleCellClick(dateStr) {
-            if (window.innerWidth <= 768) {
-                openDayView(dateStr); 
-            } else {
-                openModal(dateStr);   
-            }
+            if (window.innerWidth <= 768) openDayView(dateStr);
+            else openModal(dateStr);
         }
         function openDayViewFromCell(event, dateStr) {
-            if (event && event.stopPropagation) event.stopPropagation(); 
-            openDayView(dateStr); 
+            if (event) event.stopPropagation();
+            openDayView(dateStr);
         }
 
         function openDayView(dateStr) {
-            currentDayViewDate = dateStr; document.getElementById('dayViewTitle').innerText = `${dateStr} 明細`;
-            const list = document.getElementById('dayViewList'); list.innerHTML = '';
+            let txs = appData.transactions.filter(t => t.date === dateStr);
+            let schedules = generateAmortizationSchedules();
+            let vtxs = []; Object.values(schedules).forEach(s => s.forEach(v => { if(v.date === dateStr) vtxs.push(v); }));
             
-            const dayTxs = appData.transactions.filter(tx => tx.date === dateStr);
-            let schedules = generateAmortizationSchedules(); let virtualTxs = []; 
-            for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
-            const vTxs = virtualTxs.filter(t => t.date === dateStr);
-
-            if(dayTxs.length === 0 && vTxs.length === 0) {
-                list.innerHTML = '<p style="text-align:center; color:var(--text-light); padding-top:20px;">今日無任何紀錄</p>';
-            } else {
-                dayTxs.sort((a, b) => {
-                    const idA = parseInt(a.id.replace('tx_', '')) || 0;
-                    const idB = parseInt(b.id.replace('tx_', '')) || 0;
-                    return idA - idB; 
-                });
-                
-                dayTxs.forEach(tx => {
-                    let title = tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker);
-                    if (tx.isDividend) title = `領息 ${tx.ticker}`;
-                    let amtStr = (tx.type==='income' || tx.type.includes('sell') ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
-                    let color = (tx.type==='income' || tx.type.includes('sell')) ? 'var(--income)' : 'var(--expense)';
-                    list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')">
-                        <span style="color:var(--text-main); font-weight:bold;">${title}</span>
-                        <b style="color:${color}">${amtStr}</b>
-                    </div>`;
-                });
-                vTxs.forEach(vt => {
-                     list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:var(--text-main);">🔄 ${vt.loanName}</span>
-                        <b style="color:var(--expense)">-$${Math.round(vt.amount).toLocaleString()}</b>
-                    </div>`;
-                });
-            }
+            const list = document.getElementById('dayViewList');
+            list.innerHTML = (txs.length === 0 && vtxs.length === 0) ? '<p style="text-align:center; padding:20px;">無紀錄</p>' : '';
+            txs.forEach(t => {
+                let color = (t.type === 'income' || t.type === 'stock_sell') ? 'var(--income)' : 'var(--expense)';
+                let title = t.isDividend ? `領息 ${t.ticker}` : (t.category || t.ticker);
+                list.innerHTML += `<div style="padding:10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="editTx(null, '${t.id}')"><b>${title}</b> <span style="color:${color}">$${t.amount.toLocaleString()}</span></div>`;
+            });
+            vtxs.forEach(v => {
+                list.innerHTML += `<div style="padding:10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; opacity:0.7;"><b>🔄 ${v.loanName}</b> <span style="color:var(--expense)">-$${v.amount.toLocaleString()}</span></div>`;
+            });
             document.getElementById('dayViewModal').classList.add('active');
         }
-        function closeDayView() { document.getElementById('dayViewModal').classList.remove('active'); }
-        function openModalFromDayView() { closeDayView(); openModal(currentDayViewDate); }
 
         function renderCalendar() {
-            const year = currentDate.getFullYear(); const month = currentDate.getMonth();
-            const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}`;
-            document.getElementById('monthJumpSelector').value = monthPrefix;
-            
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-            ['日', '一', '二', '三', '四', '五', '六'].forEach(d => grid.innerHTML += `<div class="calendar-day-header">${d}</div>`);
-            const fInc = document.getElementById('filterIncome').checked; const fExp = document.getElementById('filterExpense').checked; const fBuy = document.getElementById('filterBuy').checked; const fSell = document.getElementById('filterSell').checked;
-            let schedules = generateAmortizationSchedules(); let virtualTxs = []; for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
+            const y = currentDate.getFullYear(), m = currentDate.getMonth();
+            document.getElementById('monthJumpSelector').value = `${y}-${String(m+1).padStart(2,'0')}`;
             
-            const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const now = new Date(); const realTodayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="calendar-cell cell-other-month"></div>`;
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const dayTxs = appData.transactions.filter(tx => tx.date === dateStr); const vTxs = virtualTxs.filter(t => t.date === dateStr); 
+            const first = new Date(y, m, 1).getDay(), days = new Date(y, m+1, 0).getDate();
+            const schedules = generateAmortizationSchedules();
+            
+            for (let i = 0; i < first; i++) grid.innerHTML += '<div class="calendar-cell cell-other-month"></div>';
+            for (let i = 1; i <= days; i++) {
+                let dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                let txs = appData.transactions.filter(t => t.date === dStr);
+                let vtxs = []; Object.values(schedules).forEach(s => s.forEach(v => { if(v.date === dStr) vtxs.push(v); }));
                 
-                let allItems = [];
-                dayTxs.forEach(tx => allItems.push({type: 'manual', data: tx}));
-                vTxs.forEach(vt => allItems.push({type: 'virtual', data: vt}));
+                let badges = '', dots = '<div class="dot-container">', count = 0;
+                let all = [...txs.map(t => ({...t, isV: false})), ...vtxs.map(v => ({...v, isV: true}))];
                 
-                allItems.sort((a, b) => {
-                    const idA = a.type === 'manual' ? (parseInt(a.data.id.replace('tx_', '')) || 0) : 0;
-                    const idB = b.type === 'manual' ? (parseInt(b.data.id.replace('tx_', '')) || 0) : 0;
-                    return idA - idB; 
-                });
-
-                let badgesHtml = ''; let dotsHtml = '<div class="dot-container">';
-                let renderedCount = 0; let hiddenCount = 0;
-
-                allItems.forEach(item => {
-                    const clickEvent = item.type === 'manual' ? `onclick="editTx(event, '${item.data.id}')"` : '';
-                    if (renderedCount < 3) {
-                        if (item.type === 'virtual') {
-                            badgesHtml += `<div class="tx-badge bg-loan" title="自動扣款: 剩餘本金 $${item.data.principalRemain.toLocaleString()}">🔄 ${item.data.loanName} -$${item.data.amount.toLocaleString()}</div>`; 
-                            dotsHtml += `<div class="tx-dot" style="background:var(--loan);"></div>`;
-                            renderedCount++;
-                        } else {
-                            const tx = item.data;
-                            if (tx.type === 'income' && !tx.isDividend && fInc) {
-                                badgesHtml += `<div class="tx-badge bg-income" ${clickEvent} title="收入: ${tx.category}">+$${tx.amount.toLocaleString()} ${tx.category}</div>`;
-                                dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`;
-                                renderedCount++;
-                            } else if (tx.type === 'income' && tx.isDividend && fInc) {
-                                badgesHtml += `<div class="tx-badge bg-income" ${clickEvent} title="領息: ${tx.ticker}">+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}</div>`;
-                                dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`;
-                                renderedCount++;
-                            } else if (tx.type === 'expense' && fExp) {
-                                badgesHtml += `<div class="tx-badge bg-expense" ${clickEvent} title="支出: ${tx.category}">-$${tx.amount.toLocaleString()} ${tx.category}</div>`;
-                                dotsHtml += `<div class="tx-dot" style="background:var(--expense);"></div>`;
-                                renderedCount++;
-                            } else if (tx.type === 'loan_extra') {
-                                badgesHtml += `<div class="tx-badge" style="background:var(--stock-sell); color:#2e3440;" ${clickEvent} title="大額還款">大額還款 -$${tx.amount.toLocaleString()}</div>`;
-                                dotsHtml += `<div class="tx-dot" style="background:var(--stock-sell);"></div>`;
-                                renderedCount++;
-                            } else if ((tx.type === 'stock_buy' && fBuy) || (tx.type === 'stock_sell' && fSell)) {
-                                const ast = appData.assets.find(a => a.ticker === tx.ticker); let displayName = ast ? (ast.ticker.startsWith('00') ? ast.ticker : (ast.name || ast.ticker)) : tx.ticker;
-                                const actionStr = tx.type === 'stock_buy' ? '買' : '賣'; const badgeClass = tx.type === 'stock_buy' ? 'bg-buy' : 'bg-sell'; const fullText = `${actionStr} ${displayName} (${tx.shares}張)`;
-                                badgesHtml += `<div class="tx-badge ${badgeClass}" ${clickEvent} title="${fullText}">${fullText}</div>`;
-                                dotsHtml += `<div class="tx-dot" style="background:var(${tx.type === 'stock_buy' ? '--stock-buy' : '--stock-sell'});"></div>`;
-                                renderedCount++;
-                            }
-                        }
-                    } else {
-                        let shouldHideCount = false;
-                        if (item.type === 'virtual') { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--loan);"></div>`; }
-                        else {
-                            const tx = item.data;
-                            if (tx.type === 'income' && fInc) { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--income);"></div>`; }
-                            else if (tx.type === 'expense' && fExp) { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--expense);"></div>`; }
-                            else if (tx.type === 'loan_extra') { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(--stock-sell);"></div>`; }
-                            else if ((tx.type === 'stock_buy' && fBuy) || (tx.type === 'stock_sell' && fSell)) { shouldHideCount = true; dotsHtml += `<div class="tx-dot" style="background:var(${tx.type === 'stock_buy' ? '--stock-buy' : '--stock-sell'});"></div>`; }
-                        }
-                        if (shouldHideCount) hiddenCount++;
+                all.forEach(item => {
+                    if (count < 3) {
+                        let label = item.isV ? `🔄 ${item.loanName}` : (item.isDividend ? `領息 ${item.ticker}` : (item.category || item.ticker));
+                        let colorClass = item.isV ? 'bg-loan' : (item.type === 'income' || item.type === 'stock_sell' ? 'bg-income' : (item.type === 'stock_buy' ? 'bg-buy' : 'bg-expense'));
+                        badges += `<div class="tx-badge ${colorClass}" onclick="if(!${item.isV}) { event.stopPropagation(); editTx(null, '${item.id}'); }">${label}</div>`;
                     }
+                    dots += `<div class="tx-dot" style="background:var(--accent);"></div>`;
+                    count++;
                 });
-                
-                if (hiddenCount > 0) {
-                    badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border); cursor:pointer;">+ ${hiddenCount} 筆紀錄</div>`;
-                }
-                
-                dotsHtml += '</div>';
-                let cellClass = dateStr === realTodayStr ? "calendar-cell cell-today" : "calendar-cell";
-                grid.innerHTML += `<div class="${cellClass}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div>`;
+                if (count > 3) badges += `<div class="tx-badge" style="background:none; border:1px dashed var(--border); color:var(--text-light); text-align:center;" onclick="openDayViewFromCell(event, '${dStr}')">+ ${count-3} 筆...</div>`;
+                grid.innerHTML += `<div class="calendar-cell" onclick="handleCellClick('${dStr}')"><div class="cell-date">${i}</div>${badges}${dots}</div>`;
             }
         }
 
-        function populateLotSelect(excludeSellId = null) {
-            const action = document.getElementById('stockAction').value; const row = document.getElementById('sellBuyPriceRow');
-            if (action !== 'sell') { row.style.display = 'none'; return; } row.style.display = 'block';
-            const assetId = document.getElementById('stockAsset').value; const accountId = document.getElementById('stockAccount').value;
-            const ast = appData.assets.find(a => a.id === assetId); const sel = document.getElementById('stockLotSelect');
-
-            if(!ast || !accountId) { sel.innerHTML = '<option value="">請先選擇股票與帳戶</option>'; return; }
-            const ticker = ast.ticker; const lots = getBuyLotStatus(excludeSellId);
-            const availableLots = Object.values(lots).filter(l => l.ticker === ticker && l.accountId === accountId && l.remaining > 0);
-            availableLots.sort((a,b) => new Date(a.date) - new Date(b.date));
-
-            if (availableLots.length === 0) { sel.innerHTML = '<option value="">無可用買入批次 (請先補登買入紀錄)</option>'; return; }
-            let html = `<option value="auto_lowest">自動：優先扣除最低成本 (最大化帳面獲利)</option><option value="auto_highest">自動：優先扣除最高成本 (節稅認列/當沖)</option><optgroup label="--- 手動指定特定批次 ---">`;
-            availableLots.forEach(l => { html += `<option value="${l.id}">${l.date} 買入 @ $${l.price} (可售: ${l.remaining}張)</option>`; });
-            html += `</optgroup>`; sel.innerHTML = html;
+        function saveLoan() {
+            const id = document.getElementById('editLoanId').value || 'loan_' + Date.now();
+            const loan = {
+                id, name: document.getElementById('loanName').value,
+                principal: parseFloat(document.getElementById('loanPrincipal').value),
+                rate: parseFloat(document.getElementById('loanRate').value),
+                years: parseInt(document.getElementById('loanYears').value),
+                grace: parseInt(document.getElementById('loanGrace').value),
+                startDate: document.getElementById('loanStartDate').value, // v0.53 合併日期
+                accountId: document.getElementById('loanAcc').value
+            };
+            let idx = appData.loans.findIndex(l => l.id === id);
+            if (idx > -1) appData.loans[idx] = loan; else appData.loans.push(loan);
+            document.getElementById('loanFormOverlay').classList.remove('active');
+            saveData();
         }
 
-        function toggleSellRow() { const isSell = document.getElementById('stockAction').value === 'sell'; document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; document.getElementById('sellTaxRateRow').style.display = isSell ? 'block' : 'none'; }
-
-        function openModal(dateStr) {
-            document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`;
-            document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none';
-            document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; 
-            document.getElementById('cashIsDividend').checked = false; toggleDividendStock();
-            document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0;
-            document.getElementById('stockAction').value = 'buy'; document.getElementById('stockTaxRate').value = '0.003';
-            toggleSellRow();
-            loadAccSelects(); switchFormTab('cash'); 
-            document.getElementById('txModal').classList.add('active');
+        /* 核心工具函數 */
+        function switchPage(id, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(btn) btn.classList.add('active');
+            renderAll();
         }
-
-        function editTx(event, txId) {
-            if (event && event.stopPropagation) event.stopPropagation();
-            const tx = appData.transactions.find(t => t.id === txId); if (!tx) return;
-            document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`;
-            loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none';
-            if (tx.type === 'income' || tx.type === 'expense') { 
-                switchFormTab('cash'); 
-                document.getElementById('cashType').value = tx.type; 
-                document.getElementById('cashCategory').value = tx.category; 
-                document.getElementById('cashAccount').value = tx.accountId; 
-                document.getElementById('cashAmount').value = tx.amount; 
-                
-                const isDiv = document.getElementById('cashIsDividend');
-                if (tx.isDividend) {
-                    isDiv.checked = true; toggleDividendStock();
-                    const ast = appData.assets.find(a => a.ticker === tx.ticker);
-                    if (ast) document.getElementById('cashDividendStock').value = ast.id;
-                } else {
-                    isDiv.checked = false; toggleDividendStock();
-                }
-                document.getElementById('btnDeleteCash').style.display = 'block'; 
-            } 
-            else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { 
-                switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; 
-                const ast = appData.assets.find(a => a.ticker === tx.ticker); if(ast) document.getElementById('stockAsset').value = ast.id; 
-                document.getElementById('stockAccount').value = tx.accountId; document.getElementById('stockPrice').value = tx.price; 
-                document.getElementById('stockShares').value = tx.shares; 
-                document.getElementById('stockFee').value = tx.fee; 
-                
-                toggleSellRow();
-                populateLotSelect(tx.id); if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId;
-                calcStockTotal(false); 
-                document.getElementById('btnDeleteStock').style.display = 'block'; 
-            } 
-            else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; }
-            document.getElementById('txModal').classList.add('active');
+        function openAssetForm() { document.getElementById('assetFormOverlay').classList.add('active'); }
+        function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); }
+        function toggleAssetInputs() {
+            let t = document.getElementById('newAssetType').value;
+            document.getElementById('assetBankInputs').style.display = (t==='bank'||t==='broker') ? 'block' : 'none';
+            document.getElementById('assetBrokerInputs').style.display = t==='broker' ? 'block' : 'none';
+            document.getElementById('assetStockInputs').style.display = t==='stock' ? 'block' : 'none';
         }
-
+        function toggleDivStock() { document.getElementById('cashDividendStock').style.display = document.getElementById('cashIsDividend').checked ? 'block' : 'none'; }
+        function changeMonth(d) { currentDate.setMonth(currentDate.getMonth() + d); renderCalendar(); }
+        function jumpToMonth(v) { let [y, m] = v.split('-'); currentDate = new Date(y, m-1, 1); renderCalendar(); }
+        function switchFormTab(t) {
+            document.getElementById('formCash').style.display = t==='cash'?'block':'none';
+            document.getElementById('formStock').style.display = t==='stock'?'block':'none';
+            document.getElementById('tabCash').style.background = t==='cash'?'var(--accent)':'none';
+            document.getElementById('tabStock').style.background = t==='stock'?'var(--accent)':'none';
+        }
         function closeModal() { document.getElementById('txModal').classList.remove('active'); }
-        
-        function switchFormTab(type) {
-            document.getElementById('tabCash').classList.toggle('active', type === 'cash'); document.getElementById('tabStock').classList.toggle('active', type === 'stock'); document.getElementById('tabLoanExtra').classList.toggle('active', type === 'loanExtra');
-            document.getElementById('formCash').style.display = type === 'cash' ? 'block' : 'none'; document.getElementById('formStock').style.display = type === 'stock' ? 'block' : 'none'; document.getElementById('formLoanExtra').style.display = type === 'loanExtra' ? 'block' : 'none';
+        function openModal(d) {
+            document.getElementById('txDate').value = d; document.getElementById('editTxId').value = '';
+            document.getElementById('modalDateLabel').innerText = '新增紀錄: ' + d;
+            document.getElementById('btnDeleteCash').style.display = 'none';
+            document.getElementById('btnDeleteStock').style.display = 'none';
+            loadAccSelects(); document.getElementById('txModal').classList.add('active');
+        }
+        function openModalFromDayView() { document.getElementById('dayViewModal').classList.remove('active'); openModal(currentDayViewDate); }
+
+        function showCustomConfirm(msg, cb, danger = false) {
+            document.getElementById('confirmMessage').innerText = msg;
+            let btn = document.getElementById('confirmYesBtn');
+            btn.style.background = danger ? 'var(--expense)' : 'var(--accent)';
+            btn.onclick = () => { document.getElementById('customConfirm').style.display = 'none'; cb(); };
+            document.getElementById('customConfirm').style.display = 'flex';
         }
 
-        function calcStockTotal(autoCalcFee = false) { 
-            const action = document.getElementById('stockAction').value; 
-            const price = parseFloat(document.getElementById('stockPrice').value) || 0; 
-            const shares = parseFloat(document.getElementById('stockShares').value) || 0; 
-            const baseAmount = price * 1000 * shares; 
-            
-            let feeInput = document.getElementById('stockFee');
-            
-            if (autoCalcFee) {
-                const accId = document.getElementById('stockAccount').value;
-                const acc = appData.accounts.find(a => a.id === accId);
-                const discount = acc && acc.discount !== undefined ? acc.discount : 1;
-                const minFee = acc && acc.minFee !== undefined ? acc.minFee : 20;
-
-                let calcFee = Math.max(minFee, Math.floor(baseAmount * 0.001425 * discount)); 
-                if(action === 'sell') {
-                    const taxRate = parseFloat(document.getElementById('stockTaxRate').value) || 0.003;
-                    calcFee += Math.floor(baseAmount * taxRate); 
+        function getStockInventory(ticker) {
+            let ast = appData.assets.find(a => a.ticker === ticker); if(!ast) return 0;
+            let net = ast.shares || 0;
+            appData.transactions.forEach(t => {
+                if(t.ticker === ticker) {
+                    if(t.type==='stock_buy') net += t.shares;
+                    if(t.type==='stock_sell') net -= t.shares;
                 }
-                feeInput.value = calcFee; 
-            }
+            });
+            return Math.round(net * 100)/100;
+        }
+
+        function loadAccSelects() {
+            const accs = appData.accounts.map(a => `<option value="${a.id}">${a.name} ($${Math.round(getDynamicBalance(a.id)).toLocaleString()})</option>`).join('');
+            const brokers = appData.accounts.filter(a => a.type==='broker').map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+            document.getElementById('cashAccount').innerHTML = accs;
+            document.getElementById('loanAcc').innerHTML = accs;
+            document.getElementById('stockAccount').innerHTML = brokers || accs;
             
-            const fee = parseFloat(feeInput.value) || 0;
-            const total = action === 'buy' ? baseAmount + fee : baseAmount - fee; 
-            document.getElementById('stockTotalDisplay').innerText = total.toLocaleString() + ' 元'; 
+            const stocks = appData.assets.filter(a => a.type==='stock').map(a => `<option value="${a.id}">${a.ticker} ${a.name||''}</option>`).join('');
+            document.getElementById('stockAsset').innerHTML = stocks;
+            document.getElementById('cashDividendStock').innerHTML = stocks;
         }
 
-        function reverseTransaction(txId) {
-            const txIndex = appData.transactions.findIndex(t => t.id === txId); if (txIndex === -1) return;
-            const tx = appData.transactions[txIndex]; const acc = appData.accounts.find(a => a.id === tx.accountId);
-            if (tx.type === 'income' && acc) acc.balance -= tx.amount; if ((tx.type === 'expense' || tx.type === 'loan_extra') && acc) acc.balance += tx.amount;
-            if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { if (tx.type === 'stock_buy') { if (acc) acc.balance += tx.amount; } else if (tx.type === 'stock_sell') { if (acc) acc.balance -= tx.amount; } }
-            appData.transactions.splice(txIndex, 1);
+        function toggleSellRow() {
+            let isS = document.getElementById('stockAction').value === 'sell';
+            document.getElementById('sellTaxRateRow').style.display = isS ? 'block' : 'none';
         }
 
-        function confirmDeleteTransaction() {
-            showCustomConfirm('確定要刪除這筆紀錄嗎？\n相關帳戶餘額將自動還原。', () => {
-                reverseTransaction(document.getElementById('editTxId').value);
-                closeModal(); saveData();
-            }, true);
+        function calcStockTotal(auto = false) {
+            let act = document.getElementById('stockAction').value, p = parseFloat(document.getElementById('stockPrice').value)||0, s = parseFloat(document.getElementById('stockShares').value)||0, base = p*1000*s;
+            let feeIn = document.getElementById('stockFee');
+            if (auto) {
+                let acc = appData.accounts.find(a => a.id === document.getElementById('stockAccount').value);
+                let disc = acc?.discount || 1, min = acc?.minFee || 20;
+                let fee = Math.max(min, Math.floor(base * 0.001425 * disc));
+                if (act === 'sell') fee += Math.floor(base * parseFloat(document.getElementById('stockTaxRate').value));
+                feeIn.value = fee;
+            }
+            let total = act === 'buy' ? base + parseFloat(feeIn.value) : base - parseFloat(feeIn.value);
+            document.getElementById('stockTotalDisplay').innerText = Math.round(total).toLocaleString() + ' 元';
         }
 
         function saveCashTransaction() {
-            const amount = parseFloat(document.getElementById('cashAmount').value) || 0; const accountId = document.getElementById('cashAccount').value;
-            if(amount <= 0) { alert("金額必須大於 0"); return; } if(!accountId) { alert("請先建立銀行帳戶"); return; }
-            const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
-            const type = document.getElementById('cashType').value; 
-            
-            const newItem = { id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type, category: document.getElementById('cashCategory').value || '未分類', accountId, amount };
-            
-            const isDividend = document.getElementById('cashIsDividend').checked;
-            if (isDividend && type === 'income') {
-                const astId = document.getElementById('cashDividendStock').value;
-                const ast = appData.assets.find(a => a.id === astId);
-                if (ast) {
-                    newItem.isDividend = true;
-                    newItem.ticker = ast.ticker;
-                    if (!document.getElementById('cashCategory').value) newItem.category = "股票配息";
-                }
-            }
-            
-            appData.transactions.push(newItem);
-            const acc = appData.accounts.find(a => a.id === accountId); if (acc) type === 'income' ? acc.balance += amount : acc.balance -= amount;
+            let id = document.getElementById('editTxId').value || 'tx_' + Date.now();
+            let isDiv = document.getElementById('cashIsDividend').checked;
+            let item = {
+                id, date: document.getElementById('txDate').value,
+                type: document.getElementById('cashType').value,
+                category: document.getElementById('cashCategory').value || (isDiv ? '股票配息' : '未分類'),
+                accountId: document.getElementById('cashAccount').value,
+                amount: parseFloat(document.getElementById('cashAmount').value),
+                isDividend: isDiv,
+                ticker: isDiv ? appData.assets.find(a => a.id === document.getElementById('cashDividendStock').value)?.ticker : null
+            };
+            if (document.getElementById('editTxId').value) appData.transactions = appData.transactions.filter(t => t.id !== id);
+            appData.transactions.push(item);
             closeModal(); saveData();
         }
 
         function saveStockTransaction() {
-            const assetId = document.getElementById('stockAsset').value; const accountId = document.getElementById('stockAccount').value;
-            const price = parseFloat(document.getElementById('stockPrice').value); const shares = parseFloat(document.getElementById('stockShares').value); const fee = parseFloat(document.getElementById('stockFee').value);
-            if(shares <= 0 || price <= 0) { alert("張數與價格大於 0"); return; } if(!assetId || !accountId) { alert("帳戶或股票未選擇"); return; }
-            
-            const ast = appData.assets.find(a => a.id === assetId); const acc = appData.accounts.find(a => a.id === accountId);
-            const baseAmount = price * 1000 * shares; const action = document.getElementById('stockAction').value; let totalCashFlow = 0;
-            let realizedPnL = 0; let linkedBuyId = null;
-
-            const finalizeTransaction = () => {
-                const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
-                
-                if(action === 'buy') acc.balance -= totalCashFlow;
-                else acc.balance += totalCashFlow;
-
-                appData.transactions.push({ 
-                    id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: action === 'buy' ? 'stock_buy' : 'stock_sell', ticker: ast.ticker, shares, price, fee, accountId, amount: totalCashFlow,
-                    linkedBuyId: action === 'sell' ? linkedBuyId : undefined, realizedPnL: action === 'sell' ? realizedPnL : undefined
-                });
-                closeModal(); saveData();
+            let act = document.getElementById('stockAction').value, ast = appData.assets.find(a => a.id === document.getElementById('stockAsset').value);
+            let p = parseFloat(document.getElementById('stockPrice').value), s = parseFloat(document.getElementById('stockShares').value), f = parseFloat(document.getElementById('stockFee').value);
+            let total = act === 'buy' ? (p*1000*s + f) : (p*1000*s - f);
+            let tx = {
+                id: 'tx_' + Date.now(), date: document.getElementById('txDate').value,
+                type: act === 'buy' ? 'stock_buy' : 'stock_sell',
+                ticker: ast.ticker, shares: s, price: p, fee: f, amount: total, accountId: document.getElementById('stockAccount').value
             };
-
-            if(action === 'buy') { 
-                totalCashFlow = baseAmount + fee; 
-                if(getDynamicBalance(acc.id) < totalCashFlow) {
-                    showCustomConfirm('⚠️ 交割帳戶可用餘額不足\n確定要扣除嗎？', finalizeTransaction, true);
-                    return; 
-                }
-            } else { 
-                if(getStockInventory(ast.ticker) < shares) { alert("總庫存張數不足無法賣出"); return; } 
-                const lotChoice = document.getElementById('stockLotSelect').value; const lots = getBuyLotStatus();
-                const availableLots = Object.values(lots).filter(l => l.ticker === ast.ticker && l.accountId === accountId && l.remaining > 0);
-                if (availableLots.length === 0) { alert("找不到對應帳戶的買入紀錄，無法賣出。"); return; }
-                let selectedLot = null;
-                if (lotChoice === 'auto_lowest') { selectedLot = availableLots.reduce((min, l) => l.price < min.price ? l : min, availableLots[0]); } 
-                else if (lotChoice === 'auto_highest') { selectedLot = availableLots.reduce((max, l) => l.price > max.price ? l : max, availableLots[0]); } 
-                else { selectedLot = availableLots.find(l => l.id === lotChoice); }
-                if (!selectedLot) { alert("無效的批次。"); return; }
-                if (shares > selectedLot.remaining) { alert(`選擇的批次 [${selectedLot.date} @ $${selectedLot.price}] 僅剩 ${selectedLot.remaining} 張可售。\n\n請將賣出張數改為 ${selectedLot.remaining} 張，其餘張數請新增另一筆賣出紀錄 (批次拆分)。`); return; }
-                linkedBuyId = selectedLot.id; let buyBase = selectedLot.price * 1000 * shares; let buyFee = Math.floor(buyBase * 0.001425); let totalCost = buyBase + buyFee;
-                totalCashFlow = baseAmount - fee; realizedPnL = totalCashFlow - totalCost;
+            if (act === 'sell') {
+                let buy = appData.transactions.find(t => t.type === 'stock_buy' && t.ticker === ast.ticker);
+                if (buy) tx.realizedPnL = total - (buy.price * 1000 * s + (buy.price * 1000 * s * 0.001425));
             }
-            
-            finalizeTransaction();
+            appData.transactions.push(tx);
+            closeModal(); saveData();
         }
 
-        function saveLoanExtraTransaction() {
-            const amount = parseFloat(document.getElementById('loanExtraAmount').value) || 0; const accountId = document.getElementById('loanExtraAccount').value; const loanId = document.getElementById('loanExtraTarget').value;
-            if(amount <= 0) { alert("還款金額必須大於 0"); return; } if(!accountId || !loanId) { alert("請選擇貸款項目與扣款帳戶"); return; }
-            const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
-            appData.transactions.push({ id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: 'loan_extra', loanId: loanId, accountId, amount });
-            const acc = appData.accounts.find(a => a.id === accountId); if (acc) acc.balance -= amount;
-            closeModal(); saveData(); alert("大額還款已紀錄！系統已自動重新計算下個月起的房貸。");
-        }
-
-        let dragSrcId = null; let dragType = null;
-        function handleDragStart(e, type, id) { dragSrcId = id; dragType = type; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); }
-        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-        function handleDragEnter(e) { e.preventDefault(); const card = e.target.closest('.card'); if(card && !card.classList.contains('dragging')) { card.style.transform = 'scale(1.02)'; card.style.borderColor = 'var(--accent)'; } }
-        function handleDragLeave(e) { const card = e.target.closest('.card'); if(card && !card.classList.contains('dragging')) { card.style.transform = ''; card.style.borderColor = 'var(--border)'; } }
-        function handleDrop(e, type, targetId) {
-            e.preventDefault(); const card = e.target.closest('.card'); if(card) { card.style.transform = ''; card.style.borderColor = 'var(--border)'; }
-            if (dragType !== type || dragSrcId === targetId) return;
-            const list = type === 'bank' ? appData.accounts : appData.assets;
-            const srcIdx = list.findIndex(item => item.id === dragSrcId); const tgtIdx = list.findIndex(item => item.id === targetId);
-            if (srcIdx > -1 && tgtIdx > -1) { const [moved] = list.splice(srcIdx, 1); list.splice(tgtIdx, 0, moved); saveData(); }
-        }
-        function toggleAssetInputs() { 
-            const type = document.getElementById('newAssetType').value; 
-            document.getElementById('assetBankInputs').style.display = (type === 'bank' || type === 'broker') ? 'block' : 'none'; 
-            document.getElementById('assetBrokerInputs').style.display = type === 'broker' ? 'block' : 'none';
-            document.getElementById('assetStockInputs').style.display = type === 'stock' ? 'block' : 'none'; 
-        }
-
-        async function fetchRealApiData() {
-            const ticker = document.getElementById('newTicker').value.trim(); if (!ticker) { alert("請先輸入股票代號！"); return; }
-            const btn = document.getElementById('btnApiFetch'); btn.innerText = "⏳ 抓取中..."; btn.disabled = true;
-            try {
-                const response = await fetch(`${MY_API_URL}?ticker=${ticker}`); const data = await response.json();
-                if (data.error) alert("抓取失敗：" + data.error); else { 
-                    if (data.price > 0) document.getElementById('newPrice').value = data.price; 
-                    if (data.name) document.getElementById('newName').value = data.name; 
-                    if (data.dividend > 0) document.getElementById('newDividend').value = data.dividend;
-                    if (data.exDate) document.getElementById('newExDate').value = data.exDate;
-                    if (data.payDate) document.getElementById('newPayDate').value = data.payDate;
-                    if (!data.name) alert("無法抓取中文名稱，請手動輸入。"); 
-                }
-            } catch (error) { alert("無法連線到雲端 API。請檢查 Apps Script 是否設定為『所有人』可存取。"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
-        }
-
-        async function refreshAllPrices() {
-            const btn = document.querySelector('.btn-refresh-all'); btn.innerText = "⏳ 正在與雲端同步報價..."; btn.disabled = true; let successCount = 0; let failList = [];
-            for (let ast of appData.assets) {
-                if (ast.ticker) {
-                    try {
-                        const res = await fetch(`${MY_API_URL}?ticker=${ast.ticker}`); const data = await res.json();
-                        if (!data.error && data.price > 0) { 
-                            ast.price = data.price; if (data.name && !ast.name) ast.name = data.name; if (data.dividend !== undefined && data.dividend > 0) ast.dividend = data.dividend;
-                            if (data.exDate) ast.exDate = data.exDate; if (data.payDate) ast.payDate = data.payDate; successCount++; 
-                        } else { failList.push(ast.ticker); }
-                    } catch (e) { failList.push(ast.ticker); }
-                }
+        function editTx(ev, id) {
+            if(ev) ev.stopPropagation();
+            let t = appData.transactions.find(x => x.id === id); if(!t) return;
+            openModal(t.date); document.getElementById('editTxId').value = id;
+            if (t.type.includes('stock')) {
+                switchFormTab('stock'); document.getElementById('stockAction').value = t.type==='stock_buy'?'buy':'sell';
+                document.getElementById('stockAsset').value = appData.assets.find(a => a.ticker === t.ticker)?.id;
+                document.getElementById('stockPrice').value = t.price; document.getElementById('stockShares').value = t.shares;
+                document.getElementById('stockFee').value = t.fee; document.getElementById('stockAccount').value = t.accountId;
+                toggleSellRow(); calcStockTotal(false);
+                document.getElementById('btnDeleteStock').style.display = 'block';
+            } else {
+                switchFormTab('cash'); document.getElementById('cashType').value = t.type;
+                document.getElementById('cashCategory').value = t.category; document.getElementById('cashAccount').value = t.accountId;
+                document.getElementById('cashAmount').value = t.amount;
+                document.getElementById('cashIsDividend').checked = !!t.isDividend; toggleDivStock();
+                if(t.isDividend) document.getElementById('cashDividendStock').value = appData.assets.find(a => a.ticker === t.ticker)?.id;
+                document.getElementById('btnDeleteCash').style.display = 'block';
             }
-            saveData();
-            if(failList.length > 0) { alert(`更新完畢。成功: ${successCount} 檔。失敗: ${failList.join(', ')}。`); btn.innerText = `⚠️ 部分更新失敗`; } else { btn.innerText = `✅ 成功更新 ${successCount} 檔`; }
-            setTimeout(() => { btn.innerText = "🔄 一鍵更新所有報價"; btn.disabled = false; }, 3000);
         }
 
-        function formatMoney(num) { return Math.round(num).toLocaleString('zh-TW'); }
-        function formatDate(dateStr) { return dateStr ? dateStr : '<span style="color:var(--text-light);">未公布</span>'; }
-
-        function renderAssets() {
-            const bankList = document.getElementById('bankList'); const stockList = document.getElementById('stockList');
-            bankList.innerHTML = ''; stockList.innerHTML = '';
-            appData.accounts.forEach(acc => {
-                let badgeHtml = acc.type === 'broker' ? `<span style="background:var(--accent); color:#2e3440; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:8px;">交割戶</span>` : '';
-                bankList.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event, 'bank', '${acc.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'bank', '${acc.id}')" ondragend="handleDragEnd(event)"><div class="card-actions"><button onclick="editAssetItem('bank', '${acc.id}')">✏️</button><button onclick="deleteAssetItem('bank', '${acc.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title" style="display:flex; align-items:center;">${acc.name} ${badgeHtml}</h3></div><div class="card-val-row"><div class="card-val" style="color:var(--income);">$${formatMoney(getDynamicBalance(acc.id))}</div></div></div>`;
-            });
-            appData.assets.forEach(ast => {
-                let realShares = getStockInventory(ast.ticker); const totalValue = realShares * 1000 * ast.price; 
-                const badge = realShares === 0 ? `<span class="badge-watch" title="自選追蹤">👀</span>` : '';
-                const titleText = ast.name ? `${ast.ticker} ${ast.name}` : ast.ticker; const yahooUrl = `https://tw.stock.yahoo.com/quote/${ast.ticker}`; const linkedTitle = `<a href="${yahooUrl}" target="_blank" class="title-link">${titleText}</a>`;
-                const priceStr = parseFloat(ast.price).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); const totalValueHtml = realShares > 0 ? `<div class="card-val">$${formatMoney(totalValue)}<span class="val-label">總市值</span></div>` : '';
-                const accName = realShares === 0 ? '無' : getStockAccounts(ast.ticker);
-                let divPerShare = ast.dividend || 0; let calcYield = (ast.price > 0 && divPerShare > 0) ? ((divPerShare / ast.price) * 100).toFixed(2) : '0.00';
-                if(ast.dividend === undefined && ast.yield) { calcYield = ast.yield; divPerShare = (ast.price * (ast.yield / 100)).toFixed(2); }
-                const formattedDiv = typeof divPerShare === 'number' ? parseFloat(divPerShare.toFixed(2)) : divPerShare;
-                stockList.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event, 'stock', '${ast.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'stock', '${ast.id}')" ondragend="handleDragEnd(event)"><div class="card-actions">${badge}<button onclick="editAssetItem('stock', '${ast.id}')">✏️</button><button onclick="deleteAssetItem('stock', '${ast.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title" title="${titleText}">${linkedTitle}</h3></div><div style="font-size:0.8em; color:var(--text-light); margin-top:-5px; margin-bottom:12px; display:flex; align-items:center;"><span style="background:var(--bg-color); padding:3px 8px; border-radius:4px; border:1px solid var(--border);">🏦 交割戶: ${accName}</span></div><div class="card-val-row"><div class="card-val">$${priceStr}<span class="val-label">現價</span></div>${totalValueHtml}</div><div class="card-sub"><b>庫存:</b> ${realShares} 張 (@${priceStr}元)<br><b>預估現金股利:</b> ${formattedDiv} 元/股 | <b>殖利率:</b> ${calcYield}%<br><b>除息日:</b> ${formatDate(ast.exDate)} | <b>發放日:</b> ${formatDate(ast.payDate)}</div></div>`;
-            });
-        }
-
-        function deleteAssetItem(type, id) {
-            showCustomConfirm('確定要刪除？\n刪除帳戶不會影響日曆紀錄，但會導致舊紀錄失去關聯。', () => {
-                if (type === 'bank') appData.accounts = appData.accounts.filter(item => item.id !== id);
-                if (type === 'stock') appData.assets = appData.assets.filter(item => item.id !== id);
-                saveData();
+        function confirmDeleteTransaction() {
+            showCustomConfirm('確定刪除？', () => {
+                appData.transactions = appData.transactions.filter(t => t.id !== document.getElementById('editTxId').value);
+                closeModal(); saveData();
             }, true);
         }
 
-        function editAssetItem(type, id) {
-            document.getElementById('editAssetId').value = id; document.getElementById('btnCancelAssetEdit').style.display = "block"; 
-            if (type === 'bank') { 
-                let item = appData.accounts.find(x => x.id === id); 
-                document.getElementById('newAssetType').value = item.type || 'bank'; 
-                document.getElementById('newBankName').value = item.name; 
-                document.getElementById('newBankBalance').value = item.balance; 
-                document.getElementById('newBrokerMinFee').value = item.minFee || 20;
-                document.getElementById('newBrokerDiscount').value = item.discount || 1;
-            } 
-            else { 
-                document.getElementById('newAssetType').value = 'stock';
-                let item = appData.assets.find(x => x.id === id); 
-                document.getElementById('newTicker').value = item.ticker || item.name; document.getElementById('newName').value = item.name !== item.ticker ? (item.name || '') : ''; document.getElementById('newShares').value = item.shares || 0; document.getElementById('newPrice').value = item.price; document.getElementById('newDividend').value = item.dividend || 0; document.getElementById('newExDate').value = item.exDate || ''; document.getElementById('newPayDate').value = item.payDate || ''; 
-            }
-            toggleAssetInputs();
-            openAssetForm();
+        function renderAssets() {
+            const bList = document.getElementById('bankList'); bList.innerHTML = '<h3>🏦 銀行與交割戶</h3>';
+            appData.accounts.forEach(a => {
+                let bal = getDynamicBalance(a.id);
+                bList.innerHTML += `<div class="card" style="padding:15px; background:var(--sidebar-bg); margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${a.name}</b>${a.type==='broker'?' <small style="color:var(--accent)">[交割]</small>':''}</div>
+                    <div style="text-align:right;"><b>$${Math.round(bal).toLocaleString()}</b><br><button onclick="editAssetItem('bank','${a.id}')">✏️</button></div>
+                </div>`;
+            });
+            const sList = document.getElementById('stockList'); sList.innerHTML = '<h3>📈 股票庫存</h3>';
+            appData.assets.forEach(a => {
+                if(a.type !== 'stock') return;
+                let sh = getStockInventory(a.ticker);
+                sList.innerHTML += `<div class="card" style="padding:15px; background:var(--sidebar-bg); margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between;">
+                    <div><b>${a.ticker} ${a.name||''}</b><br><small>庫存: ${sh} 張</small></div>
+                    <div style="text-align:right;"><b>$${Math.round(sh*1000*a.price).toLocaleString()}</b><br><button onclick="editAssetItem('stock','${a.id}')">✏️</button></div>
+                </div>`;
+            });
         }
-
-        function resetAssetForm() { document.getElementById('editAssetId').value = ""; document.getElementById('btnCancelAssetEdit').style.display = "none"; document.getElementById('newBankName').value = ""; document.getElementById('newTicker').value = ""; document.getElementById('newName').value = ""; document.getElementById('newDividend').value = "0"; document.getElementById('newShares').value = "0"; }
 
         function saveAssetForm() {
-            const id = document.getElementById('editAssetId').value || 'id_' + Date.now(); const type = document.getElementById('newAssetType').value; const newItem = { id, type };
-            if (type === 'bank' || type === 'broker') { 
-                const name = document.getElementById('newBankName').value.trim(); if (!name) { alert("請輸入銀行名稱"); return; } 
-                newItem.name = name; 
-                newItem.balance = parseFloat(document.getElementById('newBankBalance').value) || 0; 
-                newItem.reconciledDate = new Date().toISOString().split('T')[0]; 
-                if (type === 'broker') {
-                    newItem.minFee = parseFloat(document.getElementById('newBrokerMinFee').value) || 0;
-                    newItem.discount = parseFloat(document.getElementById('newBrokerDiscount').value) || 1;
+            let id = document.getElementById('editAssetId').value || 'ast_' + Date.now();
+            let type = document.getElementById('newAssetType').value;
+            let item = { id, type };
+            if (type==='bank'||type==='broker') {
+                item.name = document.getElementById('newBankName').value;
+                item.balance = parseFloat(document.getElementById('newBankBalance').value);
+                item.reconciledDate = new Date().toISOString().split('T')[0];
+                if (type==='broker') {
+                    item.minFee = parseFloat(document.getElementById('newBrokerMinFee').value);
+                    item.discount = parseFloat(document.getElementById('newBrokerDiscount').value);
                 }
-                const idx = appData.accounts.findIndex(x => x.id === id); 
-                if(idx > -1) appData.accounts[idx] = newItem; else appData.accounts.push(newItem); 
-            } 
-            else { 
-                const ticker = document.getElementById('newTicker').value.trim(); if (!ticker) { alert("請輸入股票代號"); return; } 
-                newItem.ticker = ticker; newItem.name = document.getElementById('newName').value.trim(); newItem.shares = parseFloat(document.getElementById('newShares').value) || 0; newItem.price = parseFloat(document.getElementById('newPrice').value) || 0; newItem.dividend = parseFloat(document.getElementById('newDividend').value) || 0; newItem.exDate = document.getElementById('newExDate').value; newItem.payDate = document.getElementById('newPayDate').value; const idx = appData.assets.findIndex(x => x.id === id); if(idx > -1) appData.assets[idx] = newItem; else appData.assets.push(newItem); 
+                let idx = appData.accounts.findIndex(a => a.id === id);
+                if (idx > -1) appData.accounts[idx] = item; else appData.accounts.push(item);
+            } else {
+                item.ticker = document.getElementById('newTicker').value;
+                item.name = document.getElementById('newName').value;
+                item.shares = parseFloat(document.getElementById('newShares').value);
+                item.price = parseFloat(document.getElementById('newPrice').value);
+                item.dividend = parseFloat(document.getElementById('newDividend').value);
+                let idx = appData.assets.findIndex(a => a.id === id);
+                if (idx > -1) appData.assets[idx] = item; else appData.assets.push(item);
             }
-            closeAssetForm(); saveData();
+            saveData();
         }
+
+        function editAssetItem(type, id) {
+            document.getElementById('editAssetId').value = id;
+            if (type === 'bank') {
+                let a = appData.accounts.find(x => x.id === id);
+                document.getElementById('newAssetType').value = a.type || 'bank';
+                document.getElementById('newBankName').value = a.name;
+                document.getElementById('newBankBalance').value = a.balance;
+                document.getElementById('newBrokerMinFee').value = a.minFee || 20;
+                document.getElementById('newBrokerDiscount').value = a.discount || 1;
+            } else {
+                let a = appData.assets.find(x => x.id === id);
+                document.getElementById('newAssetType').value = 'stock';
+                document.getElementById('newTicker').value = a.ticker;
+                document.getElementById('newName').value = a.name;
+                document.getElementById('newShares').value = a.shares;
+                document.getElementById('newPrice').value = a.price;
+                document.getElementById('newDividend').value = a.dividend;
+            }
+            toggleAssetInputs(); openAssetForm();
+        }
+
+        function renderAll() { renderDashboard(); renderCalendar(); renderAssets(); renderLoans(); loadAccSelects(); renderLedger(); }
+        function renderLoans() {
+            const list = document.getElementById('loanList'); list.innerHTML = '';
+            let schs = generateAmortizationSchedules();
+            appData.loans.forEach(l => {
+                let s = schs[l.id] || [], next = s.find(x => x.date > new Date().toISOString().split('T')[0]);
+                list.innerHTML += `<div class="card" style="padding:15px; background:var(--sidebar-bg); border-radius:8px; margin-bottom:10px;">
+                    <b>${l.name}</b><br><small>剩餘本金: $${next ? next.principalRemain.toLocaleString() : '0'}</small><br>
+                    <small>首期扣款: <span style="color:var(--accent)">${l.startDate}</span></small><br>
+                    <button onclick="editLoan('${l.id}')">✏️</button><button onclick="deleteLoan('${l.id}')">🗑️</button>
+                </div>`;
+            });
+        }
+        function editLoan(id) {
+            let l = appData.loans.find(x => x.id === id);
+            document.getElementById('editLoanId').value = id;
+            document.getElementById('loanName').value = l.name;
+            document.getElementById('loanPrincipal').value = l.principal;
+            document.getElementById('loanRate').value = l.rate;
+            document.getElementById('loanYears').value = l.years;
+            document.getElementById('loanGrace').value = l.grace;
+            document.getElementById('loanStartDate').value = l.startDate;
+            document.getElementById('loanAcc').value = l.accountId;
+            openLoanForm();
+        }
+        function deleteLoan(id) { showCustomConfirm('刪除貸款？', () => { appData.loans = appData.loans.filter(x => x.id !== id); saveData(); }, true); }
+        function resetAssetForm() { document.getElementById('editAssetId').value = ''; document.getElementById('newBankName').value = ''; document.getElementById('newTicker').value = ''; }
+        function handleLedgerSearch() { ledgerSearchTerm = document.getElementById('ledgerSearch').value.toLowerCase(); renderLedger(); }
+
     </script>
 </body>
 </html>
