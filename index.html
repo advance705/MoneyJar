@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.55</title>
+    <title>🍯 MoneyJar v0.56</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -117,7 +117,6 @@
         .dash-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; color: var(--text-light); align-items: center;}
         .dash-list li:last-child { border-bottom: none; }
         .dash-list b { color: var(--text-main); }
-        .chart-container { position: relative; width: 100%; margin-top: auto; }
 
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
         .calendar-header h2 { margin: 0; padding-bottom: 0; border: none; }
@@ -289,7 +288,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.55</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.56</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -297,7 +296,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.55</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.56</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -334,8 +333,9 @@
                         <span>股票: <b id="dashStockText" style="color:var(--accent);">$0</b></span>
                         <span>負債: <b id="dashDebtText" style="color:var(--expense);">-$0</b></span>
                     </div>
-                    <div style="display: flex; justify-content: center; width: 100%; height: 100%;">
-                        <div class="chart-container" style="height: 280px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:20px; flex-grow:1;">
+                        <div style="width: 220px; height: 220px; position:relative; flex-shrink:0;"><canvas id="assetChart"></canvas></div>
+                        <div id="assetLegend" style="margin-top: 20px; width: 100%;"></div>
                     </div>
                 </div>
                 
@@ -351,15 +351,17 @@
                         <li><span>本年累積領取</span> <b id="dashDivYear" style="color:var(--accent); font-size:1.1em;">$0</b></li>
                     </ul>
                     
-                    <div style="display: flex; justify-content: center; width: 100%; height: 100%;">
-                        <div class="chart-container" style="height: 280px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="dividendChart"></canvas></div>
+                    <div style="display:flex; align-items:center; justify-content:center; gap:25px; margin-top:25px; flex-grow:1; flex-wrap:wrap;">
+                        <div style="width: 220px; height: 220px; position:relative; flex-shrink:0;"><canvas id="dividendChart"></canvas></div>
+                        <div id="dividendLegend" style="min-width:120px;"></div>
                     </div>
                 </div>
                 
                 <div class="dash-card">
                     <h3>📊 股票庫存配置比例</h3>
-                    <div style="display: flex; justify-content: center; width: 100%; height: 100%;">
-                        <div class="chart-container" style="height: 280px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="portfolioChart"></canvas></div>
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:20px; flex-grow:1;">
+                        <div style="width: 220px; height: 220px; position:relative; flex-shrink:0;"><canvas id="portfolioChart"></canvas></div>
+                        <div id="portfolioLegend" style="margin-top: 25px; width: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -943,20 +945,14 @@
 
         function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
 
-        // v0.55 圖表完美排距設定
-        const getPieOptions = (pos = 'right') => {
+        // v0.56 脫頭圖表 (Headless Chart) 設定，切斷內部圖例，保證 100% 同尺寸
+        const getHeadlessPieOptions = (isDoughnut = false) => {
             return {
                 responsive: true, maintainAspectRatio: false,
-                layout: {
-                    // v0.55 透過 layout padding 讓圓餅圖本體縮小，給圖例流出喘息空間
-                    padding: pos === 'bottom' ? { bottom: 20, top: 10 } : { right: 20, top: 10, bottom: 10 }
-                },
+                cutout: isDoughnut ? '65%' : 0,
+                layout: { padding: 0 }, 
                 plugins: {
-                    legend: { 
-                        position: pos, 
-                        // v0.55 透過 padding 讓圖例項目間距加大，整體視覺更舒適
-                        labels: { color: '#d8dee9', font: { size: 11 }, boxWidth: 15, padding: 18 } 
-                    },
+                    legend: { display: false }, // 徹底禁用 Chart.js 圖例
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -1095,30 +1091,59 @@
             document.getElementById('dashFireDiff').innerText = Math.round(fireDiff).toLocaleString();
             document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(safeWithdrawal).toLocaleString();
 
+            // ==========================================
+            // v0.56 HTML Custom Legends 產生器
+            // ==========================================
+            
+            // 1. 資產配置圖例
+            document.getElementById('assetLegend').innerHTML = `
+                <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);">
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#a3be8c;border-radius:2px;"></span>現金資產</div>
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#88c0d0;border-radius:2px;"></span>股票投資</div>
+                </div>
+            `;
+            
+            // 2. 魔法の蜜泉圖例 (垂直排列)
+            let divLegHtml = '<div style="display:flex; flex-direction:column; gap:10px; font-size:0.85em; color:var(--text-light);">';
+            rawDivData.forEach((item, i) => {
+                divLegHtml += `<div style="display:flex; align-items:center; gap:8px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;flex-shrink:0;"></span>${item.label}</div>`;
+            });
+            divLegHtml += '</div>';
+            document.getElementById('dividendLegend').innerHTML = divLegHtml;
+
+            // 3. 股票庫存配置圖例 (水平排列)
+            let portLegHtml = '<div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);">';
+            rawPortData.forEach((item, i) => {
+                portLegHtml += `<div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;"></span>${item.label}</div>`;
+            });
+            portLegHtml += '</div>';
+            document.getElementById('portfolioLegend').innerHTML = portLegHtml;
+
+
+            // ==========================================
+            // v0.56 渲染 Headless Charts
+            // ==========================================
             let portLabels = rawPortData.map(item => item.label);
             let portData = rawPortData.map(item => item.val);
             let divLabels = rawDivData.map(item => item.label);
             let divData = rawDivData.map(item => item.val);
 
-            // v0.55 圓餅圖統一完美尺寸
             const ctxAsset = document.getElementById('assetChart');
             if(ctxAsset) {
                 if(assetChartObj) assetChartObj.destroy();
-                let donutOptions = getPieOptions('bottom');
-                donutOptions.cutout = '65%';
-                assetChartObj = new Chart(ctxAsset.getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: donutOptions });
+                assetChartObj = new Chart(ctxAsset.getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: getHeadlessPieOptions(true) });
             }
             
             const ctxDiv = document.getElementById('dividendChart');
             if(ctxDiv) {
                 if(dividendChartObj) dividendChartObj.destroy();
-                dividendChartObj = new Chart(ctxDiv.getContext('2d'), { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions('right') });
+                dividendChartObj = new Chart(ctxDiv.getContext('2d'), { type: 'pie', data: { labels: divLabels, datasets: [{ data: divData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getHeadlessPieOptions() });
             }
 
             const ctxPort = document.getElementById('portfolioChart');
             if(ctxPort) {
                 if(portfolioChartObj) portfolioChartObj.destroy();
-                portfolioChartObj = new Chart(ctxPort.getContext('2d'), { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getPieOptions('bottom') });
+                portfolioChartObj = new Chart(ctxPort.getContext('2d'), { type: 'pie', data: { labels: portLabels, datasets: [{ data: portData, backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getHeadlessPieOptions() });
             }
         }
 
@@ -1736,7 +1761,7 @@
                     if (data.dividend > 0) document.getElementById('newDividend').value = data.dividend;
                     if (data.exDate) document.getElementById('newExDate').value = data.exDate;
                     if (data.payDate) document.getElementById('newPayDate').value = data.payDate;
-                    if (!data.name) alert("無法抓取中文名稱，請手動輸入。"); 
+                    if (!data.name) alert("無法抓取中文名稱，請手手動輸入。"); 
                 }
             } catch (error) { alert("無法連線到雲端 API。請檢查 Apps Script 是否設定為『所有人』可存取。"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
         }
