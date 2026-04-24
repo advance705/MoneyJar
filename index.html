@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.54</title>
+    <title>🍯 MoneyJar v0.55</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -75,7 +75,6 @@
         .btn-fetch { background: var(--income); color: #2e3440; padding: 8px; margin-top: 4px; font-size: 0.85em; }
         .btn-add:hover, .btn-fetch:hover { filter: brightness(1.1); }
 
-        /* v0.51 完美的 Sticky UI Fix */
         .desktop-form-wrapper { display: block; position: sticky; top: 0; align-self: start; z-index: 10; }
         .sticky-form { max-height: calc(100vh - 60px); overflow-y: auto; }
         
@@ -290,7 +289,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.54</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.55</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -298,7 +297,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.54</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.55</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -336,7 +335,7 @@
                         <span>負債: <b id="dashDebtText" style="color:var(--expense);">-$0</b></span>
                     </div>
                     <div style="display: flex; justify-content: center; width: 100%; height: 100%;">
-                        <div class="chart-container" style="height: 250px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
+                        <div class="chart-container" style="height: 280px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="assetChart"></canvas></div>
                     </div>
                 </div>
                 
@@ -353,14 +352,14 @@
                     </ul>
                     
                     <div style="display: flex; justify-content: center; width: 100%; height: 100%;">
-                        <div class="chart-container" style="height: 250px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="dividendChart"></canvas></div>
+                        <div class="chart-container" style="height: 280px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="dividendChart"></canvas></div>
                     </div>
                 </div>
                 
                 <div class="dash-card">
                     <h3>📊 股票庫存配置比例</h3>
                     <div style="display: flex; justify-content: center; width: 100%; height: 100%;">
-                        <div class="chart-container" style="height: 350px; width: 100%; max-width: 450px; margin-top: 15px;"><canvas id="portfolioChart"></canvas></div>
+                        <div class="chart-container" style="height: 280px; width: 100%; max-width: 400px; margin-top: 15px;"><canvas id="portfolioChart"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -944,14 +943,19 @@
 
         function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
 
-        // v0.54 圖表 Tooltip 強化，圖例純淨化
+        // v0.55 圖表完美排距設定
         const getPieOptions = (pos = 'right') => {
             return {
                 responsive: true, maintainAspectRatio: false,
+                layout: {
+                    // v0.55 透過 layout padding 讓圓餅圖本體縮小，給圖例流出喘息空間
+                    padding: pos === 'bottom' ? { bottom: 20, top: 10 } : { right: 20, top: 10, bottom: 10 }
+                },
                 plugins: {
                     legend: { 
                         position: pos, 
-                        labels: { color: '#d8dee9', font: { size: 11 }, boxWidth: 15 } 
+                        // v0.55 透過 padding 讓圖例項目間距加大，整體視覺更舒適
+                        labels: { color: '#d8dee9', font: { size: 11 }, boxWidth: 15, padding: 18 } 
                     },
                     tooltip: {
                         callbacks: {
@@ -1001,7 +1005,6 @@
             let timePrefix = cashflowView === 'month' ? divPrefixMonth : divPrefixYear;
             let timeLabel = cashflowView === 'month' ? timePrefix : `${currentDate.getFullYear()} 全年`; let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
             
-            // v0.54 計算未來12個月房貸供 FIRE 指標使用
             let future12MonthsLoan = 0;
             let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
             let next12Str = next12Date.toISOString().split('T')[0];
@@ -1092,12 +1095,12 @@
             document.getElementById('dashFireDiff').innerText = Math.round(fireDiff).toLocaleString();
             document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(safeWithdrawal).toLocaleString();
 
-            // v0.54 圖表渲染 (純淨標籤)
             let portLabels = rawPortData.map(item => item.label);
             let portData = rawPortData.map(item => item.val);
             let divLabels = rawDivData.map(item => item.label);
             let divData = rawDivData.map(item => item.val);
 
+            // v0.55 圓餅圖統一完美尺寸
             const ctxAsset = document.getElementById('assetChart');
             if(ctxAsset) {
                 if(assetChartObj) assetChartObj.destroy();
@@ -1119,7 +1122,6 @@
             }
         }
 
-        // v0.54 房貸攤還邏輯修復 (全面支援 date input 格式)
         function PMT(ir, np, pv) { if (ir === 0) return pv / np; return pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1); }
         function generateAmortizationSchedules() {
             let schedules = {};
@@ -1127,7 +1129,6 @@
                 let currentPrincipal = loan.principal; let monthlyRate = loan.rate / 100 / 12; 
                 let startY, startM, payD;
                 
-                // 相容新舊資料格式
                 if (loan.startDate) {
                     let parts = loan.startDate.split('-');
                     if(parts.length === 3) {
@@ -1368,7 +1369,6 @@
 
         let currentDayViewDate = '';
         
-        // v0.54 三層精準點擊攔截
         function handleCellClick(dateStr) {
             if (window.innerWidth <= 768) {
                 openDayView(dateStr); 
