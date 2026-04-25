@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.58</title>
+    <title>🍯 MoneyJar v0.59</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -117,7 +117,6 @@
         .dash-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; color: var(--text-light); align-items: center;}
         .dash-list li:last-child { border-bottom: none; }
         .dash-list b { color: var(--text-main); }
-        .chart-container { position: relative; width: 100%; margin-top: auto; }
 
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
         .calendar-header h2 { margin: 0; padding-bottom: 0; border: none; }
@@ -131,7 +130,6 @@
         .filter-toggle-btn { display: none; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; width: 100%; text-align: left; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; font-weight: bold; justify-content: space-between; align-items: center; transition: 0.2s; }
         .filter-toggle-btn:hover { background: var(--sidebar-hover); }
         .calendar-filters { background: var(--card-bg); padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
-        .filter-title { color:var(--text-main); font-weight:bold; margin-right:4px; display:inline-flex; align-items:center; font-size: 0.9em; }
         .filter-chip { cursor: pointer; display: inline-flex; align-items: center; margin: 0;}
         .filter-chip input { display: none; }
         .chip-label { padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: bold; border: 1px solid var(--border); background: transparent; color: var(--text-light); transition: 0.2s; user-select: none; white-space: nowrap;}
@@ -289,7 +287,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.58</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.59</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -297,7 +295,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.58</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.59</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -514,7 +512,6 @@
                 <span>👁️ 篩選顯示項目</span> <span>▾</span>
             </button>
             <div id="filterContainer" class="calendar-filters hidden-mobile">
-                <span class="filter-title" style="display:none;">👁️ 篩選：</span>
                 <label class="filter-chip income-chip">
                     <input type="checkbox" id="filterIncome" checked onchange="renderCalendar()">
                     <span class="chip-label">現金收入/配息</span>
@@ -712,14 +709,15 @@
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
         let currentDate = new Date(2026, 3, 1); 
-        
-        // v0.57 新增現金流儀表板專屬時間軸
         let dashViewDate = new Date(); 
         
         let assetChartObj = null; let dividendChartObj = null; let portfolioChartObj = null;
         let cashflowView = 'month';
         
         let ledgerCurrentPage = 1; const ledgerPageSize = 20; let ledgerSearchTerm = '';
+
+        // v0.59 效能優化：新增全域快取變數
+        let cachedAmortizationSchedules = null;
 
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
         const CLIENT_ID = '844991618019-rr297egcrjg7d509k7nduil4l19cgdot.apps.googleusercontent.com';
@@ -868,7 +866,11 @@
             } catch(e) { alert("上傳雲端失敗，請稍後重試。"); updateSyncStatus('⚠️ 雲端同步失敗'); }
         }
 
-        function renderAll() { loadAccSelects(); renderCalendar(); renderDashboard(); renderAssets(); renderLedger(); renderLoans(); }
+        // v0.59 效能優化：在執行高密度渲染前，強制刷新快取，保證全域只算一次
+        function renderAll() { 
+            cachedAmortizationSchedules = generateAmortizationSchedules();
+            loadAccSelects(); renderCalendar(); renderDashboard(); renderAssets(); renderLedger(); renderLoans(); 
+        }
 
         function switchPage(pageId, btnElement) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1040,7 +1042,7 @@
                 } 
             });
             
-            let totalDebt = 0; let schedules = generateAmortizationSchedules();
+            let totalDebt = 0; 
             let flowIncome = 0; let flowExpense = 0; let flowLoan = 0; let flowPnL = 0; 
             
             let realTodayStr = new Date().toISOString().split('T')[0];
@@ -1059,9 +1061,10 @@
             let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
             let next12Str = next12Date.toISOString().split('T')[0];
             
-            for(let lId in schedules) { 
-                schedules[lId].forEach(tx => { 
-                    if(tx.date === schedules[lId].find(s => s.date > realTodayStr)?.date) {
+            // v0.59 效能優化：使用全域快取的房貸表
+            for(let lId in cachedAmortizationSchedules) { 
+                cachedAmortizationSchedules[lId].forEach(tx => { 
+                    if(tx.date === cachedAmortizationSchedules[lId].find(s => s.date > realTodayStr)?.date) {
                         totalDebt += tx.principalRemain;
                     }
                     if(tx.date.startsWith(timePrefix)) {
@@ -1126,7 +1129,6 @@
 
             let totalInvestable = dryPowder + totalStock;
             let dryPowderPct = totalInvestable > 0 ? (dryPowder / totalInvestable * 100).toFixed(1) : '0.0';
-            // v0.58 加入戰略目標絕對金額
             let dryPowderTarget = totalInvestable * 0.3;
             document.getElementById('dashDryPowderPct').innerText = dryPowderPct + '%';
             document.getElementById('dashDryPowderTarget').innerText = `($${Math.round(dryPowderTarget).toLocaleString()})`;
@@ -1228,7 +1230,8 @@
             if(!acc) return 0; 
             let bal = acc.balance; 
             let todayStr = new Date().toISOString().split('T')[0]; 
-            let schedules = generateAmortizationSchedules(); 
+            // v0.59 效能優化：取用全域快取
+            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
             for(let lId in schedules) { 
                 schedules[lId].forEach(tx => { 
                     if(tx.accountId === accId && tx.date <= todayStr) {
@@ -1274,7 +1277,9 @@
         function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanFormTitle').innerText = "➕ 新增貸款合約"; document.getElementById('btnSaveLoan').innerText = "新增並自動產生攤還表"; document.getElementById('btnCancelLoanEdit').style.display = "none"; document.getElementById('loanName').value = ""; document.getElementById('loanStartDate').value = "";}
         
         function renderLoans() {
-            const list = document.getElementById('loanList'); list.innerHTML = ''; let schedules = generateAmortizationSchedules(); let todayStr = new Date().toISOString().split('T')[0];
+            const list = document.getElementById('loanList'); list.innerHTML = ''; 
+            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
+            let todayStr = new Date().toISOString().split('T')[0];
             appData.loans.forEach(loan => {
                 let sch = schedules[loan.id] || []; let nextPayment = sch.find(s => s.date > todayStr); let currentBal = nextPayment ? nextPayment.principalRemain : 0; let nextAmt = nextPayment ? nextPayment.amount : 0; let isGrace = nextPayment ? nextPayment.isGrace : false; let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
                 let displayStart = loan.startDate || (loan.startMonth ? loan.startMonth + ' (每月 ' + loan.payDay + ' 號)' : '');
@@ -1453,7 +1458,8 @@
             const list = document.getElementById('dayViewList'); list.innerHTML = '';
             
             const dayTxs = appData.transactions.filter(tx => tx.date === dateStr);
-            let schedules = generateAmortizationSchedules(); let virtualTxs = []; 
+            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
+            let virtualTxs = []; 
             for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
             const vTxs = virtualTxs.filter(t => t.date === dateStr);
 
@@ -1496,7 +1502,8 @@
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
             ['日', '一', '二', '三', '四', '五', '六'].forEach(d => grid.innerHTML += `<div class="calendar-day-header">${d}</div>`);
             const fInc = document.getElementById('filterIncome').checked; const fExp = document.getElementById('filterExpense').checked; const fBuy = document.getElementById('filterBuy').checked; const fSell = document.getElementById('filterSell').checked;
-            let schedules = generateAmortizationSchedules(); let virtualTxs = []; for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
+            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
+            let virtualTxs = []; for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
             
             const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
             const now = new Date(); const realTodayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
