@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.56</title>
+    <title>🍯 MoneyJar v0.57</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -117,6 +117,7 @@
         .dash-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; color: var(--text-light); align-items: center;}
         .dash-list li:last-child { border-bottom: none; }
         .dash-list b { color: var(--text-main); }
+        .chart-container { position: relative; width: 100%; margin-top: auto; }
 
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
         .calendar-header h2 { margin: 0; padding-bottom: 0; border: none; }
@@ -280,15 +281,15 @@
         <div class="login-box">
             <div class="login-logo">🍯</div>
             <div class="login-title">MoneyJar</div>
-            <button class="btn-google" onclick="handleAuthClick()" style="margin-top: 20px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo">
+            <button class="btn-google" onclick="handleAuthClick()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" style="width:18px;">
                 使用 Google 帳號登入
             </button>
         </div>
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.56</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.57</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -296,27 +297,17 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.56</div>
-        
-        <div class="user-profile" id="desktopProfile" style="display:none;">
-            <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
-            <div class="user-info">
-                <div id="desktopName" class="user-name">載入中...</div>
-                <div id="desktopSync" class="sync-badge">☁️ 雲端已同步</div>
-            </div>
-        </div>
-
+        <div class="sidebar-header">🍯 MoneyJar v0.57</div>
         <button class="nav-btn active" onclick="switchPage('dashboard', this)">🏠 <span>總覽儀表板</span></button>
         <button class="nav-btn" onclick="switchPage('calendar', this)">📅 <span>日曆與收支</span></button>
         <button class="nav-btn" onclick="switchPage('ledger', this)">📜 <span>股票對帳單</span></button>
         <button class="nav-btn" onclick="switchPage('assets', this)">💼 <span>資產與帳戶</span></button>
         <button class="nav-btn" onclick="switchPage('loans', this)">🏦 <span>貸款與負債</span></button>
-        
         <div class="file-controls">
-            <button id="btnLoad" class="btn-import">📥 從電腦載入舊檔 (遷移)</button>
-            <button id="btnExport" class="btn-export" onclick="exportData()">💾 下載實體備份 (JSON)</button>
-            <div id="syncStatus" class="status-text">已啟用雲端自動存檔。</div>
-            <button onclick="confirmSignout()" style="background:transparent; border:none; color:var(--expense); text-align:left; padding:0; cursor:pointer; font-size:0.8em; margin-top:5px; text-decoration:underline;">登出帳號</button>
+            <button id="btnLoad" class="btn-import">📥 載入舊檔 (JSON)</button>
+            <button class="btn-export" onclick="exportData()">💾 下載備份 (JSON)</button>
+            <div id="syncStatus" style="font-size:0.75em; color:var(--text-light);">雲端自動存檔中...</div>
+            <button onclick="confirmSignout()" style="color:var(--expense); border:none; background:none; text-align:left; cursor:pointer; text-decoration:underline; font-size:0.8em;">登出帳號</button>
         </div>
     </div>
 
@@ -369,18 +360,25 @@
             <div class="dash-grid">
                 <div class="dash-card">
                     <h3>
-                        <span>📊 現金流 (<span id="dashFlowLabel"></span>)</span>
+                        <span>📊 現金流</span>
                         <div class="toggle-group">
                             <button class="toggle-btn active" id="btnViewMonth" onclick="setCashflowView('month')">本月</button>
                             <button class="toggle-btn" id="btnViewYear" onclick="setCashflowView('year')">本年</button>
                         </div>
                     </h3>
-                    <div class="dash-val-main" id="dashCashflow">$0</div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:rgba(0,0,0,0.2); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
+                        <button onclick="changeDashTime(-1)" style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:1.2em;padding:0 15px; transition:0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-light)'">◀</button>
+                        <span id="dashFlowLabel" style="font-weight:bold; color:var(--accent); font-size:1.1em;"></span>
+                        <button onclick="changeDashTime(1)" style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:1.2em;padding:0 15px; transition:0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-light)'">▶</button>
+                    </div>
+
+                    <div class="dash-val-main" id="dashCashflow" style="margin-top:5px;">$0</div>
                     <div id="dashAlert" style="font-size:0.9em; margin-bottom:15px; font-weight:bold;"></div>
                     <ul class="dash-list">
-                        <li><span id="labelFlowIncome">本月總收入 (不含賣股)</span> <b id="dashFlowIncome" style="color:var(--income);">$0</b></li>
-                        <li><span id="labelFlowExpense">本月總支出 (含手動紀錄)</span> <b id="dashFlowExpense" style="color:var(--expense);">-$0</b></li>
-                        <li><span id="labelFlowLoan">本月房貸扣款 (自動計算)</span> <b id="dashFlowLoan" style="color:var(--expense);">-$0</b></li>
+                        <li><span id="labelFlowIncome">總收入 (不含賣股)</span> <b id="dashFlowIncome" style="color:var(--income);">$0</b></li>
+                        <li><span id="labelFlowExpense">總支出 (含手動紀錄)</span> <b id="dashFlowExpense" style="color:var(--expense);">-$0</b></li>
+                        <li><span id="labelFlowLoan">房貸扣款 (自動計算)</span> <b id="dashFlowLoan" style="color:var(--expense);">-$0</b></li>
                         <li style="border-top: 1px dashed var(--border); margin-top: 5px; padding-top: 15px;">
                             <span>💰 股票已實現損益</span> <b id="dashFlowPnL" style="font-size:1.1em;">$0</b>
                         </li>
@@ -413,7 +411,7 @@
                         <input type="number" id="settingBudget" onchange="saveSettings()" placeholder="如 600000">
                     </div>
                     <div style="font-size:0.8em; color:var(--text-light); margin-bottom:15px; background:var(--sidebar-bg); padding:8px; border-radius:4px; border-left:3px solid var(--accent); line-height:1.4;">
-                        💡 真實年度總支出：<b id="dashRealExpense" style="color:var(--text-main);">$0</b><br>(已自動計入未來一年房貸 $<span id="dashFutureLoan">0</span>)
+                        💡 預估年運營成本：<b id="dashRealExpense" style="color:var(--text-main);">$0</b><br>(含設定預算與未來12個月房貸預估 $<span id="dashFutureLoan">0</span>)
                     </div>
                     <ul class="dash-list">
                         <li><span>💧 股息覆蓋率：</span> <b id="dashDivCoverage" style="color:var(--income); font-size:1.1em;">0%</b></li>
@@ -704,10 +702,13 @@
     <script>
         Chart.defaults.color = '#d8dee9'; Chart.defaults.borderColor = '#4c566a';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
+        
         let currentDate = new Date(2026, 3, 1); 
+        // v0.57: 獨立的時間追蹤變數，專屬於儀表板的現金流卡片
+        let dashCurrentDate = new Date(2026, 3, 1); 
+        
         let assetChartObj = null; let dividendChartObj = null; let portfolioChartObj = null;
         let cashflowView = 'month';
-        
         let ledgerCurrentPage = 1; const ledgerPageSize = 20; let ledgerSearchTerm = '';
 
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbxWWhKfIDdJb9TrN5tVoH6QEWO4cJW_wDxW22iDazsDLs5ml7xFY-Z4rZcXmS5vyMOkAg/exec";
@@ -945,14 +946,23 @@
 
         function setCashflowView(view) { cashflowView = view; document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); renderDashboard(); }
 
-        // v0.56 脫頭圖表 (Headless Chart) 設定，切斷內部圖例，保證 100% 同尺寸
+        // v0.57 獨立時間導航操作
+        function changeDashTime(delta) {
+            if (cashflowView === 'month') {
+                dashCurrentDate.setMonth(dashCurrentDate.getMonth() + delta);
+            } else {
+                dashCurrentDate.setFullYear(dashCurrentDate.getFullYear() + delta);
+            }
+            renderDashboard();
+        }
+
         const getHeadlessPieOptions = (isDoughnut = false) => {
             return {
                 responsive: true, maintainAspectRatio: false,
                 cutout: isDoughnut ? '65%' : 0,
                 layout: { padding: 0 }, 
                 plugins: {
-                    legend: { display: false }, // 徹底禁用 Chart.js 圖例
+                    legend: { display: false }, 
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -980,55 +990,107 @@
             appData.assets.forEach(a => { 
                 if(a.type === 'stock') { 
                     let realShares = getStockInventory(a.ticker);
+                    
+                    // v0.57: 除息快照 (Ex-Dividend Snapshot) 邏輯
+                    let eligibleShares = a.shares || 0; 
+                    let hasExDate = a.exDate && a.exDate.trim() !== '';
+                    appData.transactions.forEach(t => {
+                        if (t.ticker === a.ticker) {
+                            if (hasExDate) {
+                                // 只有除息日"之前"的買賣才會影響合格張數
+                                if (t.date < a.exDate) {
+                                    if (t.type === 'stock_buy') eligibleShares += t.shares;
+                                    if (t.type === 'stock_sell') eligibleShares -= t.shares;
+                                }
+                            } else {
+                                // 沒有除息日，正常累計
+                                if (t.type === 'stock_buy') eligibleShares += t.shares;
+                                if (t.type === 'stock_sell') eligibleShares -= t.shares;
+                            }
+                        }
+                    });
+                    eligibleShares = Math.max(0, Math.round(eligibleShares * 100) / 100);
+
+                    let mv = realShares * 1000 * a.price; 
+                    totalStock += mv; 
+                    
+                    let nameLabel = a.name ? `${a.ticker} ${a.name}` : a.ticker;
+                    
                     if (realShares > 0) {
-                        let mv = realShares * 1000 * a.price; totalStock += mv; 
-                        let divAmount = a.dividend !== undefined ? a.dividend * realShares * 1000 : mv * ((a.yield || 0) / 100);
-                        yearlyDiv += divAmount; 
-                        let nameLabel = a.name ? `${a.ticker} ${a.name}` : a.ticker;
                         rawPortData.push({label: nameLabel, val: mv});
-                        if(divAmount > 0) rawDivData.push({label: nameLabel, val: divAmount});
+                    }
+
+                    // 計算除息快照後的真實股息
+                    let divAmount = 0;
+                    if (a.dividend !== undefined && a.dividend > 0) {
+                        divAmount = a.dividend * eligibleShares * 1000;
+                    } else if (a.yield !== undefined && a.yield > 0) {
+                        divAmount = mv * (a.yield / 100); // 沒發布股利，用殖利率預估
+                    }
+
+                    if (divAmount > 0) {
+                        yearlyDiv += divAmount; 
+                        rawDivData.push({label: nameLabel, val: divAmount});
                     }
                 } 
             });
             
-            let totalDebt = 0; let todayStr = new Date().toISOString().split('T')[0]; let schedules = generateAmortizationSchedules();
+            let totalDebt = 0; 
+            let schedules = generateAmortizationSchedules();
             let flowIncome = 0; let flowExpense = 0; let flowLoan = 0; let flowPnL = 0; 
-            
             let dividendThisMonth = 0; let dividendThisYear = 0;
-            let divPrefixMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}`;
-            let divPrefixYear = `${currentDate.getFullYear()}`;
-
-            let timePrefix = cashflowView === 'month' ? divPrefixMonth : divPrefixYear;
-            let timeLabel = cashflowView === 'month' ? timePrefix : `${currentDate.getFullYear()} 全年`; let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
             
-            let future12MonthsLoan = 0;
+            // ==========================================
+            // v0.57 獨立時間軸處理：儀表板卡片專用 (dashCurrentDate)
+            // ==========================================
+            let dashY = dashCurrentDate.getFullYear();
+            let dashM = dashCurrentDate.getMonth();
+            let dashPrefixMonth = `${dashY}-${String(dashM+1).padStart(2,'0')}`;
+            let dashPrefixYear = `${dashY}`;
+
+            let dashTimePrefix = cashflowView === 'month' ? dashPrefixMonth : dashPrefixYear;
+            let dashTimeLabel = cashflowView === 'month' ? `${dashY} 年 ${String(dashM+1).padStart(2,'0')} 月` : `${dashY} 全年`; 
+
+            // 更新獨立時間導航的文字
+            document.getElementById('dashFlowLabel').innerText = dashTimeLabel;
+            
+            // ==========================================
+            // FIRE 指標時間軸處理：基於「現實的今天」
+            // ==========================================
+            let realToday = new Date();
+            let realTodayStr = realToday.toISOString().split('T')[0];
             let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
             let next12Str = next12Date.toISOString().split('T')[0];
-            let todayStrForLoanCalc = new Date().toISOString().split('T')[0];
+            let future12MonthsLoan = 0;
             
             for(let lId in schedules) { 
                 schedules[lId].forEach(tx => { 
-                    if(tx.date === schedules[lId].find(s => s.date > todayStr)?.date) {
+                    // 現實總負債
+                    if(tx.date === schedules[lId].find(s => s.date > realTodayStr)?.date) {
                         totalDebt += tx.principalRemain;
                     }
-                    if(tx.date.startsWith(timePrefix)) {
+                    // 現金流卡片：使用 Dash 獨立時間軸
+                    if(tx.date.startsWith(dashTimePrefix)) {
                         flowLoan += tx.amount; 
                     }
-                    if(tx.date >= todayStrForLoanCalc && tx.date < next12Str) {
+                    // FIRE 指標：使用現實時間算未來 12 個月
+                    if(tx.date >= realTodayStr && tx.date < next12Str) {
                         future12MonthsLoan += tx.amount;
                     }
                 }); 
             }
 
             appData.transactions.forEach(t => { 
-                if(t.date.startsWith(timePrefix)) { 
+                // 現金流卡片：使用 Dash 獨立時間軸
+                if(t.date.startsWith(dashTimePrefix)) { 
                     if(t.type === 'income') flowIncome += t.amount; 
                     if(t.type === 'expense' || t.type === 'loan_extra') flowExpense += t.amount; 
                     if(t.type === 'stock_sell' && t.realizedPnL !== undefined) flowPnL += t.realizedPnL;
                 } 
+                // 魔法の蜜泉領息統計：同樣使用 Dash 獨立時間軸
                 if(t.isDividend) {
-                    if(t.date.startsWith(divPrefixMonth)) dividendThisMonth += t.amount;
-                    if(t.date.startsWith(divPrefixYear)) dividendThisYear += t.amount;
+                    if(t.date.startsWith(dashPrefixMonth)) dividendThisMonth += t.amount;
+                    if(t.date.startsWith(dashPrefixYear)) dividendThisYear += t.amount;
                 }
             });
 
@@ -1036,9 +1098,6 @@
             document.getElementById('dashCashText').innerText = '$' + Math.round(totalCash).toLocaleString(); 
             document.getElementById('dashStockText').innerText = '$' + Math.round(totalStock).toLocaleString(); 
             document.getElementById('dashDebtText').innerText = '-$' + Math.round(totalDebt).toLocaleString();
-            
-            document.getElementById('dashFlowLabel').innerText = timeLabel; 
-            document.getElementById('labelFlowIncome').innerText = `${txtLabel}總收入 (不含賣股)`; document.getElementById('labelFlowExpense').innerText = `${txtLabel}總支出 (含手動紀錄)`; document.getElementById('labelFlowLoan').innerText = `${txtLabel}房貸扣款 (自動計算)`;
 
             let totalFlowOutflow = flowExpense + flowLoan; let cashflow = flowIncome - totalFlowOutflow;
             let cfEl = document.getElementById('dashCashflow'); cfEl.innerText = (cashflow >= 0 ? '+' : '') + '$' + Math.round(cashflow).toLocaleString(); cfEl.style.color = cashflow >= 0 ? 'var(--income)' : 'var(--expense)';
@@ -1046,7 +1105,9 @@
             
             let elPnL = document.getElementById('dashFlowPnL'); elPnL.innerText = (flowPnL >= 0 ? '+' : '') + '$' + Math.round(flowPnL).toLocaleString(); elPnL.style.color = flowPnL >= 0 ? 'var(--income)' : 'var(--expense)';
             let alertEl = document.getElementById('dashAlert');
-            if(cashflow < 0) { alertEl.innerHTML = `<span style="color:var(--expense);">⚠️ 警告：${txtLabel}支出與房貸已超過收入，現金流呈現赤字。</span>`; } else { alertEl.innerHTML = `<span style="color:var(--income);">✅ 安全：${txtLabel}收入足以涵蓋所有開銷與房貸。</span>`; }
+            
+            let txtLabel = cashflowView === 'month' ? '本月' : '本年度';
+            if(cashflow < 0) { alertEl.innerHTML = `<span style="color:var(--expense);">⚠️ 警告：該週期支出與房貸已超過收入，現金流呈現赤字。</span>`; } else { alertEl.innerHTML = `<span style="color:var(--income);">✅ 安全：該週期收入足以涵蓋所有開銷與房貸。</span>`; }
             
             document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
             document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
@@ -1091,11 +1152,6 @@
             document.getElementById('dashFireDiff').innerText = Math.round(fireDiff).toLocaleString();
             document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(safeWithdrawal).toLocaleString();
 
-            // ==========================================
-            // v0.56 HTML Custom Legends 產生器
-            // ==========================================
-            
-            // 1. 資產配置圖例
             document.getElementById('assetLegend').innerHTML = `
                 <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);">
                     <div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#a3be8c;border-radius:2px;"></span>現金資產</div>
@@ -1103,7 +1159,6 @@
                 </div>
             `;
             
-            // 2. 魔法の蜜泉圖例 (垂直排列)
             let divLegHtml = '<div style="display:flex; flex-direction:column; gap:10px; font-size:0.85em; color:var(--text-light);">';
             rawDivData.forEach((item, i) => {
                 divLegHtml += `<div style="display:flex; align-items:center; gap:8px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;flex-shrink:0;"></span>${item.label}</div>`;
@@ -1111,7 +1166,6 @@
             divLegHtml += '</div>';
             document.getElementById('dividendLegend').innerHTML = divLegHtml;
 
-            // 3. 股票庫存配置圖例 (水平排列)
             let portLegHtml = '<div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);">';
             rawPortData.forEach((item, i) => {
                 portLegHtml += `<div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;"></span>${item.label}</div>`;
@@ -1119,10 +1173,6 @@
             portLegHtml += '</div>';
             document.getElementById('portfolioLegend').innerHTML = portLegHtml;
 
-
-            // ==========================================
-            // v0.56 渲染 Headless Charts
-            // ==========================================
             let portLabels = rawPortData.map(item => item.label);
             let portData = rawPortData.map(item => item.val);
             let divLabels = rawDivData.map(item => item.label);
@@ -1761,7 +1811,7 @@
                     if (data.dividend > 0) document.getElementById('newDividend').value = data.dividend;
                     if (data.exDate) document.getElementById('newExDate').value = data.exDate;
                     if (data.payDate) document.getElementById('newPayDate').value = data.payDate;
-                    if (!data.name) alert("無法抓取中文名稱，請手手動輸入。"); 
+                    if (!data.name) alert("無法抓取中文名稱，請手動輸入。"); 
                 }
             } catch (error) { alert("無法連線到雲端 API。請檢查 Apps Script 是否設定為『所有人』可存取。"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
         }
