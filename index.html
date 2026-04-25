@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.57</title>
+    <title>🍯 MoneyJar v0.58</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -289,7 +289,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.57</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.58</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -297,7 +297,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.57</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.58</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -408,7 +408,7 @@
                         <li style="flex-direction:column; align-items:flex-start; gap:5px; border-top:1px dashed var(--border); margin-top:5px; padding-top:15px;">
                             <span>⚔️ <b>攻擊籌碼</b></span>
                             <b id="dashDryPowder" style="font-size:1.4em; color:var(--income);">$0</b>
-                            <span style="font-size:0.85em; color:var(--text-light);">目前現金水位：<span id="dashDryPowderPct" style="font-weight:bold;">0%</span> / 戰略目標 30.0%</span>
+                            <span style="font-size:0.85em; color:var(--text-light);">目前現金水位：<span id="dashDryPowderPct" style="font-weight:bold;">0%</span> / 戰略目標 30.0% <span id="dashDryPowderTarget"></span></span>
                         </li>
                     </ul>
                 </div>
@@ -954,7 +954,6 @@
             saveData();
         }
 
-        // v0.57 現金流獨立切換時間邏輯
         function setCashflowView(view) { 
             cashflowView = view; 
             document.getElementById('btnViewMonth').classList.toggle('active', view === 'month'); 
@@ -1011,10 +1010,9 @@
                         rawPortData.push({label: nameLabel, val: mv});
                     }
                     
-                    // v0.57 📸 除息快照過濾器
                     let eligibleShares = 0;
                     if (a.exDate) {
-                        eligibleShares = a.shares || 0; // 初始庫存預設合格
+                        eligibleShares = a.shares || 0; 
                         appData.transactions.forEach(t => {
                             if (t.ticker === a.ticker) {
                                 if (t.date < a.exDate) {
@@ -1025,7 +1023,7 @@
                         });
                         eligibleShares = Math.max(0, eligibleShares);
                     } else {
-                        eligibleShares = currentShares; // 無除息日，視同全數參與
+                        eligibleShares = currentShares; 
                     }
 
                     if (eligibleShares > 0) {
@@ -1045,36 +1043,30 @@
             let totalDebt = 0; let schedules = generateAmortizationSchedules();
             let flowIncome = 0; let flowExpense = 0; let flowLoan = 0; let flowPnL = 0; 
             
-            // 抓取真實時間 (以符合情境中的2026年)
             let realTodayStr = new Date().toISOString().split('T')[0];
             let realThisMonth = realTodayStr.substring(0, 7);
             let realThisYear = realTodayStr.substring(0, 4);
 
             let dividendThisMonth = 0; let dividendThisYear = 0;
 
-            // v0.57 獨立時間導航 (Cashflow 卡片專用)
             let dashY = dashViewDate.getFullYear();
             let dashM = String(dashViewDate.getMonth() + 1).padStart(2, '0');
             let timePrefix = cashflowView === 'month' ? `${dashY}-${dashM}` : `${dashY}`;
             let timeLabel = cashflowView === 'month' ? `${dashY}-${dashM}` : `${dashY} 年`;
             document.getElementById('dashTimeDisplay').innerText = timeLabel;
             
-            // 計算未來 12 個月房貸 (FIRE 卡片專用，必須是 Forward 12M)
             let future12MonthsLoan = 0;
             let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
             let next12Str = next12Date.toISOString().split('T')[0];
             
             for(let lId in schedules) { 
                 schedules[lId].forEach(tx => { 
-                    // 計算現有債務
                     if(tx.date === schedules[lId].find(s => s.date > realTodayStr)?.date) {
                         totalDebt += tx.principalRemain;
                     }
-                    // 計算導航選定時間的房貸現金流
                     if(tx.date.startsWith(timePrefix)) {
                         flowLoan += tx.amount; 
                     }
-                    // 計算真實未來一年的房貸火力
                     if(tx.date >= realTodayStr && tx.date < next12Str) {
                         future12MonthsLoan += tx.amount;
                     }
@@ -1082,13 +1074,11 @@
             }
 
             appData.transactions.forEach(t => { 
-                // 現金流卡片受 dashViewDate 控制
                 if(t.date.startsWith(timePrefix)) { 
                     if(t.type === 'income') flowIncome += t.amount; 
                     if(t.type === 'expense' || t.type === 'loan_extra') flowExpense += t.amount; 
                     if(t.type === 'stock_sell' && t.realizedPnL !== undefined) flowPnL += t.realizedPnL;
                 } 
-                // 蜜泉卡片看真實當下
                 if(t.isDividend) {
                     if(t.date.startsWith(realThisMonth)) dividendThisMonth += t.amount;
                     if(t.date.startsWith(realThisYear)) dividendThisYear += t.amount;
@@ -1136,7 +1126,10 @@
 
             let totalInvestable = dryPowder + totalStock;
             let dryPowderPct = totalInvestable > 0 ? (dryPowder / totalInvestable * 100).toFixed(1) : '0.0';
+            // v0.58 加入戰略目標絕對金額
+            let dryPowderTarget = totalInvestable * 0.3;
             document.getElementById('dashDryPowderPct').innerText = dryPowderPct + '%';
+            document.getElementById('dashDryPowderTarget').innerText = `($${Math.round(dryPowderTarget).toLocaleString()})`;
 
             let divCoverage = realAnnualExpense > 0 ? ((yearlyDiv / realAnnualExpense) * 100).toFixed(1) : '0.0';
             document.getElementById('dashDivCoverage').innerText = divCoverage + '%';
