@@ -1250,7 +1250,7 @@
                     let pnl = Math.round(tx.realizedPnL); 
                     pnlHtml = `<span style="color:${pnl >= 0 ? 'var(--income)' : 'var(--expense)'}; font-weight:bold;">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
                 }
-                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${displayFee.toLocaleString()}</td><td style="color:var(--expense)">${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${displayFee.toLocaleString()}</td><td>${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
             renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
             renderPaginationControls('paginationBottom', ledgerCurrentPage, totalPages);
