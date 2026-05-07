@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🍯 MoneyJar v0.60</title>
+    <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -611,6 +612,7 @@
         </div>
     </div>
 
+    <!-- 新增/編輯紀錄視窗 -->
     <div id="txModal" class="modal-overlay" onclick="closeModal()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -1202,7 +1204,6 @@
         function changeLedgerPage(delta) { ledgerCurrentPage += delta; renderLedger(); }
         function gotoLedgerPage(page) { ledgerCurrentPage = page; renderLedger(); }
 
-        // v0.60 精準對帳單拆解
         function renderLedger() {
             const tbody = document.getElementById('ledgerBody'); tbody.innerHTML = '';
             const stockTxs = appData.transactions.filter(t => t.type === 'stock_buy' || t.type === 'stock_sell' || t.isDividend);
@@ -1236,7 +1237,6 @@
                 const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
                 const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
                 
-                // v0.60 拆解邏輯
                 let displayTax = 0; let displayFee = tx.fee || 0;
                 if (!isBuy) {
                     const taxRate = (tx.ticker && tx.ticker.startsWith('00')) ? 0.001 : 0.003;
@@ -1250,6 +1250,7 @@
                     let pnl = Math.round(tx.realizedPnL); 
                     pnlHtml = `<span style="color:${pnl >= 0 ? 'var(--income)' : 'var(--expense)'}; font-weight:bold;">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
                 }
+                // v0.60 移除 displayTax 的 color 樣式，讓他變為預設的淡灰色文字
                 tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${displayFee.toLocaleString()}</td><td>${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
             renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
