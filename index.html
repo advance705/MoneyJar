@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.60</title>
+    <title>🍯 MoneyJar v0.61</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -143,7 +143,8 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
         
-        .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; min-height: 100px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
+        /* v0.61 修改高度強制固定為 125px 以維持完美方格排版 */
+        .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; height: 125px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
         .calendar-cell:hover { background: #434c5e; border-color: var(--accent); }
         .cell-today { border: 2px solid var(--accent) !important; }
         .cell-date { font-weight: bold; color: var(--text-light); text-align: right; margin-bottom: 5px; font-size: 0.9em; flex-shrink: 0;}
@@ -246,7 +247,8 @@
             .calendar-nav button { padding: 6px 10px; font-size: 0.85em; flex: 1; }
             .month-picker-input { padding: 6px 10px; font-size: 0.9em; flex: 1; max-width: 140px; }
             
-            .calendar-cell { aspect-ratio: 1/1; min-height: 0; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
+            /* v0.61 手機版覆蓋為 height: auto 保持正方形 */
+            .calendar-cell { height: auto; aspect-ratio: 1/1; min-height: 0; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
             .cell-date { font-size: 1em; text-align: center; margin-bottom: 2px;}
             .tx-badge { display: none !important; } 
             .dot-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; width: 100%; align-content: flex-start;}
@@ -288,7 +290,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.60</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.61</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -296,7 +298,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.60</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.61</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -1250,7 +1252,6 @@
                     let pnl = Math.round(tx.realizedPnL); 
                     pnlHtml = `<span style="color:${pnl >= 0 ? 'var(--income)' : 'var(--expense)'}; font-weight:bold;">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
                 }
-                // v0.60 移除 displayTax 的 color 樣式，讓他變為預設的淡灰色文字
                 tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${displayFee.toLocaleString()}</td><td>${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
             renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
@@ -1295,7 +1296,12 @@
             if(dayTxs.length === 0 && virtualTxs.length === 0) { list.innerHTML = '<p style="text-align:center; color:var(--text-light); padding-top:20px;">今日無任何紀錄</p>'; } 
             else {
                 dayTxs.sort((a, b) => parseInt(a.id.replace('tx_', '')) - parseInt(b.id.replace('tx_', ''))).forEach(tx => {
-                    let title = tx.isDividend ? `領息 ${tx.ticker}` : (tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker));
+                    let astName = '';
+                    if (tx.ticker) {
+                        let ast = appData.assets.find(a => a.ticker === tx.ticker);
+                        if (ast && ast.name) astName = ` ${ast.name}`;
+                    }
+                    let title = tx.isDividend ? `領息 ${tx.ticker}${astName}` : (tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker + astName));
                     let amtStr = (tx.type==='income' || tx.type.includes('sell') ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
                     list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')"><span style="color:var(--text-main); font-weight:bold;">${title}</span><b style="color:${(tx.type==='income' || tx.type.includes('sell')) ? 'var(--income)' : 'var(--expense)'}">${amtStr}</b></div>`;
                 });
@@ -1332,7 +1338,12 @@
                     else if(tx.type === 'stock_sell' && filters.sell) visible = true;
                     if(visible) {
                         if(renderedCount < 3) {
-                            let label = (item.type === 'virtual') ? `🔄 ${tx.loanName} -$${tx.amount.toLocaleString()}` : (tx.isDividend ? `+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}` : (tx.type==='income' ? `+$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='expense' ? `-$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='loan_extra' ? `大額還款 -$${tx.amount.toLocaleString()}` : (tx.type==='stock_buy' ? `買 ${tx.ticker}` : `賣 ${tx.ticker}`)))));
+                            let astName = '';
+                            if (tx.ticker) {
+                                let ast = appData.assets.find(a => a.ticker === tx.ticker);
+                                if (ast && ast.name) astName = ` ${ast.name}`;
+                            }
+                            let label = (item.type === 'virtual') ? `🔄 ${tx.loanName} -$${tx.amount.toLocaleString()}` : (tx.isDividend ? `+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}${astName}` : (tx.type==='income' ? `+$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='expense' ? `-$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='loan_extra' ? `大額還款 -$${tx.amount.toLocaleString()}` : (tx.type==='stock_buy' ? `買 ${tx.ticker}${astName}` : `賣 ${tx.ticker}${astName}`)))));
                             let cls = (item.type==='virtual') ? 'bg-loan' : (tx.isDividend || tx.type==='income' ? 'bg-income' : (tx.type==='expense' ? 'bg-expense' : (tx.type==='loan_extra' ? 'bg-sell' : (tx.type==='stock_buy' ? 'bg-buy' : 'bg-sell'))));
                             badgesHtml += `<div class="tx-badge ${cls}" ${item.type==='manual' ? `onclick="editTx(event, '${tx.id}')"` : ''}>${label}</div>`;
                             dotsHtml += `<div class="tx-dot" style="background:var(--accent);"></div>`;
