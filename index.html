@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.61</title>
+    <title>🍯 MoneyJar v0.62</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -143,7 +143,7 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
         
-        /* v0.61 修改高度強制固定為 125px 以維持完美方格排版 */
+        /* v0.62 修改高度強制固定為 150px 以容納 +N 筆按鈕 */
         .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; height: 150px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
         .calendar-cell:hover { background: #434c5e; border-color: var(--accent); }
         .cell-today { border: 2px solid var(--accent) !important; }
@@ -247,7 +247,6 @@
             .calendar-nav button { padding: 6px 10px; font-size: 0.85em; flex: 1; }
             .month-picker-input { padding: 6px 10px; font-size: 0.9em; flex: 1; max-width: 140px; }
             
-            /* v0.61 手機版覆蓋為 height: auto 保持正方形 */
             .calendar-cell { height: auto; aspect-ratio: 1/1; min-height: 0; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
             .cell-date { font-size: 1em; text-align: center; margin-bottom: 2px;}
             .tx-badge { display: none !important; } 
@@ -290,7 +289,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.61</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.62</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -298,7 +297,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.61</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.62</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -710,7 +709,7 @@
     <script>
         Chart.defaults.color = '#d8dee9';
         let appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
-        let currentDate = new Date(2026, 3, 1); 
+        let currentDate = new Date(); 
         let dashViewDate = new Date(); 
         
         let assetChartObj = null; let dividendChartObj = null; let portfolioChartObj = null;
