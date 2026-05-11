@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.63</title>
+    <title>🍯 MoneyJar v0.64</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -288,7 +288,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.63</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.64</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -296,7 +296,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.63</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.64</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -377,7 +377,7 @@
                     </h3>
                     <div style="display:flex; align-items:center; justify-content:center; gap:15px; margin-bottom:15px; background:var(--sidebar-bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
                         <button onclick="changeDashTime(-1)" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.2em; padding:0 10px;">◀</button>
-                        <span id="dashTimeDisplay" style="font-weight:bold; color:var(--accent); font-size:1.1em; min-width:100px; text-align:center;">2026-04</span>
+                        <span id="dashTimeDisplay" style="font-weight:bold; color:var(--accent); font-size:1.1em; min-width:100px; text-align:center;"></span>
                         <button onclick="changeDashTime(1)" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.2em; padding:0 10px;">▶</button>
                     </div>
                     
@@ -386,7 +386,7 @@
                     <ul class="dash-list">
                         <li><span id="labelFlowIncome">期內總收入 (不含賣股)</span> <b id="dashFlowIncome" style="color:var(--income);">$0</b></li>
                         <li><span id="labelFlowExpense">期內總支出 (含手動紀錄)</span> <b id="dashFlowExpense" style="color:var(--expense);">-$0</b></li>
-                        <li><span id="labelFlowLoan">期內房貸扣款 (自動計算)</span> <b id="dashFlowLoan" style="color:var(--expense);">-$0</b></li>
+                        <li><span id="labelFlowLoan">期內房貸/利息扣款 (自動計算)</span> <b id="dashFlowLoan" style="color:var(--expense);">-$0</b></li>
                         <li style="border-top: 1px dashed var(--border); margin-top: 5px; padding-top: 15px;">
                             <span>💰 股票已實現損益</span> <b id="dashFlowPnL" style="font-size:1.1em;">$0</b>
                         </li>
@@ -419,7 +419,7 @@
                         <input type="number" id="settingBudget" onchange="saveSettings()" placeholder="如 600000">
                     </div>
                     <div style="font-size:0.8em; color:var(--text-light); margin-bottom:15px; background:var(--sidebar-bg); padding:8px; border-radius:4px; border-left:3px solid var(--accent); line-height:1.4;">
-                        💡 預估年運營成本：<b id="dashRealExpense" style="color:var(--text-main);">$0</b><br>(含設定預算與未來12個月房貸預估 $<span id="dashFutureLoan">0</span>)
+                        💡 預估年運營成本：<b id="dashRealExpense" style="color:var(--text-main);">$0</b><br>(含設定預算與未來12個月房貸與利息預估 $<span id="dashFutureLoan">0</span>)
                     </div>
                     <ul class="dash-list">
                         <li><span>💧 股息覆蓋率：</span> <b id="dashDivCoverage" style="color:var(--income); font-size:1.1em;">0%</b></li>
@@ -447,17 +447,41 @@
                         </div>
                         <input type="hidden" id="editLoanId" value="">
                         <div class="form-group"><label>貸款名稱 (如：房屋貸款)</label><input type="text" id="loanName"></div>
-                        <div class="flex-row">
-                            <div class="form-group"><label>貸款本金 (元)</label><input type="number" id="loanPrincipal" value="10000000"></div>
-                            <div class="form-group"><label>年利率 (%)</label><input type="number" id="loanRate" value="2.1" step="0.01"></div>
+                        
+                        <div class="form-group">
+                            <label>貸款類型</label>
+                            <select id="loanType" onchange="toggleLoanInputs()">
+                                <option value="amortized">一般本息攤還型 (如：房貸、信貸)</option>
+                                <option value="revolving">理財型貸款 (隨借隨還、動用計息)</option>
+                            </select>
                         </div>
-                        <div class="flex-row">
-                            <div class="form-group"><label>期數 (年)</label><input type="number" id="loanYears" value="30"></div>
-                            <div class="form-group"><label>寬限期 (月)</label><input type="number" id="loanGrace" value="36"></div>
+
+                        <div id="amortizedInputs">
+                            <div class="flex-row">
+                                <div class="form-group"><label>貸款本金 (元)</label><input type="number" id="loanPrincipal" value="10000000"></div>
+                                <div class="form-group"><label>年利率 (%)</label><input type="number" id="loanRate" value="2.1" step="0.01"></div>
+                            </div>
+                            <div class="flex-row">
+                                <div class="form-group"><label>期數 (年)</label><input type="number" id="loanYears" value="30"></div>
+                                <div class="form-group"><label>寬限期 (月)</label><input type="number" id="loanGrace" value="36"></div>
+                            </div>
+                            <div class="form-group"><label>首期扣款日</label><input type="date" id="loanStartDate"></div>
                         </div>
-                        <div class="form-group"><label>首期扣款日</label><input type="date" id="loanStartDate"></div>
-                        <div class="form-group"><label>自動扣款帳戶</label><select id="loanAcc"></select></div>
-                        <button id="btnSaveLoan" class="btn-add" onclick="saveLoan()">新增並自動產生攤還表</button>
+
+                        <div id="revolvingInputs" style="display:none;">
+                            <div class="flex-row">
+                                <div class="form-group"><label>總信用額度 (元)</label><input type="number" id="revLimit" value="5000000"></div>
+                                <div class="form-group"><label>年利率 (%)</label><input type="number" id="revRate" value="2.5" step="0.01"></div>
+                            </div>
+                            <div class="flex-row">
+                                <div class="form-group"><label>初始已借出餘額 (元)</label><input type="number" id="revPrincipal" value="0" title="輸入現有欠款作為初始值"></div>
+                                <div class="form-group"><label>每月利息扣款日</label><input type="number" id="revPayDay" value="10" min="1" max="31"></div>
+                            </div>
+                            <div class="form-group"><label>起始計算月份 (YYYY-MM)</label><input type="month" id="revStartMonth"></div>
+                        </div>
+
+                        <div class="form-group"><label>自動扣款帳戶 (利息/本金)</label><select id="loanAcc"></select></div>
+                        <button id="btnSaveLoan" class="btn-add" onclick="saveLoan()">儲存貸款合約</button>
                         <button id="btnCancelLoanEdit" class="btn-add" style="display:none; background:var(--border); color:var(--text-main); margin-top:5px;" onclick="closeLoanForm()">取消編輯</button>
                     </div>
                 </div>
@@ -581,7 +605,6 @@
                                 <div class="form-group"><label>現價 (元)</label><input type="number" id="newPrice" value="0" step="0.01"></div>
                             </div>
                             
-                            <!-- v0.63 下方三項資訊現在完全由手動輸入，雲端更新不會觸碰 -->
                             <div class="form-group"><label>預估現金股利 (元/股)</label><input type="number" id="newDividend" value="0" step="0.01"></div>
                             <div class="flex-row"><div class="form-group"><label>除息日</label><input type="date" id="newExDate"></div><div class="form-group"><label>發放日</label><input type="date" id="newPayDate"></div></div>
                         </div>
@@ -702,6 +725,25 @@
                     <button class="btn-save" id="btnSaveLoanExtra" onclick="saveLoanExtraTransaction()" style="flex:1; background:var(--accent); color:#2e3440; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">儲存並重算房貸</button>
                     <button class="btn-delete" id="btnDeleteLoanExtra" onclick="confirmDeleteTransaction()" style="background:var(--expense); color:#eceff4; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">刪除</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 理財型房貸借還款視窗 -->
+    <div id="revTxModal" class="modal-overlay" onclick="closeRevTxModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="revTxTitle">借還款</h3>
+                <button class="close-btn" onclick="closeRevTxModal()">×</button>
+            </div>
+            <input type="hidden" id="revTxLoanId">
+            <input type="hidden" id="revTxType">
+            <input type="hidden" id="editRevTxId">
+            <div class="form-group"><label>日期</label><input type="date" id="revTxDate"></div>
+            <div class="form-group"><label>金額 (元)</label><input type="number" id="revTxAmount" value="0" min="1"></div>
+            <div class="modal-actions">
+                <button class="btn-save" onclick="saveRevTx()" style="flex:1; background:var(--accent); color:#2e3440; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">儲存</button>
+                <button id="btnDeleteRevTx" class="btn-delete" onclick="confirmDeleteRevTx()" style="display:none; background:var(--expense); color:#eceff4; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">刪除</button>
             </div>
         </div>
     </div>
@@ -881,9 +923,20 @@
             renderAll();
         }
 
+        function toggleLoanInputs() {
+            const type = document.getElementById('loanType').value;
+            if (type === 'amortized') {
+                document.getElementById('amortizedInputs').style.display = 'block';
+                document.getElementById('revolvingInputs').style.display = 'none';
+            } else {
+                document.getElementById('amortizedInputs').style.display = 'none';
+                document.getElementById('revolvingInputs').style.display = 'block';
+            }
+        }
+
         function openAssetForm() { document.getElementById('assetFormOverlay').classList.add('active'); }
         function closeAssetForm() { document.getElementById('assetFormOverlay').classList.remove('active'); resetAssetForm(); }
-        function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); }
+        function openLoanForm() { document.getElementById('loanFormOverlay').classList.add('active'); toggleLoanInputs(); }
         function closeLoanForm() { document.getElementById('loanFormOverlay').classList.remove('active'); resetLoanForm(); }
 
         function jumpToTx(txId) {
@@ -946,6 +999,20 @@
             });
             let activeAccs = Object.keys(netSharesPerAcc).filter(id => netSharesPerAcc[id] > 0);
             if(activeAccs.length === 0) return '無'; return activeAccs.map(id => appData.accounts.find(a => a.id === id)?.name || '未知').join(', ');
+        }
+
+        function getRevDynamicBalance(loanId) {
+            let loan = (appData.loans || []).find(l => l.id === loanId);
+            if (!loan || loan.type !== 'revolving') return 0;
+            let bal = loan.principal || 0;
+            let todayStr = new Date().toISOString().split('T')[0];
+            appData.transactions.forEach(tx => {
+                if (tx.loanId === loanId && tx.date <= todayStr) {
+                    if (tx.type === 'rev_borrow') bal += tx.amount;
+                    if (tx.type === 'rev_repay') bal -= tx.amount;
+                }
+            });
+            return bal;
         }
 
         function saveSettings() {
@@ -1053,10 +1120,21 @@
             let next12Date = new Date(); next12Date.setFullYear(next12Date.getFullYear() + 1);
             let next12Str = next12Date.toISOString().split('T')[0];
             
+            // 加入理財型當前餘額
+            (appData.loans || []).forEach(l => {
+                if (l.type === 'revolving') totalDebt += getRevDynamicBalance(l.id);
+            });
+
             let schedules = cachedAmortizationSchedules || generateAmortizationSchedules();
             for(let lId in schedules) { 
+                let loan = appData.loans.find(l => l.id === lId);
+                if (loan && loan.type !== 'revolving') {
+                    let s = schedules[lId].find(s => s.date > realTodayStr);
+                    if (s) totalDebt += s.principalRemain;
+                    else if (schedules[lId].length === 0) totalDebt += loan.principal;
+                }
+                
                 schedules[lId].forEach(tx => { 
-                    if(tx.date === schedules[lId].find(s => s.date > realTodayStr)?.date) totalDebt += tx.principalRemain;
                     if(tx.date.startsWith(timePrefix)) flowLoan += tx.amount; 
                     if(tx.date >= realTodayStr && tx.date < next12Str) future12MonthsLoan += tx.amount;
                 }); 
@@ -1064,8 +1142,8 @@
 
             appData.transactions.forEach(t => { 
                 if(t.date.startsWith(timePrefix)) { 
-                    if(t.type === 'income') flowIncome += t.amount; 
-                    if(t.type === 'expense' || t.type === 'loan_extra') flowExpense += t.amount; 
+                    if(t.type === 'income' || t.type === 'rev_borrow') flowIncome += t.amount; 
+                    if(t.type === 'expense' || t.type === 'loan_extra' || t.type === 'rev_repay') flowExpense += t.amount; 
                     if(t.type === 'stock_sell' && t.realizedPnL !== undefined) flowPnL += t.realizedPnL;
                 } 
                 if(t.isDividend) {
@@ -1142,21 +1220,50 @@
         function generateAmortizationSchedules() {
             let schedules = {};
             (appData.loans || []).forEach(loan => {
-                let currentPrincipal = loan.principal; let monthlyRate = loan.rate / 100 / 12; 
-                let startY, startM, payD;
-                if (loan.startDate) { let parts = loan.startDate.split('-'); startY = parseInt(parts[0]); startM = parseInt(parts[1]) - 1; payD = parseInt(parts[2]); } 
-                else if (loan.startMonth) { let [sY, sM] = loan.startMonth.split('-'); startY = parseInt(sY); startM = parseInt(sM) - 1; payD = loan.payDay || 10; } 
-                else return;
-                let extras = appData.transactions.filter(t => t.type === 'loan_extra' && t.loanId === loan.id); let schedule = [];
-                for (let i = 1; i <= loan.years * 12; i++) {
-                    if (currentPrincipal <= 0) break;
-                    let mIdx = startM + i - 1; let y = startY + Math.floor(mIdx / 12); let m = mIdx % 12;
-                    let dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(payD).padStart(2,'0')}`;
-                    let extra = extras.filter(ex => ex.date.startsWith(dStr.substring(0, 7))).reduce((s, ex) => s + ex.amount, 0);
-                    currentPrincipal -= extra; if (currentPrincipal <= 0) break;
-                    let isGrace = i <= loan.grace; let payment = isGrace ? currentPrincipal * monthlyRate : PMT(monthlyRate, (loan.years * 12) - i + 1, currentPrincipal);
-                    schedule.push({ date: dStr, loanId: loan.id, loanName: loan.name, accountId: loan.accountId, amount: Math.round(payment), principalRemain: Math.round(currentPrincipal), isGrace });
-                    if (!isGrace) currentPrincipal -= (payment - (currentPrincipal * monthlyRate));
+                let schedule = [];
+                if (loan.type === 'revolving') {
+                    let monthlyRate = (loan.rate || 0) / 100 / 12;
+                    let sMArray = (loan.startMonth || '').split('-');
+                    if (sMArray.length !== 2) return;
+                    let startY = parseInt(sMArray[0]); let startM = parseInt(sMArray[1]) - 1;
+                    let payD = loan.payDay || 10;
+                    let revTxs = appData.transactions.filter(t => (t.type === 'rev_borrow' || t.type === 'rev_repay') && t.loanId === loan.id);
+                    
+                    // 投射未來 60 個月
+                    for (let i = 0; i < 60; i++) {
+                        let mIdx = startM + i; let y = startY + Math.floor(mIdx / 12); let m = mIdx % 12;
+                        let dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(payD).padStart(2,'0')}`;
+                        
+                        let tempBal = loan.principal || 0;
+                        revTxs.forEach(rtx => {
+                            if (rtx.date <= dStr) {
+                                if (rtx.type === 'rev_borrow') tempBal += rtx.amount;
+                                if (rtx.type === 'rev_repay') tempBal -= rtx.amount;
+                            }
+                        });
+                        tempBal = Math.max(0, tempBal);
+                        let interest = tempBal * monthlyRate;
+                        if (interest > 0) {
+                            schedule.push({ date: dStr, loanId: loan.id, loanName: loan.name, accountId: loan.accountId, amount: Math.round(interest), principalRemain: Math.round(tempBal), isGrace: true, isRevolvingInterest: true });
+                        }
+                    }
+                } else {
+                    let currentPrincipal = loan.principal; let monthlyRate = loan.rate / 100 / 12; 
+                    let startY, startM, payD;
+                    if (loan.startDate) { let parts = loan.startDate.split('-'); startY = parseInt(parts[0]); startM = parseInt(parts[1]) - 1; payD = parseInt(parts[2]); } 
+                    else if (loan.startMonth) { let [sY, sM] = loan.startMonth.split('-'); startY = parseInt(sY); startM = parseInt(sM) - 1; payD = loan.payDay || 10; } 
+                    else return;
+                    let extras = appData.transactions.filter(t => t.type === 'loan_extra' && t.loanId === loan.id);
+                    for (let i = 1; i <= loan.years * 12; i++) {
+                        if (currentPrincipal <= 0) break;
+                        let mIdx = startM + i - 1; let y = startY + Math.floor(mIdx / 12); let m = mIdx % 12;
+                        let dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(payD).padStart(2,'0')}`;
+                        let extra = extras.filter(ex => ex.date.startsWith(dStr.substring(0, 7))).reduce((s, ex) => s + ex.amount, 0);
+                        currentPrincipal -= extra; if (currentPrincipal <= 0) break;
+                        let isGrace = i <= loan.grace; let payment = isGrace ? currentPrincipal * monthlyRate : PMT(monthlyRate, (loan.years * 12) - i + 1, currentPrincipal);
+                        schedule.push({ date: dStr, loanId: loan.id, loanName: loan.name, accountId: loan.accountId, amount: Math.round(payment), principalRemain: Math.round(currentPrincipal), isGrace });
+                        if (!isGrace) currentPrincipal -= (payment - (currentPrincipal * monthlyRate));
+                    }
                 }
                 schedules[loan.id] = schedule;
             });
@@ -1176,30 +1283,102 @@
         }
 
         function saveLoan() {
-            if(!document.getElementById('loanStartDate').value) { alert("請輸入首期扣款日"); return; }
+            const type = document.getElementById('loanType').value || 'amortized';
             const editId = document.getElementById('editLoanId').value;
-            const newLoan = { id: editId || 'loan_' + Date.now(), name: document.getElementById('loanName').value || '未命名貸款', principal: parseFloat(document.getElementById('loanPrincipal').value), rate: parseFloat(document.getElementById('loanRate').value), years: parseInt(document.getElementById('loanYears').value), grace: parseInt(document.getElementById('loanGrace').value), startDate: document.getElementById('loanStartDate').value, accountId: document.getElementById('loanAcc').value };
-            if (editId) { const idx = appData.loans.findIndex(l => l.id === editId); if(idx > -1) appData.loans[idx] = newLoan; } else appData.loans.push(newLoan);
+            const accountId = document.getElementById('loanAcc').value;
+            const name = document.getElementById('loanName').value || '未命名貸款';
+
+            let newLoan = { id: editId || 'loan_' + Date.now(), name, type, accountId };
+
+            if (type === 'amortized') {
+                if(!document.getElementById('loanStartDate').value) { alert("請輸入首期扣款日"); return; }
+                newLoan.principal = parseFloat(document.getElementById('loanPrincipal').value);
+                newLoan.rate = parseFloat(document.getElementById('loanRate').value);
+                newLoan.years = parseInt(document.getElementById('loanYears').value);
+                newLoan.grace = parseInt(document.getElementById('loanGrace').value);
+                newLoan.startDate = document.getElementById('loanStartDate').value;
+            } else {
+                if(!document.getElementById('revStartMonth').value) { alert("請輸入起始計算月份"); return; }
+                newLoan.limit = parseFloat(document.getElementById('revLimit').value);
+                newLoan.principal = parseFloat(document.getElementById('revPrincipal').value); 
+                newLoan.rate = parseFloat(document.getElementById('revRate').value);
+                newLoan.payDay = parseInt(document.getElementById('revPayDay').value);
+                newLoan.startMonth = document.getElementById('revStartMonth').value;
+            }
+
+            if (editId) { const idx = appData.loans.findIndex(l => l.id === editId); if(idx > -1) appData.loans[idx] = newLoan; } 
+            else appData.loans.push(newLoan);
             closeLoanForm(); saveData();
         }
+        
         function editLoan(id) { 
             const l = appData.loans.find(x => x.id === id); if(!l) return; 
             document.getElementById('editLoanId').value = l.id; document.getElementById('loanFormTitle').innerText = "✏️ 編輯貸款合約"; 
-            document.getElementById('loanName').value = l.name; document.getElementById('loanPrincipal').value = l.principal; document.getElementById('loanRate').value = l.rate; document.getElementById('loanYears').value = l.years; document.getElementById('loanGrace').value = l.grace; 
-            document.getElementById('loanStartDate').value = l.startDate || (l.startMonth ? l.startMonth + '-' + String(l.payDay||10).padStart(2,'0') : ''); 
-            document.getElementById('loanAcc').value = l.accountId; document.getElementById('btnSaveLoan').innerText = "更新合約並重算"; document.getElementById('btnCancelLoanEdit').style.display = "block"; openLoanForm(); 
+            document.getElementById('loanName').value = l.name; 
+            document.getElementById('loanAcc').value = l.accountId; 
+            document.getElementById('loanType').value = l.type || 'amortized';
+            toggleLoanInputs();
+
+            if (l.type === 'revolving') {
+                document.getElementById('revLimit').value = l.limit || 0;
+                document.getElementById('revRate').value = l.rate || 0;
+                document.getElementById('revPrincipal').value = l.principal || 0;
+                document.getElementById('revPayDay').value = l.payDay || 10;
+                document.getElementById('revStartMonth').value = l.startMonth || '';
+            } else {
+                document.getElementById('loanPrincipal').value = l.principal || 0; 
+                document.getElementById('loanRate').value = l.rate || 0; 
+                document.getElementById('loanYears').value = l.years || 30; 
+                document.getElementById('loanGrace').value = l.grace || 0; 
+                document.getElementById('loanStartDate').value = l.startDate || (l.startMonth ? l.startMonth + '-' + String(l.payDay||10).padStart(2,'0') : ''); 
+            }
+            document.getElementById('btnSaveLoan').innerText = "更新合約"; document.getElementById('btnCancelLoanEdit').style.display = "block"; openLoanForm(); 
         }
+
         function deleteLoan(id) { showCustomConfirm('確定要刪除此貸款？', () => { appData.loans = appData.loans.filter(l => l.id !== id); saveData(); }, true); }
-        function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanName').value = ""; document.getElementById('loanStartDate').value = ""; document.getElementById('btnCancelLoanEdit').style.display = "none"; }
+        function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanName').value = ""; document.getElementById('loanStartDate').value = ""; document.getElementById('btnCancelLoanEdit').style.display = "none"; document.getElementById('loanType').value = 'amortized'; toggleLoanInputs(); document.getElementById('btnSaveLoan').innerText = "新增並自動產生攤還表";}
         
         function renderLoans() {
             const list = document.getElementById('loanList'); list.innerHTML = ''; 
             let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
             let todayStr = new Date().toISOString().split('T')[0];
             appData.loans.forEach(loan => {
-                let sch = schedules[loan.id] || []; let nextPayment = sch.find(s => s.date > todayStr); let currentBal = nextPayment ? nextPayment.principalRemain : (sch.length > 0 ? 0 : loan.principal); let nextAmt = nextPayment ? nextPayment.amount : 0; let isGrace = nextPayment ? nextPayment.isGrace : false; let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
-                let displayStart = loan.startDate || (loan.startMonth ? loan.startMonth + ' (每月 ' + loan.payDay + ' 號)' : '');
-                list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);"><div class="card-actions"><button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div><div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div><div class="card-sub"><b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br><b>首期扣款日:</b> <span style="color:var(--accent); font-weight:bold;">${displayStart}</span><br><b>最新/下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br><b>自動扣款帳戶:</b> ${accName}</div></div>`;
+                let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
+                let sch = schedules[loan.id] || []; 
+                let nextPayment = sch.find(s => s.date > todayStr); 
+                
+                if (loan.type === 'revolving') {
+                    let currentBal = getRevDynamicBalance(loan.id);
+                    let limit = loan.limit || 0;
+                    let available = Math.max(0, limit - currentBal);
+                    let nextAmt = nextPayment ? nextPayment.amount : 0;
+                    
+                    list.innerHTML += `<div class="card" style="border-left: 4px solid var(--accent);">
+                        <div class="card-actions">
+                            <button onclick="openRevTxModal('${loan.id}', 'borrow')" title="借款">🔽借款</button>
+                            <button onclick="openRevTxModal('${loan.id}', 'repay')" title="還款">🔼還款</button>
+                            <button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button>
+                        </div>
+                        <div class="card-title-row"><h3 class="card-title">${loan.name} (理財型)</h3></div>
+                        <div class="card-val-row">
+                            <div class="card-val" style="color:var(--expense);">$${currentBal.toLocaleString()}<span class="val-label">已動用餘額</span></div>
+                            <div class="card-val" style="color:var(--income); font-size:1em;">$${available.toLocaleString()}<span class="val-label">剩餘額度</span></div>
+                        </div>
+                        <div class="card-sub"><b>總額度:</b> $${limit.toLocaleString()}<br><b>利率:</b> ${loan.rate}% | <b>扣款日:</b> 每月 ${loan.payDay} 號<br><b>下期預估利息:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span><br><b>自動扣款帳戶:</b> ${accName}</div>
+                    </div>`;
+                } else {
+                    let currentBal = nextPayment ? nextPayment.principalRemain : (sch.length > 0 ? 0 : loan.principal); 
+                    let nextAmt = nextPayment ? nextPayment.amount : 0; 
+                    let isGrace = nextPayment ? nextPayment.isGrace : false; 
+                    let displayStart = loan.startDate || (loan.startMonth ? loan.startMonth + ' (每月 ' + loan.payDay + ' 號)' : '');
+                    
+                    list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);">
+                        <div class="card-actions"><button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button></div>
+                        <div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div>
+                        <div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div>
+                        <div class="card-sub"><b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br><b>首期扣款日:</b> <span style="color:var(--accent); font-weight:bold;">${displayStart}</span><br><b>最新/下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br><b>自動扣款帳戶:</b> ${accName}</div>
+                    </div>`;
+                }
             });
         }
 
@@ -1303,9 +1482,16 @@
                         let ast = appData.assets.find(a => a.ticker === tx.ticker);
                         if (ast && ast.name) astName = ` ${ast.name}`;
                     }
-                    let title = tx.isDividend ? `領息 ${tx.ticker}${astName}` : (tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker + astName));
-                    let amtStr = (tx.type==='income' || tx.type.includes('sell') ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
-                    list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')"><span style="color:var(--text-main); font-weight:bold;">${title}</span><b style="color:${(tx.type==='income' || tx.type.includes('sell')) ? 'var(--income)' : 'var(--expense)'}">${amtStr}</b></div>`;
+                    
+                    let title = '';
+                    if (tx.isDividend) title = `領息 ${tx.ticker}${astName}`;
+                    else if (tx.type === 'rev_borrow') title = `🔽借款自 ${(appData.loans.find(l => l.id === tx.loanId)?.name || '理財型')}`;
+                    else if (tx.type === 'rev_repay') title = `🔼還款至 ${(appData.loans.find(l => l.id === tx.loanId)?.name || '理財型')}`;
+                    else title = tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker + astName);
+                    
+                    let amtStr = (tx.type==='income' || tx.type.includes('sell') || tx.type==='rev_borrow' ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
+                    let color = (tx.type==='income' || tx.type.includes('sell') || tx.type==='rev_borrow') ? 'var(--income)' : 'var(--expense)';
+                    list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')"><span style="color:var(--text-main); font-weight:bold;">${title}</span><b style="color:${color}">${amtStr}</b></div>`;
                 });
                 virtualTxs.forEach(vt => { list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-main);">🔄 ${vt.loanName}</span><b style="color:var(--expense)">-$${Math.round(vt.amount).toLocaleString()}</b></div>`; });
             }
@@ -1338,6 +1524,9 @@
                     else if(tx.type === 'loan_extra') visible = true;
                     else if(tx.type === 'stock_buy' && filters.buy) visible = true;
                     else if(tx.type === 'stock_sell' && filters.sell) visible = true;
+                    else if(tx.type === 'rev_borrow' && filters.income) visible = true;
+                    else if(tx.type === 'rev_repay' && filters.expense) visible = true;
+                    
                     if(visible) {
                         if(renderedCount < 3) {
                             let astName = '';
@@ -1345,8 +1534,21 @@
                                 let ast = appData.assets.find(a => a.ticker === tx.ticker);
                                 if (ast && ast.name) astName = ` ${ast.name}`;
                             }
-                            let label = (item.type === 'virtual') ? `🔄 ${tx.loanName} -$${tx.amount.toLocaleString()}` : (tx.isDividend ? `+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}${astName}` : (tx.type==='income' ? `+$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='expense' ? `-$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='loan_extra' ? `大額還款 -$${tx.amount.toLocaleString()}` : (tx.type==='stock_buy' ? `買 ${tx.ticker}${astName}` : `賣 ${tx.ticker}${astName}`)))));
-                            let cls = (item.type==='virtual') ? 'bg-loan' : (tx.isDividend || tx.type==='income' ? 'bg-income' : (tx.type==='expense' ? 'bg-expense' : (tx.type==='loan_extra' ? 'bg-sell' : (tx.type==='stock_buy' ? 'bg-buy' : 'bg-sell'))));
+                            
+                            let label = ''; let cls = '';
+                            if (item.type === 'virtual') {
+                                label = `🔄 ${tx.loanName} -$${tx.amount.toLocaleString()}`; cls = 'bg-loan';
+                            } else if (tx.type === 'rev_borrow') {
+                                let lName = appData.loans.find(l => l.id === tx.loanId)?.name || '理財型';
+                                label = `+$${tx.amount.toLocaleString()} 借款 ${lName}`; cls = 'bg-income';
+                            } else if (tx.type === 'rev_repay') {
+                                let lName = appData.loans.find(l => l.id === tx.loanId)?.name || '理財型';
+                                label = `-$${tx.amount.toLocaleString()} 還款 ${lName}`; cls = 'bg-expense';
+                            } else {
+                                label = (tx.isDividend ? `+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}${astName}` : (tx.type==='income' ? `+$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='expense' ? `-$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='loan_extra' ? `大額還款 -$${tx.amount.toLocaleString()}` : (tx.type==='stock_buy' ? `買 ${tx.ticker}${astName}` : `賣 ${tx.ticker}${astName}`)))));
+                                cls = (tx.isDividend || tx.type==='income' ? 'bg-income' : (tx.type==='expense' ? 'bg-expense' : (tx.type==='loan_extra' ? 'bg-sell' : (tx.type==='stock_buy' ? 'bg-buy' : 'bg-sell'))));
+                            }
+                            
                             badgesHtml += `<div class="tx-badge ${cls}" ${item.type==='manual' ? `onclick="editTx(event, '${tx.id}')"` : ''}>${label}</div>`;
                             dotsHtml += `<div class="tx-dot" style="background:var(--accent);"></div>`;
                             renderedCount++;
@@ -1354,8 +1556,8 @@
                     }
                 });
                 if (hiddenCount > 0) badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border);">+ ${hiddenCount} 筆...</div>`;
-                dotsHtml += '</div>'; // 防呆：確保小圓點容器確實關閉
-                grid.innerHTML += `<div class="calendar-cell ${dateStr === realTodayStr ? "cell-today" : ""}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div>`; // 確保日曆格子確實關閉
+                dotsHtml += '</div>'; 
+                grid.innerHTML += `<div class="calendar-cell ${dateStr === realTodayStr ? "cell-today" : ""}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div>`; 
             }
         }
 
@@ -1373,8 +1575,35 @@
         }
 
         function toggleSellRow() { const isSell = document.getElementById('stockAction').value === 'sell'; document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; document.getElementById('sellTaxRateRow').style.display = isSell ? 'block' : 'none'; }
-        function openModal(dateStr) { document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`; document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none'; document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; document.getElementById('cashIsDividend').checked = false; toggleDividendStock(); document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0; document.getElementById('stockAction').value = 'buy'; document.getElementById('stockTaxRate').value = '0.003'; toggleSellRow(); loadAccSelects(); switchFormTab('cash'); document.getElementById('txModal').classList.add('active'); }
-        function editTx(event, txId) { if (event) event.stopPropagation(); const tx = appData.transactions.find(t => t.id === txId); if (!tx) return; document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`; loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none'; if (tx.type === 'income' || tx.type === 'expense') { switchFormTab('cash'); document.getElementById('cashType').value = tx.type; document.getElementById('cashCategory').value = tx.category; document.getElementById('cashAccount').value = tx.accountId; document.getElementById('cashAmount').value = tx.amount; const isDiv = document.getElementById('cashIsDividend'); if (tx.isDividend) { isDiv.checked = true; toggleDividendStock(); const ast = appData.assets.find(a => a.ticker === tx.ticker); if (ast) document.getElementById('cashDividendStock').value = ast.id; } else { isDiv.checked = false; toggleDividendStock(); } document.getElementById('btnDeleteCash').style.display = 'block'; } else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; const ast = appData.assets.find(a => a.ticker === tx.ticker); if(ast) document.getElementById('stockAsset').value = ast.id; document.getElementById('stockAccount').value = tx.accountId; document.getElementById('stockPrice').value = tx.price; document.getElementById('stockShares').value = tx.shares; document.getElementById('stockFee').value = tx.fee; toggleSellRow(); populateLotSelect(tx.id); if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId; calcStockTotal(false); document.getElementById('btnDeleteStock').style.display = 'block'; } else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; } document.getElementById('txModal').classList.add('active'); }
+        
+        function openModal(dateStr) { 
+            document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`; document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none'; document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; document.getElementById('cashIsDividend').checked = false; toggleDividendStock(); document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0; document.getElementById('stockAction').value = 'buy'; document.getElementById('stockTaxRate').value = '0.003'; toggleSellRow(); loadAccSelects(); switchFormTab('cash'); document.getElementById('txModal').classList.add('active'); 
+        }
+        
+        function editTx(event, txId) { 
+            if (event) event.stopPropagation(); const tx = appData.transactions.find(t => t.id === txId); if (!tx) return; 
+            
+            // 處理理財型房貸紀錄的獨立編輯視窗
+            if (tx.type === 'rev_borrow' || tx.type === 'rev_repay') {
+                document.getElementById('revTxLoanId').value = tx.loanId;
+                document.getElementById('revTxType').value = tx.type === 'rev_borrow' ? 'borrow' : 'repay';
+                document.getElementById('revTxDate').value = tx.date;
+                document.getElementById('revTxAmount').value = tx.amount;
+                document.getElementById('editRevTxId').value = tx.id;
+                const loan = appData.loans.find(l => l.id === tx.loanId);
+                document.getElementById('revTxTitle').innerText = (tx.type === 'rev_borrow' ? `🔽 編輯借款: ` : `🔼 編輯還款: `) + (loan?.name || '');
+                document.getElementById('btnDeleteRevTx').style.display = 'block';
+                document.getElementById('revTxModal').classList.add('active');
+                return;
+            }
+
+            document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`; loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none'; 
+            if (tx.type === 'income' || tx.type === 'expense') { switchFormTab('cash'); document.getElementById('cashType').value = tx.type; document.getElementById('cashCategory').value = tx.category; document.getElementById('cashAccount').value = tx.accountId; document.getElementById('cashAmount').value = tx.amount; const isDiv = document.getElementById('cashIsDividend'); if (tx.isDividend) { isDiv.checked = true; toggleDividendStock(); const ast = appData.assets.find(a => a.ticker === tx.ticker); if (ast) document.getElementById('cashDividendStock').value = ast.id; } else { isDiv.checked = false; toggleDividendStock(); } document.getElementById('btnDeleteCash').style.display = 'block'; } 
+            else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; const ast = appData.assets.find(a => a.ticker === tx.ticker); if(ast) document.getElementById('stockAsset').value = ast.id; document.getElementById('stockAccount').value = tx.accountId; document.getElementById('stockPrice').value = tx.price; document.getElementById('stockShares').value = tx.shares; document.getElementById('stockFee').value = tx.fee; toggleSellRow(); populateLotSelect(tx.id); if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId; calcStockTotal(false); document.getElementById('btnDeleteStock').style.display = 'block'; } 
+            else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; } 
+            document.getElementById('txModal').classList.add('active'); 
+        }
+        
         function closeModal() { document.getElementById('txModal').classList.remove('active'); }
         function switchFormTab(type) { document.getElementById('tabCash').classList.toggle('active', type === 'cash'); document.getElementById('tabStock').classList.toggle('active', type === 'stock'); document.getElementById('tabLoanExtra').classList.toggle('active', type === 'loanExtra'); document.getElementById('formCash').style.display = type === 'cash' ? 'block' : 'none'; document.getElementById('formStock').style.display = type === 'stock' ? 'block' : 'none'; document.getElementById('formLoanExtra').style.display = type === 'loanExtra' ? 'block' : 'none'; }
 
@@ -1388,7 +1617,14 @@
 
         function reverseTransaction(txId) {
             const idx = appData.transactions.findIndex(t => t.id === txId); if (idx === -1) return; const tx = appData.transactions[idx]; const acc = appData.accounts.find(a => a.id === tx.accountId);
-            if (acc) { if (tx.type === 'income') acc.balance -= tx.amount; else if (tx.type === 'expense' || tx.type === 'loan_extra') acc.balance += tx.amount; else if (tx.type === 'stock_buy') acc.balance += tx.amount; else if (tx.type === 'stock_sell') acc.balance -= tx.amount; }
+            if (acc) { 
+                if (tx.type === 'income') acc.balance -= tx.amount; 
+                else if (tx.type === 'expense' || tx.type === 'loan_extra') acc.balance += tx.amount; 
+                else if (tx.type === 'stock_buy') acc.balance += tx.amount; 
+                else if (tx.type === 'stock_sell') acc.balance -= tx.amount; 
+                else if (tx.type === 'rev_borrow') acc.balance -= tx.amount;
+                else if (tx.type === 'rev_repay') acc.balance += tx.amount;
+            }
             appData.transactions.splice(idx, 1);
         }
         function confirmDeleteTransaction() { showCustomConfirm('確定要刪除這筆紀錄嗎？', () => { reverseTransaction(document.getElementById('editTxId').value); closeModal(); saveData(); }, true); }
@@ -1428,6 +1664,66 @@
             closeModal(); saveData();
         }
 
+        function openRevTxModal(loanId, actionType) {
+            const loan = appData.loans.find(l => l.id === loanId);
+            if(!loan) return;
+            document.getElementById('revTxLoanId').value = loanId;
+            document.getElementById('revTxType').value = actionType;
+            document.getElementById('editRevTxId').value = '';
+            document.getElementById('revTxDate').value = currentDate.toISOString().split('T')[0];
+            document.getElementById('revTxAmount').value = '';
+            document.getElementById('revTxTitle').innerText = actionType === 'borrow' ? `🔽 借款自: ${loan.name}` : `🔼 還款至: ${loan.name}`;
+            document.getElementById('btnDeleteRevTx').style.display = 'none';
+            document.getElementById('revTxModal').classList.add('active');
+        }
+
+        function closeRevTxModal() { document.getElementById('revTxModal').classList.remove('active'); }
+
+        function saveRevTx() {
+            const loanId = document.getElementById('revTxLoanId').value;
+            const type = document.getElementById('revTxType').value;
+            const amount = parseFloat(document.getElementById('revTxAmount').value);
+            const date = document.getElementById('revTxDate').value;
+            const editId = document.getElementById('editRevTxId').value;
+            if(!amount || amount <= 0 || !date) { alert('請輸入有效金額與日期'); return; }
+
+            const loan = appData.loans.find(l => l.id === loanId);
+            if(!loan) return;
+
+            let currentBal = getRevDynamicBalance(loanId);
+            if (editId) {
+                const oldTx = appData.transactions.find(t => t.id === editId);
+                if (oldTx) currentBal = currentBal + (oldTx.type === 'rev_borrow' ? -oldTx.amount : oldTx.amount);
+            }
+
+            if (type === 'borrow' && (currentBal + amount > (loan.limit || 0))) {
+                if(!confirm(`借款金額可能超出總額度！目前剩餘 ${Math.max(0, loan.limit - currentBal)}。\n確定要強行借出？`)) return;
+            }
+            if (type === 'repay' && amount > currentBal) {
+                if(!confirm(`還款金額超出目前欠款！目前僅欠 ${currentBal}。\n確定要強行還款？`)) return;
+            }
+
+            if (editId) reverseTransaction(editId);
+
+            const txType = type === 'borrow' ? 'rev_borrow' : 'rev_repay';
+            appData.transactions.push({ id: 'tx_' + Date.now(), date: date, type: txType, loanId: loanId, accountId: loan.accountId, amount: amount });
+            
+            const acc = appData.accounts.find(a => a.id === loan.accountId);
+            if (acc) {
+                if (type === 'borrow') acc.balance += amount; 
+                if (type === 'repay') acc.balance -= amount; 
+            }
+
+            closeRevTxModal(); saveData();
+        }
+
+        function confirmDeleteRevTx() {
+            showCustomConfirm('確定要刪除這筆借/還款紀錄嗎？\n銀行帳戶餘額將自動還原。', () => {
+                reverseTransaction(document.getElementById('editRevTxId').value);
+                closeRevTxModal(); saveData();
+            }, true);
+        }
+
         let dragSrcId = null, dragType = null;
         function handleDragStart(e, type, id) { dragSrcId = id; dragType = type; e.target.classList.add('dragging'); e.dataTransfer.setData('text/plain', id); }
         function handleDragOver(e) { e.preventDefault(); }
@@ -1444,7 +1740,6 @@
                 if (!data.error) { 
                     if (data.price > 0) document.getElementById('newPrice').value = data.price; 
                     if (data.name) document.getElementById('newName').value = data.name; 
-                    // v0.63 拔除股利抓取，保持手動精準控制
                 } 
             } catch (e) { alert("連線失敗"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
         }
@@ -1459,7 +1754,6 @@
                         if (!data.error && data.price > 0) { 
                             ast.price = data.price; 
                             if (data.name && !ast.name) ast.name = data.name; 
-                            // v0.63 拔除一鍵更新時對股利與除息日的覆蓋，確保資料安全
                             count++; 
                         } 
                     } catch (e) {} 
