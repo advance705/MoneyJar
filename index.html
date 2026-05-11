@@ -143,7 +143,6 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
         
-        /* v0.63 修改高度強制固定為 150px 以容納 +N 筆按鈕並提供呼吸空間 */
         .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; height: 150px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
         .calendar-cell:hover { background: #434c5e; border-color: var(--accent); }
         .cell-today { border: 2px solid var(--accent) !important; }
@@ -378,7 +377,7 @@
                     </h3>
                     <div style="display:flex; align-items:center; justify-content:center; gap:15px; margin-bottom:15px; background:var(--sidebar-bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
                         <button onclick="changeDashTime(-1)" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.2em; padding:0 10px;">◀</button>
-                        <span id="dashTimeDisplay" style="font-weight:bold; color:var(--accent); font-size:1.1em; min-width:100px; text-align:center;"></span>
+                        <span id="dashTimeDisplay" style="font-weight:bold; color:var(--accent); font-size:1.1em; min-width:100px; text-align:center;">2026-04</span>
                         <button onclick="changeDashTime(1)" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.2em; padding:0 10px;">▶</button>
                     </div>
                     
@@ -1255,7 +1254,7 @@
                     let pnl = Math.round(tx.realizedPnL); 
                     pnlHtml = `<span style="color:${pnl >= 0 ? 'var(--income)' : 'var(--expense)'}; font-weight:bold;">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
                 }
-                tbody.innerHTML += "<tr><td>" + dateLink + "</td><td>" + accName + "</td><td>" + actionStr + "</td><td style=\"font-weight:bold;\">" + name + "</td><td>" + shares.toLocaleString() + "</td><td>" + tx.price.toFixed(2) + "</td><td>" + baseAmt.toLocaleString() + "</td><td>" + displayFee.toLocaleString() + "</td><td>" + (displayTax > 0 ? displayTax.toLocaleString() : '0') + "</td><td>0</td><td>0</td><td>0</td><td style=\"font-weight:bold; color:var(--accent);\">" + Math.round(tx.amount).toLocaleString() + "</td><td>" + pnlHtml + "</td></tr>";
+                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${displayFee.toLocaleString()}</td><td>${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
             });
             renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
             renderPaginationControls('paginationBottom', ledgerCurrentPage, totalPages);
@@ -1355,11 +1354,8 @@
                     }
                 });
                 if (hiddenCount > 0) badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border);">+ ${hiddenCount} 筆...</div>`;
-                
-                // v0.63 補上這個關鍵的閉合標籤，解決 31層 Div 嵌套導致崩潰的問題
-                dotsHtml += '</div>';
-                
-                grid.innerHTML += `<div class="calendar-cell ${dateStr === realTodayStr ? "cell-today" : ""}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div>`;
+                dotsHtml += '</div>'; // 防呆：確保小圓點容器確實關閉
+                grid.innerHTML += `<div class="calendar-cell ${dateStr === realTodayStr ? "cell-today" : ""}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div>`; // 確保日曆格子確實關閉
             }
         }
 
@@ -1442,11 +1438,33 @@
 
         async function fetchRealApiData() {
             const t = document.getElementById('newTicker').value.trim(); if (!t) return; const btn = document.getElementById('btnApiFetch'); btn.innerText = "⏳ 抓取中..."; btn.disabled = true;
-            try { const res = await fetch(`${MY_API_URL}?ticker=${t}`); const data = await res.json(); if (!data.error) { if (data.price > 0) document.getElementById('newPrice').value = data.price; if (data.name) document.getElementById('newName').value = data.name; } } catch (e) { alert("連線失敗"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
+            try { 
+                const res = await fetch(`${MY_API_URL}?ticker=${t}`); 
+                const data = await res.json(); 
+                if (!data.error) { 
+                    if (data.price > 0) document.getElementById('newPrice').value = data.price; 
+                    if (data.name) document.getElementById('newName').value = data.name; 
+                    // v0.63 拔除股利抓取，保持手動精準控制
+                } 
+            } catch (e) { alert("連線失敗"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
         }
+
         async function refreshAllPrices() {
             const btn = document.querySelector('.btn-refresh-all'); btn.innerText = "⏳ 正在同步..."; btn.disabled = true; let count = 0;
-            for (let ast of appData.assets) { if (ast.ticker) { try { const res = await fetch(`${MY_API_URL}?ticker=${ast.ticker}`); const data = await res.json(); if (!data.error && data.price > 0) { ast.price = data.price; if (data.name && !ast.name) ast.name = data.name; count++; } } catch (e) {} } }
+            for (let ast of appData.assets) { 
+                if (ast.ticker) { 
+                    try { 
+                        const res = await fetch(`${MY_API_URL}?ticker=${ast.ticker}`); 
+                        const data = await res.json(); 
+                        if (!data.error && data.price > 0) { 
+                            ast.price = data.price; 
+                            if (data.name && !ast.name) ast.name = data.name; 
+                            // v0.63 拔除一鍵更新時對股利與除息日的覆蓋，確保資料安全
+                            count++; 
+                        } 
+                    } catch (e) {} 
+                } 
+            }
             saveData(); btn.innerText = `✅ 成功更新 ${count} 檔`; setTimeout(() => { btn.innerText = "🔄 一鍵更新所有報價"; btn.disabled = false; }, 3000);
         }
 
@@ -1462,4 +1480,17 @@
         function deleteAssetItem(type, id) { showCustomConfirm('確定要刪除？', () => { if (type==='bank') appData.accounts=appData.accounts.filter(i=>i.id!==id); else appData.assets=appData.assets.filter(i=>i.id!==id); saveData(); }, true); }
         function editAssetItem(type, id) {
             document.getElementById('editAssetId').value = id; document.getElementById('btnCancelAssetEdit').style.display = "block"; 
-            if (
+            if (type === 'bank') { let i = appData.accounts.find(x => x.id === id); document.getElementById('newAssetType').value = i.type || 'bank'; document.getElementById('newBankName').value = i.name; document.getElementById('newBankBalance').value = i.balance; document.getElementById('newBrokerMinFee').value = i.minFee || 20; document.getElementById('newBrokerDiscount').value = i.discount || 1; } 
+            else { let i = appData.assets.find(x => x.id === id); document.getElementById('newAssetType').value = 'stock'; document.getElementById('newTicker').value = i.ticker; document.getElementById('newName').value = i.name; document.getElementById('newShares').value = i.shares || 0; document.getElementById('newPrice').value = i.price; document.getElementById('newDividend').value = i.dividend || 0; document.getElementById('newExDate').value = i.exDate || ''; document.getElementById('newPayDate').value = i.payDate || ''; }
+            toggleAssetInputs(); openAssetForm();
+        }
+        function resetAssetForm() { document.getElementById('editAssetId').value = ""; document.getElementById('btnCancelAssetEdit').style.display = "none"; document.getElementById('newBankName').value = ""; document.getElementById('newTicker').value = ""; document.getElementById('newName').value = ""; }
+        function saveAssetForm() {
+            const id = document.getElementById('editAssetId').value || 'id_' + Date.now(); const type = document.getElementById('newAssetType').value; const newItem = { id, type };
+            if (type === 'bank' || type === 'broker') { newItem.name = document.getElementById('newBankName').value.trim(); newItem.balance = parseFloat(document.getElementById('newBankBalance').value) || 0; newItem.reconciledDate = new Date().toISOString().split('T')[0]; if (type === 'broker') { newItem.minFee = parseFloat(document.getElementById('newBrokerMinFee').value) || 0; newItem.discount = parseFloat(document.getElementById('newBrokerDiscount').value) || 1; } const idx = appData.accounts.findIndex(x => x.id === id); if(idx > -1) appData.accounts[idx] = newItem; else appData.accounts.push(newItem); } 
+            else { newItem.ticker = document.getElementById('newTicker').value.trim(); newItem.name = document.getElementById('newName').value.trim(); newItem.shares = parseFloat(document.getElementById('newShares').value) || 0; newItem.price = parseFloat(document.getElementById('newPrice').value) || 0; newItem.dividend = parseFloat(document.getElementById('newDividend').value) || 0; newItem.exDate = document.getElementById('newExDate').value; newItem.payDate = document.getElementById('newPayDate').value; const idx = appData.assets.findIndex(x => x.id === id); if(idx > -1) appData.assets[idx] = newItem; else appData.assets.push(newItem); }
+            closeAssetForm(); saveData();
+        }
+    </script>
+</body>
+</html>
