@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.62</title>
+    <title>🍯 MoneyJar v0.63</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -143,7 +143,7 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day-header { text-align: center; font-weight: bold; padding: 10px; background: var(--sidebar-bg); border-radius: 4px; color: var(--text-main); }
         
-        /* v0.62 修改高度強制固定為 150px 以容納 +N 筆按鈕 */
+        /* v0.63 修改高度強制固定為 150px 以容納 +N 筆按鈕並提供呼吸空間 */
         .calendar-cell { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; height: 150px; padding: 5px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; overflow: hidden; justify-content: flex-start; }
         .calendar-cell:hover { background: #434c5e; border-color: var(--accent); }
         .cell-today { border: 2px solid var(--accent) !important; }
@@ -230,7 +230,7 @@
             .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
             .form-group input, .form-group select { font-size: 16px !important; min-height: 36px !important; padding: 6px 8px !important; -webkit-appearance: none; appearance: none; background-color: var(--bg-color); min-width: 0 !important; width: 100% !important; box-sizing: border-box !important;}
             .btn-add, .btn-fetch { padding: 8px 12px; margin-top: 5px; font-size: 0.9em; }
-            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
+            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%0-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
 
             .desktop-form-wrapper, .modal-overlay { display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.75) !important; z-index: 99999 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding: calc(env(safe-area-inset-top) + 70px) 15px calc(env(safe-area-inset-bottom) + 85px) 15px !important; }
             .desktop-form-wrapper.active, .modal-overlay.active { display: block !important; }
@@ -289,7 +289,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.62</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.63</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -297,7 +297,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.62</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.63</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -378,7 +378,7 @@
                     </h3>
                     <div style="display:flex; align-items:center; justify-content:center; gap:15px; margin-bottom:15px; background:var(--sidebar-bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
                         <button onclick="changeDashTime(-1)" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.2em; padding:0 10px;">◀</button>
-                        <span id="dashTimeDisplay" style="font-weight:bold; color:var(--accent); font-size:1.1em; min-width:100px; text-align:center;">2026-04</span>
+                        <span id="dashTimeDisplay" style="font-weight:bold; color:var(--accent); font-size:1.1em; min-width:100px; text-align:center;"></span>
                         <button onclick="changeDashTime(1)" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.2em; padding:0 10px;">▶</button>
                     </div>
                     
@@ -582,6 +582,7 @@
                                 <div class="form-group"><label>現價 (元)</label><input type="number" id="newPrice" value="0" step="0.01"></div>
                             </div>
                             
+                            <!-- v0.63 下方三項資訊現在完全由手動輸入，雲端更新不會觸碰 -->
                             <div class="form-group"><label>預估現金股利 (元/股)</label><input type="number" id="newDividend" value="0" step="0.01"></div>
                             <div class="flex-row"><div class="form-group"><label>除息日</label><input type="date" id="newExDate"></div><div class="form-group"><label>發放日</label><input type="date" id="newPayDate"></div></div>
                         </div>
@@ -788,81 +789,6 @@
             document.getElementById('mobileAvatar').style.display = 'none';
             appData = { accounts: [], assets: [], transactions: [], loans: [], settings: { annualBudget: 0, emergencyMonths: 6 } };
             renderAll();
-        }
-
-        function updateSyncStatus(msg, isSyncing = false) {
-            document.getElementById('syncStatus').innerText = msg;
-            document.getElementById('desktopSync').innerText = msg;
-            const mobileIcon = document.getElementById('mobileSyncIcon');
-            if (isSyncing) {
-                mobileIcon.innerText = '⏳'; mobileIcon.style.opacity = '0.5';
-            } else if (msg.includes('失敗')) {
-                mobileIcon.innerText = '⚠️'; mobileIcon.style.opacity = '1';
-            } else {
-                mobileIcon.innerText = '☁️'; mobileIcon.style.opacity = '1';
-            }
-            document.getElementById('desktopSync').style.color = isSyncing ? 'var(--stock-sell)' : 'var(--income)';
-        }
-
-        async function fetchUserProfile() {
-            try {
-                let res = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                let profile = await res.json();
-                document.getElementById('desktopProfile').style.display = 'flex';
-                document.getElementById('desktopAvatar').src = profile.picture;
-                document.getElementById('desktopName').innerText = profile.name;
-                document.getElementById('mobileAvatar').src = profile.picture;
-                document.getElementById('mobileAvatar').style.display = 'block';
-            } catch(e) { console.error("取得個人資料失敗", e); }
-        }
-
-        async function initCloudSync() {
-            updateSyncStatus('正在連接 Google Drive...', true);
-            try {
-                let query = encodeURIComponent("name='MoneyJar_Data' and mimeType='application/vnd.google-apps.folder' and trashed=false");
-                let res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                let data = await res.json();
-                
-                if (data.files && data.files.length > 0) { driveFolderId = data.files[0].id; } 
-                else {
-                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'MoneyJar_Data', mimeType: 'application/vnd.google-apps.folder' }) });
-                    let createData = await createRes.json(); driveFolderId = createData.id;
-                }
-
-                let fileQuery = encodeURIComponent(`name='data.json' and '${driveFolderId}' in parents and trashed=false`);
-                let fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                let fileData = await fileRes.json();
-
-                if (fileData.files && fileData.files.length > 0) {
-                    driveFileId = fileData.files[0].id;
-                    updateSyncStatus('正在下載雲端資料...', true);
-                    let contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-                    let cloudData = await contentRes.json();
-                    if(cloudData && cloudData.accounts) { appData = cloudData; }
-                }
-                updateSyncStatus('☁️ 雲端已同步'); renderAll();
-            } catch(e) { 
-                updateSyncStatus('⚠️ 雲端連線失敗'); 
-                if(e.status === 401) handleSignoutClick(); 
-            }
-        }
-
-        async function saveData() {
-            renderAll(); 
-            if (!accessToken || !driveFolderId) { alert("未連接 Google Drive，無法儲存。"); return; }
-            updateSyncStatus('⏳ 儲存至雲端中...', true);
-            const contentString = JSON.stringify(appData);
-
-            try {
-                if (driveFileId) {
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
-                } else {
-                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'data.json', parents: [driveFolderId] }) });
-                    let createData = await createRes.json(); driveFileId = createData.id;
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
-                }
-                updateSyncStatus('☁️ 雲端已同步 (' + new Date().toLocaleTimeString() + ')');
-            } catch(e) { alert("上傳雲端失敗，請稍後重試。"); updateSyncStatus('⚠️ 雲端同步失敗'); }
         }
 
         function renderAll() { 
@@ -1084,6 +1010,9 @@
             document.getElementById('dashFlowIncome').innerText = '$' + Math.round(flowIncome).toLocaleString(); document.getElementById('dashFlowExpense').innerText = '-$' + Math.round(flowExpense).toLocaleString(); document.getElementById('dashFlowLoan').innerText = '-$' + Math.round(flowLoan).toLocaleString();
             let elPnL = document.getElementById('dashFlowPnL'); elPnL.innerText = (flowPnL >= 0 ? '+' : '') + '$' + Math.round(flowPnL).toLocaleString(); elPnL.style.color = flowPnL >= 0 ? 'var(--income)' : 'var(--expense)';
             
+            let alertEl = document.getElementById('dashAlert');
+            if(cashflow < 0) { alertEl.innerHTML = `<span style="color:var(--expense);">⚠️ 警告：期內支出與房貸已超過收入，現金流呈現赤字。</span>`; } else { alertEl.innerHTML = `<span style="color:var(--income);">✅ 安全：期內收入足以涵蓋所有開銷與房貸。</span>`; }
+            
             document.getElementById('dashYearlyDiv').innerText = '$' + Math.round(yearlyDiv).toLocaleString();
             document.getElementById('dashDivMonth').innerText = '$' + Math.round(dividendThisMonth).toLocaleString();
             document.getElementById('dashDivYear').innerText = '$' + Math.round(dividendThisYear).toLocaleString();
@@ -1251,7 +1180,7 @@
                     let pnl = Math.round(tx.realizedPnL); 
                     pnlHtml = `<span style="color:${pnl >= 0 ? 'var(--income)' : 'var(--expense)'}; font-weight:bold;">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
                 }
-                tbody.innerHTML += `<tr><td>${dateLink}</td><td>${accName}</td><td>${actionStr}</td><td style="font-weight:bold;">${name}</td><td>${shares.toLocaleString()}</td><td>${tx.price.toFixed(2)}</td><td>${baseAmt.toLocaleString()}</td><td>${displayFee.toLocaleString()}</td><td>${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td><td>0</td><td>0</td><td>0</td><td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td><td>${pnlHtml}</td></tr>`;
+                tbody.innerHTML += "<tr><td>" + dateLink + "</td><td>" + accName + "</td><td>" + actionStr + "</td><td style=\"font-weight:bold;\">" + name + "</td><td>" + shares.toLocaleString() + "</td><td>" + tx.price.toFixed(2) + "</td><td>" + baseAmt.toLocaleString() + "</td><td>" + displayFee.toLocaleString() + "</td><td>" + (displayTax > 0 ? displayTax.toLocaleString() : '0') + "</td><td>0</td><td>0</td><td>0</td><td style=\"font-weight:bold; color:var(--accent);\">" + Math.round(tx.amount).toLocaleString() + "</td><td>" + pnlHtml + "</td></tr>";
             });
             renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
             renderPaginationControls('paginationBottom', ledgerCurrentPage, totalPages);
@@ -1406,7 +1335,7 @@
             let pnl = undefined, linkedId = undefined;
             if(action === 'sell') {
                 const choice = document.getElementById('stockLotSelect').value; const lots = Object.values(getBuyLotStatus()).filter(l => l.ticker === ast.ticker && l.accountId === accId && l.remaining > 0);
-                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest' ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice));
+                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest') ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice);
                 if (!lot || shares > lot.remaining) { alert("批次剩餘張數不足"); return; }
                 linkedId = lot.id; pnl = total - (lot.price * 1000 * shares + Math.floor(lot.price * 1000 * shares * 0.001425));
             }
@@ -1434,11 +1363,11 @@
 
         async function fetchRealApiData() {
             const t = document.getElementById('newTicker').value.trim(); if (!t) return; const btn = document.getElementById('btnApiFetch'); btn.innerText = "⏳ 抓取中..."; btn.disabled = true;
-            try { const res = await fetch(`${MY_API_URL}?ticker=${t}`); const data = await res.json(); if (!data.error) { if (data.price > 0) document.getElementById('newPrice').value = data.price; if (data.name) document.getElementById('newName').value = data.name; if (data.dividend > 0) document.getElementById('newDividend').value = data.dividend; if (data.exDate) document.getElementById('newExDate').value = data.exDate; if (data.payDate) document.getElementById('newPayDate').value = data.payDate; } } catch (e) { alert("連線失敗"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
+            try { const res = await fetch(`${MY_API_URL}?ticker=${t}`); const data = await res.json(); if (!data.error) { if (data.price > 0) document.getElementById('newPrice').value = data.price; if (data.name) document.getElementById('newName').value = data.name; } } catch (e) { alert("連線失敗"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
         }
         async function refreshAllPrices() {
             const btn = document.querySelector('.btn-refresh-all'); btn.innerText = "⏳ 正在同步..."; btn.disabled = true; let count = 0;
-            for (let ast of appData.assets) { if (ast.ticker) { try { const res = await fetch(`${MY_API_URL}?ticker=${ast.ticker}`); const data = await res.json(); if (!data.error && data.price > 0) { ast.price = data.price; if (data.name) ast.name = data.name; if (data.dividend > 0) ast.dividend = data.dividend; ast.exDate = data.exDate || ast.exDate; ast.payDate = data.payDate || ast.payDate; count++; } } catch (e) {} } }
+            for (let ast of appData.assets) { if (ast.ticker) { try { const res = await fetch(`${MY_API_URL}?ticker=${ast.ticker}`); const data = await res.json(); if (!data.error && data.price > 0) { ast.price = data.price; if (data.name && !ast.name) ast.name = data.name; count++; } } catch (e) {} } }
             saveData(); btn.innerText = `✅ 成功更新 ${count} 檔`; setTimeout(() => { btn.innerText = "🔄 一鍵更新所有報價"; btn.disabled = false; }, 3000);
         }
 
