@@ -230,7 +230,7 @@
             .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
             .form-group input, .form-group select { font-size: 16px !important; min-height: 36px !important; padding: 6px 8px !important; -webkit-appearance: none; appearance: none; background-color: var(--bg-color); min-width: 0 !important; width: 100% !important; box-sizing: border-box !important;}
             .btn-add, .btn-fetch { padding: 8px 12px; margin-top: 5px; font-size: 0.9em; }
-            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%0-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
+            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
 
             .desktop-form-wrapper, .modal-overlay { display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.75) !important; z-index: 99999 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding: calc(env(safe-area-inset-top) + 70px) 15px calc(env(safe-area-inset-bottom) + 85px) 15px !important; }
             .desktop-form-wrapper.active, .modal-overlay.active { display: block !important; }
@@ -736,15 +736,18 @@
             confirmActionCallback = callback;
             document.getElementById('customConfirm').style.display = 'flex';
         }
+        
         document.getElementById('confirmYesBtn').addEventListener('click', () => {
             document.getElementById('customConfirm').style.display = 'none';
             if (confirmActionCallback) confirmActionCallback();
         });
+        
         function showCustomAlert(msg) {
             showCustomConfirm(msg, null, false);
             document.getElementById('confirmYesBtn').innerText = '我知道了';
             setTimeout(() => { document.getElementById('confirmYesBtn').innerText = '確定'; }, 500); 
         }
+        
         function confirmSignout() {
             showCustomConfirm('目前已連接 Google Drive。\n確定要登出嗎？', handleSignoutClick, true);
         }
@@ -791,9 +794,91 @@
             renderAll();
         }
 
+        function updateSyncStatus(msg, isSyncing = false) {
+            document.getElementById('syncStatus').innerText = msg;
+            document.getElementById('desktopSync').innerText = msg;
+            const mobileIcon = document.getElementById('mobileSyncIcon');
+            if (isSyncing) {
+                mobileIcon.innerText = '⏳'; mobileIcon.style.opacity = '0.5';
+            } else if (msg.includes('失敗')) {
+                mobileIcon.innerText = '⚠️'; mobileIcon.style.opacity = '1';
+            } else {
+                mobileIcon.innerText = '☁️'; mobileIcon.style.opacity = '1';
+            }
+            document.getElementById('desktopSync').style.color = isSyncing ? 'var(--stock-sell)' : 'var(--income)';
+        }
+
+        async function fetchUserProfile() {
+            try {
+                let res = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                let profile = await res.json();
+                document.getElementById('desktopProfile').style.display = 'flex';
+                document.getElementById('desktopAvatar').src = profile.picture;
+                document.getElementById('desktopName').innerText = profile.name;
+                document.getElementById('mobileAvatar').src = profile.picture;
+                document.getElementById('mobileAvatar').style.display = 'block';
+            } catch(e) { console.error("取得個人資料失敗", e); }
+        }
+
+        async function initCloudSync() {
+            updateSyncStatus('正在連接 Google Drive...', true);
+            try {
+                let query = encodeURIComponent("name='MoneyJar_Data' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+                let res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                let data = await res.json();
+                
+                if (data.files && data.files.length > 0) { 
+                    driveFolderId = data.files[0].id; 
+                } else {
+                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'MoneyJar_Data', mimeType: 'application/vnd.google-apps.folder' }) });
+                    let createData = await createRes.json(); driveFolderId = createData.id;
+                }
+
+                let fileQuery = encodeURIComponent(`name='data.json' and '${driveFolderId}' in parents and trashed=false`);
+                let fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&spaces=drive`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                let fileData = await fileRes.json();
+
+                if (fileData.files && fileData.files.length > 0) {
+                    driveFileId = fileData.files[0].id;
+                    updateSyncStatus('正在下載雲端資料...', true);
+                    let contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                    let cloudData = await contentRes.json();
+                    if(cloudData && cloudData.accounts) { appData = cloudData; }
+                }
+                updateSyncStatus('☁️ 雲端已同步'); 
+                renderAll();
+            } catch(e) { 
+                updateSyncStatus('⚠️ 雲端連線失敗'); 
+                if(e.status === 401) handleSignoutClick(); 
+            }
+        }
+
+        async function saveData() {
+            renderAll(); 
+            if (!accessToken || !driveFolderId) { alert("未連接 Google Drive，無法儲存。"); return; }
+            updateSyncStatus('⏳ 儲存至雲端中...', true);
+            const contentString = JSON.stringify(appData);
+
+            try {
+                if (driveFileId) {
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
+                } else {
+                    let createRes = await fetch('https://www.googleapis.com/drive/v3/files', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'data.json', parents: [driveFolderId] }) });
+                    let createData = await createRes.json(); driveFileId = createData.id;
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: contentString });
+                }
+                updateSyncStatus('☁️ 雲端已同步 (' + new Date().toLocaleTimeString() + ')');
+            } catch(e) { alert("上傳雲端失敗，請稍後重試。"); updateSyncStatus('⚠️ 雲端同步失敗'); }
+        }
+
         function renderAll() { 
             cachedAmortizationSchedules = generateAmortizationSchedules();
-            loadAccSelects(); renderCalendar(); renderDashboard(); renderAssets(); renderLedger(); renderLoans(); 
+            loadAccSelects(); 
+            renderCalendar(); 
+            renderDashboard(); 
+            renderAssets(); 
+            renderLedger(); 
+            renderLoans(); 
         }
 
         function switchPage(pageId, btnElement) {
@@ -820,7 +905,7 @@
             }
             const calBtn = document.querySelectorAll('.nav-btn')[1];
             switchPage('calendar', calBtn);
-            setTimeout(() => { editTx({ stopPropagation: () => {} }, txId); }, 50);
+            setTimeout(() => { editTx(null, txId); }, 50);
         }
 
         document.getElementById('btnLoad').addEventListener('click', () => {
@@ -886,6 +971,7 @@
             document.getElementById('btnViewYear').classList.toggle('active', view === 'year'); 
             renderDashboard(); 
         }
+        
         function changeDashTime(delta) {
             if(cashflowView === 'month') {
                 dashViewDate.setMonth(dashViewDate.getMonth() + delta);
@@ -919,10 +1005,16 @@
 
         function renderDashboard() {
             if(!appData) return;
-            document.getElementById('settingBudget').value = appData.settings?.annualBudget || ''; document.getElementById('settingEFMonths').value = appData.settings?.emergencyMonths || '';
-            let totalCash = 0; appData.accounts.forEach(a => totalCash += getDynamicBalance(a.id));
-            let totalStock = 0; let yearlyDiv = 0; 
-            let rawPortData = []; let rawDivData = [];
+            document.getElementById('settingBudget').value = appData.settings?.annualBudget || ''; 
+            document.getElementById('settingEFMonths').value = appData.settings?.emergencyMonths || '';
+            
+            let totalCash = 0; 
+            appData.accounts.forEach(a => totalCash += getDynamicBalance(a.id));
+            
+            let totalStock = 0; 
+            let yearlyDiv = 0; 
+            let rawPortData = []; 
+            let rawDivData = [];
             let stockColors = ['#bf616a', '#d08770', '#ebcb8b', '#a3be8c', '#b48ead', '#88c0d0', '#81a1c1', '#5e81ac', '#4c566a', '#a3be8c'];
             
             appData.assets.forEach(a => { 
@@ -947,7 +1039,9 @@
                             }
                         });
                         eligibleShares = Math.max(0, eligibleShares);
-                    } else { eligibleShares = currentShares; }
+                    } else { 
+                        eligibleShares = currentShares; 
+                    }
 
                     if (eligibleShares > 0) {
                         let divAmount = a.dividend !== undefined && a.dividend > 0 
@@ -1048,32 +1142,54 @@
             document.getElementById('dashFireDiff').innerText = Math.max(0, Math.round(fireTarget - totalStock)).toLocaleString();
             document.getElementById('dashSafeWithdrawal').innerText = '$' + Math.round(totalStock * 0.04).toLocaleString();
 
-            document.getElementById('assetLegend').innerHTML = `<div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);"><div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#a3be8c;border-radius:2px;"></span>現金資產</div><div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#88c0d0;border-radius:2px;"></span>股票投資</div></div>`;
+            document.getElementById('assetLegend').innerHTML = `
+                <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);">
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#a3be8c;border-radius:2px;"></span>現金資產</div>
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:#88c0d0;border-radius:2px;"></span>股票投資</div>
+                </div>`;
+            
             let divLegHtml = '<div style="display:flex; flex-direction:column; gap:10px; font-size:0.85em; color:var(--text-light);">';
-            rawDivData.forEach((item, i) => { divLegHtml += `<div style="display:flex; align-items:center; gap:8px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;flex-shrink:0;"></span>${item.label}</div>`; });
+            rawDivData.forEach((item, i) => { 
+                divLegHtml += `<div style="display:flex; align-items:center; gap:8px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;flex-shrink:0;"></span>${item.label}</div>`; 
+            });
             document.getElementById('dividendLegend').innerHTML = divLegHtml + '</div>';
+            
             let portLegHtml = '<div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:var(--text-light);">';
-            rawPortData.forEach((item, i) => { portLegHtml += `<div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;"></span>${item.label}</div>`; });
+            rawPortData.forEach((item, i) => { 
+                portLegHtml += `<div style="display:flex; align-items:center; gap:6px;"><span style="width:20px;height:10px;background:${stockColors[i%stockColors.length]};border-radius:2px;"></span>${item.label}</div>`; 
+            });
             document.getElementById('portfolioLegend').innerHTML = portLegHtml + '</div>';
 
             if(assetChartObj) assetChartObj.destroy();
             assetChartObj = new Chart(document.getElementById('assetChart').getContext('2d'), { type: 'doughnut', data: { labels: ['現金資產', '股票投資'], datasets: [{ data: [totalCash, totalStock], backgroundColor: ['#a3be8c', '#88c0d0'], borderColor: '#3b4252' }] }, options: getHeadlessPieOptions(true) });
+            
             if(dividendChartObj) dividendChartObj.destroy();
             dividendChartObj = new Chart(document.getElementById('dividendChart').getContext('2d'), { type: 'pie', data: { labels: rawDivData.map(d => d.label), datasets: [{ data: rawDivData.map(d => d.val), backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getHeadlessPieOptions() });
+            
             if(portfolioChartObj) portfolioChartObj.destroy();
             portfolioChartObj = new Chart(document.getElementById('portfolioChart').getContext('2d'), { type: 'pie', data: { labels: rawPortData.map(p => p.label), datasets: [{ data: rawPortData.map(p => p.val), backgroundColor: stockColors, borderColor: '#3b4252' }] }, options: getHeadlessPieOptions() });
         }
 
-        function PMT(ir, np, pv) { if (ir === 0) return pv / np; return pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1); }
+        function PMT(ir, np, pv) { 
+            if (ir === 0) return pv / np; 
+            return pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1); 
+        }
+
         function generateAmortizationSchedules() {
             let schedules = {};
             (appData.loans || []).forEach(loan => {
                 let currentPrincipal = loan.principal; let monthlyRate = loan.rate / 100 / 12; 
                 let startY, startM, payD;
-                if (loan.startDate) { let parts = loan.startDate.split('-'); startY = parseInt(parts[0]); startM = parseInt(parts[1]) - 1; payD = parseInt(parts[2]); } 
-                else if (loan.startMonth) { let [sY, sM] = loan.startMonth.split('-'); startY = parseInt(sY); startM = parseInt(sM) - 1; payD = loan.payDay || 10; } 
-                else return;
-                let extras = appData.transactions.filter(t => t.type === 'loan_extra' && t.loanId === loan.id); let schedule = [];
+                if (loan.startDate) { 
+                    let parts = loan.startDate.split('-'); 
+                    startY = parseInt(parts[0]); startM = parseInt(parts[1]) - 1; payD = parseInt(parts[2]); 
+                } else if (loan.startMonth) { 
+                    let [sY, sM] = loan.startMonth.split('-'); 
+                    startY = parseInt(sY); startM = parseInt(sM) - 1; payD = loan.payDay || 10; 
+                } else return;
+                
+                let extras = appData.transactions.filter(t => t.type === 'loan_extra' && t.loanId === loan.id); 
+                let schedule = [];
                 for (let i = 1; i <= loan.years * 12; i++) {
                     if (currentPrincipal <= 0) break;
                     let mIdx = startM + i - 1; let y = startY + Math.floor(mIdx / 12); let m = mIdx % 12;
@@ -1090,12 +1206,16 @@
         }
         
         function getDynamicBalance(accId) { 
-            let acc = appData.accounts.find(a => a.id === accId); if(!acc) return 0; 
-            let bal = acc.balance; let todayStr = new Date().toISOString().split('T')[0]; 
+            let acc = appData.accounts.find(a => a.id === accId); 
+            if(!acc) return 0; 
+            let bal = acc.balance; 
+            let todayStr = new Date().toISOString().split('T')[0]; 
             let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
             for(let lId in schedules) { 
                 schedules[lId].forEach(tx => { 
-                    if(tx.accountId === accId && tx.date <= todayStr) { if (!acc.reconciledDate || tx.date > acc.reconciledDate) bal -= tx.amount; }
+                    if(tx.accountId === accId && tx.date <= todayStr) { 
+                        if (!acc.reconciledDate || tx.date > acc.reconciledDate) bal -= tx.amount; 
+                    }
                 }); 
             } 
             return bal; 
@@ -1104,10 +1224,23 @@
         function saveLoan() {
             if(!document.getElementById('loanStartDate').value) { alert("請輸入首期扣款日"); return; }
             const editId = document.getElementById('editLoanId').value;
-            const newLoan = { id: editId || 'loan_' + Date.now(), name: document.getElementById('loanName').value || '未命名貸款', principal: parseFloat(document.getElementById('loanPrincipal').value), rate: parseFloat(document.getElementById('loanRate').value), years: parseInt(document.getElementById('loanYears').value), grace: parseInt(document.getElementById('loanGrace').value), startDate: document.getElementById('loanStartDate').value, accountId: document.getElementById('loanAcc').value };
-            if (editId) { const idx = appData.loans.findIndex(l => l.id === editId); if(idx > -1) appData.loans[idx] = newLoan; } else appData.loans.push(newLoan);
+            const newLoan = { 
+                id: editId || 'loan_' + Date.now(), 
+                name: document.getElementById('loanName').value || '未命名貸款', 
+                principal: parseFloat(document.getElementById('loanPrincipal').value), 
+                rate: parseFloat(document.getElementById('loanRate').value), 
+                years: parseInt(document.getElementById('loanYears').value), 
+                grace: parseInt(document.getElementById('loanGrace').value), 
+                startDate: document.getElementById('loanStartDate').value, 
+                accountId: document.getElementById('loanAcc').value 
+            };
+            if (editId) { 
+                const idx = appData.loans.findIndex(l => l.id === editId); 
+                if(idx > -1) appData.loans[idx] = newLoan; 
+            } else appData.loans.push(newLoan);
             closeLoanForm(); saveData();
         }
+
         function editLoan(id) { 
             const l = appData.loans.find(x => x.id === id); if(!l) return; 
             document.getElementById('editLoanId').value = l.id; document.getElementById('loanFormTitle').innerText = "✏️ 編輯貸款合約"; 
@@ -1115,7 +1248,9 @@
             document.getElementById('loanStartDate').value = l.startDate || (l.startMonth ? l.startMonth + '-' + String(l.payDay||10).padStart(2,'0') : ''); 
             document.getElementById('loanAcc').value = l.accountId; document.getElementById('btnSaveLoan').innerText = "更新合約並重算"; document.getElementById('btnCancelLoanEdit').style.display = "block"; openLoanForm(); 
         }
+
         function deleteLoan(id) { showCustomConfirm('確定要刪除此貸款？', () => { appData.loans = appData.loans.filter(l => l.id !== id); saveData(); }, true); }
+        
         function resetLoanForm() { document.getElementById('editLoanId').value = ""; document.getElementById('loanName').value = ""; document.getElementById('loanStartDate').value = ""; document.getElementById('btnCancelLoanEdit').style.display = "none"; }
         
         function renderLoans() {
@@ -1123,9 +1258,28 @@
             let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
             let todayStr = new Date().toISOString().split('T')[0];
             appData.loans.forEach(loan => {
-                let sch = schedules[loan.id] || []; let nextPayment = sch.find(s => s.date > todayStr); let currentBal = nextPayment ? nextPayment.principalRemain : (sch.length > 0 ? 0 : loan.principal); let nextAmt = nextPayment ? nextPayment.amount : 0; let isGrace = nextPayment ? nextPayment.isGrace : false; let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
+                let sch = schedules[loan.id] || []; 
+                let nextPayment = sch.find(s => s.date > todayStr); 
+                let currentBal = nextPayment ? nextPayment.principalRemain : (sch.length > 0 ? 0 : loan.principal); 
+                let nextAmt = nextPayment ? nextPayment.amount : 0; 
+                let isGrace = nextPayment ? nextPayment.isGrace : false; 
+                let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
                 let displayStart = loan.startDate || (loan.startMonth ? loan.startMonth + ' (每月 ' + loan.payDay + ' 號)' : '');
-                list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);"><div class="card-actions"><button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div><div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div><div class="card-sub"><b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br><b>首期扣款日:</b> <span style="color:var(--accent); font-weight:bold;">${displayStart}</span><br><b>最新/下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br><b>自動扣款帳戶:</b> ${accName}</div></div>`;
+                
+                list.innerHTML += `<div class="card" style="border-left: 4px solid var(--loan);">
+                    <div class="card-actions">
+                        <button onclick="editLoan('${loan.id}')">✏️</button>
+                        <button onclick="deleteLoan('${loan.id}')">🗑️</button>
+                    </div>
+                    <div class="card-title-row"><h3 class="card-title">${loan.name}</h3></div>
+                    <div class="card-val-row"><div class="card-val">$${currentBal.toLocaleString()}<span class="val-label">剩餘本金</span></div></div>
+                    <div class="card-sub">
+                        <b>利率:</b> ${loan.rate}% | <b>寬限期:</b> ${loan.grace} 個月<br>
+                        <b>首期扣款日:</b> <span style="color:var(--accent); font-weight:bold;">${displayStart}</span><br>
+                        <b>最新/下期扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> ${isGrace ? '(純繳息)' : '(本息攤還)'}<br>
+                        <b>自動扣款帳戶:</b> ${accName}
+                    </div>
+                </div>`;
             });
         }
 
@@ -1155,7 +1309,8 @@
             const pagedTxs = filteredTxs.slice((ledgerCurrentPage - 1) * ledgerPageSize, ledgerCurrentPage * ledgerPageSize);
 
             pagedTxs.forEach(tx => {
-                const ast = appData.assets.find(a => a.ticker === tx.ticker); const name = ast ? (ast.name ? `${tx.ticker} ${ast.name}` : tx.ticker) : tx.ticker;
+                const ast = appData.assets.find(a => a.ticker === tx.ticker); 
+                const name = ast ? (ast.name ? `${tx.ticker} ${ast.name}` : tx.ticker) : tx.ticker;
                 const accName = appData.accounts.find(a => a.id === tx.accountId)?.name || '未知帳戶';
                 const dateLink = `<a href="javascript:void(0)" onclick="jumpToTx('${tx.id}')" class="jump-link">${tx.date}</a>`;
                 
@@ -1164,8 +1319,10 @@
                     return;
                 }
 
-                const isBuy = tx.type === 'stock_buy'; const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
-                const shares = Math.round(tx.shares * 1000); const baseAmt = Math.floor(tx.price * 1000 * tx.shares); 
+                const isBuy = tx.type === 'stock_buy'; 
+                const actionStr = isBuy ? '<span class="text-buy">買進</span>' : '<span class="text-sell">賣出</span>';
+                const shares = Math.round(tx.shares * 1000); 
+                const baseAmt = Math.floor((tx.price || 0) * 1000 * tx.shares); 
                 
                 let displayTax = 0; let displayFee = tx.fee || 0;
                 if (!isBuy) {
@@ -1175,12 +1332,33 @@
                 }
                 
                 let pnlHtml = '-';
-                if (isBuy) { let lot = buyLots[tx.id]; if (lot) pnlHtml = (lot.remaining === 0) ? '已結清' : (lot.remaining === lot.shares ? '庫存中' : `剩 ${lot.remaining} 張`); } 
+                if (isBuy) { 
+                    let lot = buyLots[tx.id]; 
+                    if (lot) pnlHtml = (lot.remaining === 0) ? '已結清' : (lot.remaining === lot.shares ? '庫存中' : `剩 ${lot.remaining} 張`); 
+                } 
                 else if (tx.realizedPnL !== undefined) {
                     let pnl = Math.round(tx.realizedPnL); 
                     pnlHtml = `<span style="color:${pnl >= 0 ? 'var(--income)' : 'var(--expense)'}; font-weight:bold;">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
                 }
-                tbody.innerHTML += "<tr><td>" + dateLink + "</td><td>" + accName + "</td><td>" + actionStr + "</td><td style=\"font-weight:bold;\">" + name + "</td><td>" + shares.toLocaleString() + "</td><td>" + tx.price.toFixed(2) + "</td><td>" + baseAmt.toLocaleString() + "</td><td>" + displayFee.toLocaleString() + "</td><td>" + (displayTax > 0 ? displayTax.toLocaleString() : '0') + "</td><td>0</td><td>0</td><td>0</td><td style=\"font-weight:bold; color:var(--accent);\">" + Math.round(tx.amount).toLocaleString() + "</td><td>" + pnlHtml + "</td></tr>";
+                
+                let displayPrice = tx.price ? tx.price.toFixed(2) : "0.00";
+
+                tbody.innerHTML += `<tr>
+                    <td>${dateLink}</td>
+                    <td>${accName}</td>
+                    <td>${actionStr}</td>
+                    <td style="font-weight:bold;">${name}</td>
+                    <td>${shares.toLocaleString()}</td>
+                    <td>${displayPrice}</td>
+                    <td>${baseAmt.toLocaleString()}</td>
+                    <td>${displayFee.toLocaleString()}</td>
+                    <td>${displayTax > 0 ? displayTax.toLocaleString() : '0'}</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td style="font-weight:bold; color:var(--accent);">${Math.round(tx.amount).toLocaleString()}</td>
+                    <td>${pnlHtml}</td>
+                </tr>`;
             });
             renderPaginationControls('paginationTop', ledgerCurrentPage, totalPages);
             renderPaginationControls('paginationBottom', ledgerCurrentPage, totalPages);
@@ -1189,18 +1367,30 @@
         function renderPaginationControls(containerId, current, total) {
             const container = document.getElementById(containerId);
             if (total <= 1) { container.innerHTML = ''; return; } 
-            container.innerHTML = `<button class="page-btn" onclick="gotoLedgerPage(1)" ${current === 1 ? 'disabled' : ''}>⏮</button><button class="page-btn" onclick="changeLedgerPage(-1)" ${current === 1 ? 'disabled' : ''}>◀</button><span class="page-info">${current} / ${total}</span><button class="page-btn" onclick="changeLedgerPage(1)" ${current === total ? 'disabled' : ''}>▶</button><button class="page-btn" onclick="gotoLedgerPage(${total})" ${current === total ? 'disabled' : ''}>⏭</button>`;
+            container.innerHTML = `
+                <button class="page-btn" onclick="gotoLedgerPage(1)" ${current === 1 ? 'disabled' : ''}>⏮</button>
+                <button class="page-btn" onclick="changeLedgerPage(-1)" ${current === 1 ? 'disabled' : ''}>◀</button>
+                <span class="page-info">${current} / ${total}</span>
+                <button class="page-btn" onclick="changeLedgerPage(1)" ${current === total ? 'disabled' : ''}>▶</button>
+                <button class="page-btn" onclick="gotoLedgerPage(${total})" ${current === total ? 'disabled' : ''}>⏭</button>
+            `;
         }
 
         function loadAccSelects() {
             const allAccHtml = appData.accounts.map(acc => `<option value="${acc.id}">${acc.name} (餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('');
             let brokerAccs = appData.accounts.filter(a => a.type === 'broker');
             let stockAccHtml = (brokerAccs.length > 0) ? brokerAccs.map(acc => `<option value="${acc.id}">${acc.name} (餘額: $${Math.round(getDynamicBalance(acc.id)).toLocaleString()})</option>`).join('') : allAccHtml;
+            
             document.getElementById('cashAccount').innerHTML = allAccHtml; 
             document.getElementById('stockAccount').innerHTML = stockAccHtml; 
             document.getElementById('loanExtraAccount').innerHTML = allAccHtml;
             if(document.getElementById('loanAcc')) document.getElementById('loanAcc').innerHTML = allAccHtml;
-            let uniqueStocks = []; appData.assets.filter(a => a.type === 'stock').forEach(a => { if(!uniqueStocks.find(s => s.ticker === a.ticker)) uniqueStocks.push(a); });
+            
+            let uniqueStocks = []; 
+            appData.assets.filter(a => a.type === 'stock').forEach(a => { 
+                if(!uniqueStocks.find(s => s.ticker === a.ticker)) uniqueStocks.push(a); 
+            });
+            
             const stockOptionsHtml = uniqueStocks.map(a => `<option value="${a.id}">${a.ticker} ${a.name || ''} (總庫存: ${getStockInventory(a.ticker)}張)</option>`).join('');
             document.getElementById('stockAsset').innerHTML = stockOptionsHtml;
             document.getElementById('cashDividendStock').innerHTML = stockOptionsHtml; 
@@ -1216,13 +1406,20 @@
         function openDayViewFromCell(event, dateStr) { if (event) event.stopPropagation(); openDayView(dateStr); }
 
         function openDayView(dateStr) {
-            currentDayViewDate = dateStr; document.getElementById('dayViewTitle').innerText = `${dateStr} 明細`;
+            currentDayViewDate = dateStr; 
+            document.getElementById('dayViewTitle').innerText = `${dateStr} 明細`;
             const list = document.getElementById('dayViewList'); list.innerHTML = '';
+            
             const dayTxs = appData.transactions.filter(tx => tx.date === dateStr);
-            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); let virtualTxs = []; 
-            for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k].filter(t => t.date === dateStr));
-            if(dayTxs.length === 0 && virtualTxs.length === 0) { list.innerHTML = '<p style="text-align:center; color:var(--text-light); padding-top:20px;">今日無任何紀錄</p>'; } 
-            else {
+            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
+            let virtualTxs = []; 
+            for(let k in schedules) {
+                virtualTxs = virtualTxs.concat(schedules[k].filter(t => t.date === dateStr));
+            }
+            
+            if(dayTxs.length === 0 && virtualTxs.length === 0) { 
+                list.innerHTML = '<p style="text-align:center; color:var(--text-light); padding-top:20px;">今日無任何紀錄</p>'; 
+            } else {
                 dayTxs.sort((a, b) => parseInt(a.id.replace('tx_', '')) - parseInt(b.id.replace('tx_', ''))).forEach(tx => {
                     let astName = '';
                     if (tx.ticker) {
@@ -1231,12 +1428,21 @@
                     }
                     let title = tx.isDividend ? `領息 ${tx.ticker}${astName}` : (tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker + astName));
                     let amtStr = (tx.type==='income' || tx.type.includes('sell') ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
-                    list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')"><span style="color:var(--text-main); font-weight:bold;">${title}</span><b style="color:${(tx.type==='income' || tx.type.includes('sell')) ? 'var(--income)' : 'var(--expense)'}">${amtStr}</b></div>`;
+                    list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" onclick="closeDayView(); editTx(null, '${tx.id}')">
+                        <span style="color:var(--text-main); font-weight:bold;">${title}</span>
+                        <b style="color:${(tx.type==='income' || tx.type.includes('sell')) ? 'var(--income)' : 'var(--expense)'}">${amtStr}</b>
+                    </div>`;
                 });
-                virtualTxs.forEach(vt => { list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-main);">🔄 ${vt.loanName}</span><b style="color:var(--expense)">-$${Math.round(vt.amount).toLocaleString()}</b></div>`; });
+                virtualTxs.forEach(vt => { 
+                    list.innerHTML += `<div style="padding: 12px 10px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                        <span style="color:var(--text-main);">🔄 ${vt.loanName}</span>
+                        <b style="color:var(--expense)">-$${Math.round(vt.amount).toLocaleString()}</b>
+                    </div>`; 
+                });
             }
             document.getElementById('dayViewModal').classList.add('active');
         }
+        
         function closeDayView() { document.getElementById('dayViewModal').classList.remove('active'); }
         function openModalFromDayView() { closeDayView(); openModal(currentDayViewDate); }
 
@@ -1244,18 +1450,31 @@
             const year = currentDate.getFullYear(); const month = currentDate.getMonth();
             const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}`;
             document.getElementById('monthJumpSelector').value = monthPrefix;
+            
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
             ['日', '一', '二', '三', '四', '五', '六'].forEach(d => grid.innerHTML += `<div class="calendar-day-header">${d}</div>`);
+            
             const filters = { income: document.getElementById('filterIncome').checked, expense: document.getElementById('filterExpense').checked, buy: document.getElementById('filterBuy').checked, sell: document.getElementById('filterSell').checked };
-            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); let virtualTxs = []; for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
-            const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
+            let virtualTxs = []; 
+            for(let k in schedules) virtualTxs = virtualTxs.concat(schedules[k]);
+            
+            const firstDay = new Date(year, month, 1).getDay(); 
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
             const realTodayStr = new Date().toISOString().split('T')[0];
+            
             for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="calendar-cell cell-other-month"></div>`;
+            
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                const dayTxs = appData.transactions.filter(tx => tx.date === dateStr); const vTxs = virtualTxs.filter(t => t.date === dateStr); 
-                let allItems = [...dayTxs.map(d => ({type:'manual', data:d})), ...vTxs.map(v => ({type:'virtual', data:v}))].sort((a, b) => (a.type==='manual'?parseInt(a.data.id.replace('tx_','')):0) - (b.type==='manual'?parseInt(b.data.id.replace('tx_','')):0));
+                const dayTxs = appData.transactions.filter(tx => tx.date === dateStr); 
+                const vTxs = virtualTxs.filter(t => t.date === dateStr); 
+                
+                let allItems = [...dayTxs.map(d => ({type:'manual', data:d})), ...vTxs.map(v => ({type:'virtual', data:v}))];
+                allItems.sort((a, b) => (a.type==='manual'?parseInt(a.data.id.replace('tx_','')):0) - (b.type==='manual'?parseInt(b.data.id.replace('tx_','')):0));
+                
                 let badgesHtml = ''; let dotsHtml = '<div class="dot-container">'; let renderedCount = 0; let hiddenCount = 0;
+                
                 allItems.forEach(item => {
                     const tx = item.data; let visible = false;
                     if(item.type === 'virtual') visible = true;
@@ -1264,6 +1483,7 @@
                     else if(tx.type === 'loan_extra') visible = true;
                     else if(tx.type === 'stock_buy' && filters.buy) visible = true;
                     else if(tx.type === 'stock_sell' && filters.sell) visible = true;
+                    
                     if(visible) {
                         if(renderedCount < 3) {
                             let astName = '';
@@ -1273,14 +1493,26 @@
                             }
                             let label = (item.type === 'virtual') ? `🔄 ${tx.loanName} -$${tx.amount.toLocaleString()}` : (tx.isDividend ? `+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}${astName}` : (tx.type==='income' ? `+$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='expense' ? `-$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='loan_extra' ? `大額還款 -$${tx.amount.toLocaleString()}` : (tx.type==='stock_buy' ? `買 ${tx.ticker}${astName}` : `賣 ${tx.ticker}${astName}`)))));
                             let cls = (item.type==='virtual') ? 'bg-loan' : (tx.isDividend || tx.type==='income' ? 'bg-income' : (tx.type==='expense' ? 'bg-expense' : (tx.type==='loan_extra' ? 'bg-sell' : (tx.type==='stock_buy' ? 'bg-buy' : 'bg-sell'))));
+                            
                             badgesHtml += `<div class="tx-badge ${cls}" ${item.type==='manual' ? `onclick="editTx(event, '${tx.id}')"` : ''}>${label}</div>`;
                             dotsHtml += `<div class="tx-dot" style="background:var(--accent);"></div>`;
                             renderedCount++;
-                        } else hiddenCount++;
+                        } else {
+                            hiddenCount++;
+                        }
                     }
                 });
-                if (hiddenCount > 0) badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border);">+ ${hiddenCount} 筆...</div>`;
-                grid.innerHTML += `<div class="calendar-cell ${dateStr === realTodayStr ? "cell-today" : ""}" onclick="handleCellClick('${dateStr}')"><div class="cell-date">${i}</div>${badgesHtml}${dotsHtml}</div></div>`;
+                if (hiddenCount > 0) {
+                    badgesHtml += `<div class="tx-badge" onclick="openDayViewFromCell(event, '${dateStr}')" style="background:transparent; color:var(--text-light); text-align:center; border: 1px dashed var(--border);">+ ${hiddenCount} 筆...</div>`;
+                }
+                
+                grid.innerHTML += `
+                    <div class="calendar-cell ${dateStr === realTodayStr ? "cell-today" : ""}" onclick="handleCellClick('${dateStr}')">
+                        <div class="cell-date">${i}</div>
+                        ${badgesHtml}
+                        ${dotsHtml}
+                    </div>
+                `;
             }
         }
 
@@ -1298,102 +1530,87 @@
         }
 
         function toggleSellRow() { const isSell = document.getElementById('stockAction').value === 'sell'; document.getElementById('sellBuyPriceRow').style.display = isSell ? 'flex' : 'none'; document.getElementById('sellTaxRateRow').style.display = isSell ? 'block' : 'none'; }
-        function openModal(dateStr) { document.getElementById('txDate').value = dateStr; document.getElementById('editTxId').value = ""; document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`; document.getElementById('modalTabGroup').style.display = 'flex'; document.getElementById('btnDeleteCash').style.display = 'none'; document.getElementById('btnDeleteStock').style.display = 'none'; document.getElementById('btnDeleteLoanExtra').style.display = 'none'; document.getElementById('cashAmount').value = 0; document.getElementById('cashCategory').value = ""; document.getElementById('cashIsDividend').checked = false; toggleDividendStock(); document.getElementById('stockPrice').value = 0; document.getElementById('stockShares').value = 1; document.getElementById('loanExtraAmount').value = 0; document.getElementById('stockAction').value = 'buy'; document.getElementById('stockTaxRate').value = '0.003'; toggleSellRow(); loadAccSelects(); switchFormTab('cash'); document.getElementById('txModal').classList.add('active'); }
-        function editTx(event, txId) { if (event) event.stopPropagation(); const tx = appData.transactions.find(t => t.id === txId); if (!tx) return; document.getElementById('txDate').value = tx.date; document.getElementById('editTxId').value = tx.id; document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`; loadAccSelects(); document.getElementById('modalTabGroup').style.display = 'none'; if (tx.type === 'income' || tx.type === 'expense') { switchFormTab('cash'); document.getElementById('cashType').value = tx.type; document.getElementById('cashCategory').value = tx.category; document.getElementById('cashAccount').value = tx.accountId; document.getElementById('cashAmount').value = tx.amount; const isDiv = document.getElementById('cashIsDividend'); if (tx.isDividend) { isDiv.checked = true; toggleDividendStock(); const ast = appData.assets.find(a => a.ticker === tx.ticker); if (ast) document.getElementById('cashDividendStock').value = ast.id; } else { isDiv.checked = false; toggleDividendStock(); } document.getElementById('btnDeleteCash').style.display = 'block'; } else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { switchFormTab('stock'); document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; const ast = appData.assets.find(a => a.ticker === tx.ticker); if(ast) document.getElementById('stockAsset').value = ast.id; document.getElementById('stockAccount').value = tx.accountId; document.getElementById('stockPrice').value = tx.price; document.getElementById('stockShares').value = tx.shares; document.getElementById('stockFee').value = tx.fee; toggleSellRow(); populateLotSelect(tx.id); if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId; calcStockTotal(false); document.getElementById('btnDeleteStock').style.display = 'block'; } else if (tx.type === 'loan_extra') { switchFormTab('loanExtra'); document.getElementById('loanExtraTarget').value = tx.loanId; document.getElementById('loanExtraAmount').value = tx.amount; document.getElementById('loanExtraAccount').value = tx.accountId; document.getElementById('btnDeleteLoanExtra').style.display = 'block'; } document.getElementById('txModal').classList.add('active'); }
+        
+        function openModal(dateStr) { 
+            document.getElementById('txDate').value = dateStr; 
+            document.getElementById('editTxId').value = ""; 
+            document.getElementById('modalDateLabel').innerText = `新增紀錄：${dateStr}`; 
+            document.getElementById('modalTabGroup').style.display = 'flex'; 
+            document.getElementById('btnDeleteCash').style.display = 'none'; 
+            document.getElementById('btnDeleteStock').style.display = 'none'; 
+            document.getElementById('btnDeleteLoanExtra').style.display = 'none'; 
+            document.getElementById('cashAmount').value = 0; 
+            document.getElementById('cashCategory').value = ""; 
+            document.getElementById('cashIsDividend').checked = false; 
+            toggleDividendStock(); 
+            document.getElementById('stockPrice').value = 0; 
+            document.getElementById('stockShares').value = 1; 
+            document.getElementById('loanExtraAmount').value = 0; 
+            document.getElementById('stockAction').value = 'buy'; 
+            document.getElementById('stockTaxRate').value = '0.003'; 
+            toggleSellRow(); 
+            loadAccSelects(); 
+            switchFormTab('cash'); 
+            document.getElementById('txModal').classList.add('active'); 
+        }
+
+        function editTx(event, txId) { 
+            if (event) event.stopPropagation(); 
+            const tx = appData.transactions.find(t => t.id === txId); 
+            if (!tx) return; 
+            document.getElementById('txDate').value = tx.date; 
+            document.getElementById('editTxId').value = tx.id; 
+            document.getElementById('modalDateLabel').innerText = `編輯紀錄：${tx.date}`; 
+            loadAccSelects(); 
+            document.getElementById('modalTabGroup').style.display = 'none'; 
+            
+            if (tx.type === 'income' || tx.type === 'expense') { 
+                switchFormTab('cash'); 
+                document.getElementById('cashType').value = tx.type; 
+                document.getElementById('cashCategory').value = tx.category; 
+                document.getElementById('cashAccount').value = tx.accountId; 
+                document.getElementById('cashAmount').value = tx.amount; 
+                const isDiv = document.getElementById('cashIsDividend'); 
+                if (tx.isDividend) { 
+                    isDiv.checked = true; toggleDividendStock(); 
+                    const ast = appData.assets.find(a => a.ticker === tx.ticker); 
+                    if (ast) document.getElementById('cashDividendStock').value = ast.id; 
+                } else { 
+                    isDiv.checked = false; toggleDividendStock(); 
+                } 
+                document.getElementById('btnDeleteCash').style.display = 'block'; 
+            } else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') { 
+                switchFormTab('stock'); 
+                document.getElementById('stockAction').value = tx.type === 'stock_buy' ? 'buy' : 'sell'; 
+                const ast = appData.assets.find(a => a.ticker === tx.ticker); 
+                if(ast) document.getElementById('stockAsset').value = ast.id; 
+                document.getElementById('stockAccount').value = tx.accountId; 
+                document.getElementById('stockPrice').value = tx.price; 
+                document.getElementById('stockShares').value = tx.shares; 
+                document.getElementById('stockFee').value = tx.fee; 
+                toggleSellRow(); 
+                populateLotSelect(tx.id); 
+                if (tx.type === 'stock_sell' && tx.linkedBuyId) document.getElementById('stockLotSelect').value = tx.linkedBuyId; 
+                calcStockTotal(false); 
+                document.getElementById('btnDeleteStock').style.display = 'block'; 
+            } else if (tx.type === 'loan_extra') { 
+                switchFormTab('loanExtra'); 
+                document.getElementById('loanExtraTarget').value = tx.loanId; 
+                document.getElementById('loanExtraAmount').value = tx.amount; 
+                document.getElementById('loanExtraAccount').value = tx.accountId; 
+                document.getElementById('btnDeleteLoanExtra').style.display = 'block'; 
+            } 
+            document.getElementById('txModal').classList.add('active'); 
+        }
+        
         function closeModal() { document.getElementById('txModal').classList.remove('active'); }
         function switchFormTab(type) { document.getElementById('tabCash').classList.toggle('active', type === 'cash'); document.getElementById('tabStock').classList.toggle('active', type === 'stock'); document.getElementById('tabLoanExtra').classList.toggle('active', type === 'loanExtra'); document.getElementById('formCash').style.display = type === 'cash' ? 'block' : 'none'; document.getElementById('formStock').style.display = type === 'stock' ? 'block' : 'none'; document.getElementById('formLoanExtra').style.display = type === 'loanExtra' ? 'block' : 'none'; }
 
         function calcStockTotal(autoCalcFee = false) { 
             const action = document.getElementById('stockAction').value; const price = parseFloat(document.getElementById('stockPrice').value) || 0; const shares = parseFloat(document.getElementById('stockShares').value) || 0; const baseAmount = price * 1000 * shares; 
             let feeInput = document.getElementById('stockFee');
-            if (autoCalcFee) { const acc = appData.accounts.find(a => a.id === document.getElementById('stockAccount').value); const disc = acc?.discount || 1; const minF = acc?.minFee || 20; let calcF = Math.max(minF, Math.floor(baseAmount * 0.001425 * disc)); if(action === 'sell') calcF += Math.floor(baseAmount * parseFloat(document.getElementById('stockTaxRate').value)); feeInput.value = calcF; }
-            const total = action === 'buy' ? baseAmount + (parseFloat(feeInput.value)||0) : baseAmount - (parseFloat(feeInput.value)||0); 
-            document.getElementById('stockTotalDisplay').innerText = Math.round(total).toLocaleString() + ' 元'; 
-        }
-
-        function reverseTransaction(txId) {
-            const idx = appData.transactions.findIndex(t => t.id === txId); if (idx === -1) return; const tx = appData.transactions[idx]; const acc = appData.accounts.find(a => a.id === tx.accountId);
-            if (acc) { if (tx.type === 'income') acc.balance -= tx.amount; else if (tx.type === 'expense' || tx.type === 'loan_extra') acc.balance += tx.amount; else if (tx.type === 'stock_buy') acc.balance += tx.amount; else if (tx.type === 'stock_sell') acc.balance -= tx.amount; }
-            appData.transactions.splice(idx, 1);
-        }
-        function confirmDeleteTransaction() { showCustomConfirm('確定要刪除這筆紀錄嗎？', () => { reverseTransaction(document.getElementById('editTxId').value); closeModal(); saveData(); }, true); }
-
-        function saveCashTransaction() {
-            const amount = parseFloat(document.getElementById('cashAmount').value) || 0; const accId = document.getElementById('cashAccount').value; if(amount <= 0 || !accId) return;
-            const editId = document.getElementById('editTxId').value; if (editId) reverseTransaction(editId);
-            const isDiv = document.getElementById('cashIsDividend').checked;
-            const newItem = { id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: document.getElementById('cashType').value, category: document.getElementById('cashCategory').value || (isDiv ? "股票配息" : "未分類"), accountId: accId, amount, isDividend: isDiv, ticker: isDiv ? appData.assets.find(a => a.id === document.getElementById('cashDividendStock').value)?.ticker : null };
-            appData.transactions.push(newItem); const acc = appData.accounts.find(a => a.id === accId); if (acc) acc.balance += (newItem.type === 'income' ? amount : -amount);
-            closeModal(); saveData();
-        }
-
-        function saveStockTransaction() {
-            const assetId = document.getElementById('stockAsset').value; const accId = document.getElementById('stockAccount').value; const price = parseFloat(document.getElementById('stockPrice').value); const shares = parseFloat(document.getElementById('stockShares').value); const fee = parseFloat(document.getElementById('stockFee').value);
-            if(shares <= 0 || price <= 0 || !assetId || !accId) return;
-            const ast = appData.assets.find(a => a.id === assetId); const acc = appData.accounts.find(a => a.id === accId);
-            const baseAmount = price * 1000 * shares; const action = document.getElementById('stockAction').value; const total = action === 'buy' ? baseAmount + fee : baseAmount - fee;
-            let pnl = undefined, linkedId = undefined;
-            if(action === 'sell') {
-                const choice = document.getElementById('stockLotSelect').value; const lots = Object.values(getBuyLotStatus()).filter(l => l.ticker === ast.ticker && l.accountId === accId && l.remaining > 0);
-                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest') ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice);
-                if (!lot || shares > lot.remaining) { alert("批次剩餘張數不足"); return; }
-                linkedId = lot.id; pnl = total - (lot.price * 1000 * shares + Math.floor(lot.price * 1000 * shares * 0.001425));
-            }
-            if (document.getElementById('editTxId').value) reverseTransaction(document.getElementById('editTxId').value);
-            acc.balance += (action === 'buy' ? -total : total);
-            appData.transactions.push({ id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: action === 'buy' ? 'stock_buy' : 'stock_sell', ticker: ast.ticker, shares, price, fee, accountId: accId, amount: total, linkedBuyId: linkedId, realizedPnL: pnl });
-            closeModal(); saveData();
-        }
-
-        function saveLoanExtraTransaction() {
-            const amount = parseFloat(document.getElementById('loanExtraAmount').value) || 0; const accId = document.getElementById('loanExtraAccount').value; const loanId = document.getElementById('loanExtraTarget').value; if(amount <= 0 || !accId || !loanId) return;
-            if (document.getElementById('editTxId').value) reverseTransaction(document.getElementById('editTxId').value);
-            appData.transactions.push({ id: 'tx_' + Date.now(), date: document.getElementById('txDate').value, type: 'loan_extra', loanId, accountId: accId, amount });
-            const acc = appData.accounts.find(a => a.id === accId); if (acc) acc.balance -= amount;
-            closeModal(); saveData();
-        }
-
-        let dragSrcId = null, dragType = null;
-        function handleDragStart(e, type, id) { dragSrcId = id; dragType = type; e.target.classList.add('dragging'); e.dataTransfer.setData('text/plain', id); }
-        function handleDragOver(e) { e.preventDefault(); }
-        function handleDragEnter(e) { const c = e.target.closest('.card'); if(c && !c.classList.contains('dragging')) { c.style.transform = 'scale(1.02)'; c.style.borderColor = 'var(--accent)'; } }
-        function handleDragLeave(e) { const c = e.target.closest('.card'); if(c && !c.classList.contains('dragging')) { c.style.transform = ''; c.style.borderColor = 'var(--border)'; } }
-        function handleDrop(e, type, targetId) { e.preventDefault(); const c = e.target.closest('.card'); if(c) { c.style.transform = ''; c.style.borderColor = 'var(--border)'; } if (dragType !== type || dragSrcId === targetId) return; const list = type === 'bank' ? appData.accounts : appData.assets; const sIdx = list.findIndex(i => i.id === dragSrcId), tIdx = list.findIndex(i => i.id === targetId); if (sIdx > -1 && tIdx > -1) { const [m] = list.splice(sIdx, 1); list.splice(tIdx, 0, m); saveData(); } }
-        function toggleAssetInputs() { const t = document.getElementById('newAssetType').value; document.getElementById('assetBankInputs').style.display = (t === 'bank' || t === 'broker') ? 'block' : 'none'; document.getElementById('assetBrokerInputs').style.display = t === 'broker' ? 'block' : 'none'; document.getElementById('assetStockInputs').style.display = t === 'stock' ? 'block' : 'none'; }
-
-        async function fetchRealApiData() {
-            const t = document.getElementById('newTicker').value.trim(); if (!t) return; const btn = document.getElementById('btnApiFetch'); btn.innerText = "⏳ 抓取中..."; btn.disabled = true;
-            try { const res = await fetch(`${MY_API_URL}?ticker=${t}`); const data = await res.json(); if (!data.error) { if (data.price > 0) document.getElementById('newPrice').value = data.price; if (data.name) document.getElementById('newName').value = data.name; } } catch (e) { alert("連線失敗"); } finally { btn.innerText = "🔄 雲端抓取即時報價與名稱"; btn.disabled = false; }
-        }
-        async function refreshAllPrices() {
-            const btn = document.querySelector('.btn-refresh-all'); btn.innerText = "⏳ 正在同步..."; btn.disabled = true; let count = 0;
-            for (let ast of appData.assets) { if (ast.ticker) { try { const res = await fetch(`${MY_API_URL}?ticker=${ast.ticker}`); const data = await res.json(); if (!data.error && data.price > 0) { ast.price = data.price; if (data.name && !ast.name) ast.name = data.name; count++; } } catch (e) {} } }
-            saveData(); btn.innerText = `✅ 成功更新 ${count} 檔`; setTimeout(() => { btn.innerText = "🔄 一鍵更新所有報價"; btn.disabled = false; }, 3000);
-        }
-
-        function renderAssets() {
-            const bL = document.getElementById('bankList'); const sL = document.getElementById('stockList'); bL.innerHTML = ''; sL.innerHTML = '';
-            appData.accounts.forEach(acc => { bL.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event,'bank','${acc.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'bank','${acc.id}')"><div class="card-actions"><button onclick="editAssetItem('bank','${acc.id}')">✏️</button><button onclick="deleteAssetItem('bank','${acc.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${acc.name} ${acc.type==='broker'?'<span style="background:var(--accent);color:#2e3440;padding:2px 6px;border-radius:4px;font-size:0.7em;">交割戶</span>':''}</h3></div><div class="card-val-row"><div class="card-val" style="color:var(--income);">$${Math.round(getDynamicBalance(acc.id)).toLocaleString()}</div></div></div>`; });
-            appData.assets.forEach(ast => {
-                let sh = getStockInventory(ast.ticker); let mv = sh * 1000 * ast.price; let yieldVal = (ast.price > 0 && ast.dividend > 0) ? (ast.dividend/ast.price*100).toFixed(2) : '0.00';
-                sL.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event,'stock','${ast.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'stock','${ast.id}')"><div class="card-actions">${sh===0?'👀':''}<button onclick="editAssetItem('stock','${ast.id}')">✏️</button><button onclick="deleteAssetItem('stock','${ast.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title"><a href="https://tw.stock.yahoo.com/quote/${ast.ticker}" target="_blank" class="title-link">${ast.ticker} ${ast.name||''}</a></h3></div><div style="font-size:0.8em;color:var(--text-light);margin-bottom:12px;"><span style="background:var(--bg-color);padding:3px 8px;border-radius:4px;border:1px solid var(--border);">🏦 交割戶: ${getStockAccounts(ast.ticker)}</span></div><div class="card-val-row"><div class="card-val">$${ast.price.toLocaleString()}<span class="val-label">現價</span></div>${sh>0?`<div class="card-val">$${Math.round(mv).toLocaleString()}<span class="val-label">總市值</span></div>`:''}</div><div class="card-sub"><b>庫存:</b> ${sh}張 | <b>預估股利:</b> ${ast.dividend||0}元 | <b>殖利率:</b> ${yieldVal}%<br><b>除息日:</b> ${ast.exDate||'未定'} | <b>發放日:</b> ${ast.payDate||'未定'}</div></div>`;
-            });
-        }
-
-        function deleteAssetItem(type, id) { showCustomConfirm('確定要刪除？', () => { if (type==='bank') appData.accounts=appData.accounts.filter(i=>i.id!==id); else appData.assets=appData.assets.filter(i=>i.id!==id); saveData(); }, true); }
-        function editAssetItem(type, id) {
-            document.getElementById('editAssetId').value = id; document.getElementById('btnCancelAssetEdit').style.display = "block"; 
-            if (type === 'bank') { let i = appData.accounts.find(x => x.id === id); document.getElementById('newAssetType').value = i.type || 'bank'; document.getElementById('newBankName').value = i.name; document.getElementById('newBankBalance').value = i.balance; document.getElementById('newBrokerMinFee').value = i.minFee || 20; document.getElementById('newBrokerDiscount').value = i.discount || 1; } 
-            else { let i = appData.assets.find(x => x.id === id); document.getElementById('newAssetType').value = 'stock'; document.getElementById('newTicker').value = i.ticker; document.getElementById('newName').value = i.name; document.getElementById('newShares').value = i.shares || 0; document.getElementById('newPrice').value = i.price; document.getElementById('newDividend').value = i.dividend || 0; document.getElementById('newExDate').value = i.exDate || ''; document.getElementById('newPayDate').value = i.payDate || ''; }
-            toggleAssetInputs(); openAssetForm();
-        }
-        function resetAssetForm() { document.getElementById('editAssetId').value = ""; document.getElementById('btnCancelAssetEdit').style.display = "none"; document.getElementById('newBankName').value = ""; document.getElementById('newTicker').value = ""; document.getElementById('newName').value = ""; }
-        function saveAssetForm() {
-            const id = document.getElementById('editAssetId').value || 'id_' + Date.now(); const type = document.getElementById('newAssetType').value; const newItem = { id, type };
-            if (type === 'bank' || type === 'broker') { newItem.name = document.getElementById('newBankName').value.trim(); newItem.balance = parseFloat(document.getElementById('newBankBalance').value) || 0; newItem.reconciledDate = new Date().toISOString().split('T')[0]; if (type === 'broker') { newItem.minFee = parseFloat(document.getElementById('newBrokerMinFee').value) || 0; newItem.discount = parseFloat(document.getElementById('newBrokerDiscount').value) || 1; } const idx = appData.accounts.findIndex(x => x.id === id); if(idx > -1) appData.accounts[idx] = newItem; else appData.accounts.push(newItem); } 
-            else { newItem.ticker = document.getElementById('newTicker').value.trim(); newItem.name = document.getElementById('newName').value.trim(); newItem.shares = parseFloat(document.getElementById('newShares').value) || 0; newItem.price = parseFloat(document.getElementById('newPrice').value) || 0; newItem.dividend = parseFloat(document.getElementById('newDividend').value) || 0; newItem.exDate = document.getElementById('newExDate').value; newItem.payDate = document.getElementById('newPayDate').value; const idx = appData.assets.findIndex(x => x.id === id); if(idx > -1) appData.assets[idx] = newItem; else appData.assets.push(newItem); }
-            closeAssetForm(); saveData();
-        }
-    </script>
-</body>
-</html>
+            if (autoCalcFee) { 
+                const acc = appData.accounts.find(a => a.id === document.getElementById('stockAccount').value); 
+                const disc = acc?.discount || 1; 
+                const minF = acc?.minFee || 20; 
+                let calcF = Math.max(minF, Math.floor(baseAmount * 0
