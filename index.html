@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.64</title>
+    <title>🍯 MoneyJar v0.65</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -75,6 +75,12 @@
         .btn-add { background: var(--accent); color: #2e3440; margin-top: 10px; }
         .btn-fetch { background: var(--income); color: #2e3440; padding: 8px; margin-top: 4px; font-size: 0.85em; }
         .btn-add:hover, .btn-fetch:hover { filter: brightness(1.1); }
+        
+        /* v0.65 理財型借還款按鈕專屬樣式 */
+        .btn-borrow { background: var(--expense); color: #eceff4; flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-borrow:hover { filter: brightness(1.1); transform: scale(1.02); }
+        .btn-repay { background: var(--income); color: #2e3440; flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-repay:hover { filter: brightness(1.1); transform: scale(1.02); }
 
         .desktop-form-wrapper { display: block; position: sticky; top: 0; align-self: start; z-index: 10; }
         .sticky-form { max-height: calc(100vh - 60px); overflow-y: auto; }
@@ -288,7 +294,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.64</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.65</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -296,7 +302,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.64</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.65</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -1342,6 +1348,9 @@
             const list = document.getElementById('loanList'); list.innerHTML = ''; 
             let schedules = cachedAmortizationSchedules || generateAmortizationSchedules(); 
             let todayStr = new Date().toISOString().split('T')[0];
+            let todayDate = new Date();
+            let daysThisMonth = todayDate.getDate();
+
             appData.loans.forEach(loan => {
                 let accName = appData.accounts.find(a => a.id === loan.accountId)?.name || '未指定';
                 let sch = schedules[loan.id] || []; 
@@ -1352,19 +1361,41 @@
                     let limit = loan.limit || 0;
                     let available = Math.max(0, limit - currentBal);
                     let nextAmt = nextPayment ? nextPayment.amount : 0;
+                    let utilizationPct = limit > 0 ? ((currentBal / limit) * 100).toFixed(1) : 0;
+                    let accruedInterest = Math.round(currentBal * ((loan.rate || 0) / 100 / 365) * daysThisMonth);
                     
-                    list.innerHTML += `<div class="card" style="border-left: 4px solid var(--accent);">
+                    list.innerHTML += `<div class="card" style="border-left: 4px solid var(--accent); display: flex; flex-direction: column;">
                         <div class="card-actions">
-                            <button onclick="openRevTxModal('${loan.id}', 'borrow')" title="借款">🔽借款</button>
-                            <button onclick="openRevTxModal('${loan.id}', 'repay')" title="還款">🔼還款</button>
                             <button onclick="editLoan('${loan.id}')">✏️</button><button onclick="deleteLoan('${loan.id}')">🗑️</button>
                         </div>
-                        <div class="card-title-row"><h3 class="card-title">${loan.name} (理財型)</h3></div>
-                        <div class="card-val-row">
-                            <div class="card-val" style="color:var(--expense);">$${currentBal.toLocaleString()}<span class="val-label">已動用餘額</span></div>
-                            <div class="card-val" style="color:var(--income); font-size:1em;">$${available.toLocaleString()}<span class="val-label">剩餘額度</span></div>
+                        <div class="card-title-row" style="margin-bottom: 5px;">
+                            <h3 class="card-title">${loan.name} <span style="font-size:0.7em; font-weight:normal; color:var(--text-light); background:var(--bg-color); padding:2px 6px; border-radius:4px; border:1px solid var(--border);">理財型</span></h3>
                         </div>
-                        <div class="card-sub"><b>總額度:</b> $${limit.toLocaleString()}<br><b>利率:</b> ${loan.rate}% | <b>扣款日:</b> 每月 ${loan.payDay} 號<br><b>下期預估利息:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span><br><b>自動扣款帳戶:</b> ${accName}</div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <div class="card-val" style="color:var(--expense); font-size: 2em; line-height: 1.2;">$${currentBal.toLocaleString()}<span class="val-label">已動用餘額</span></div>
+                            <div style="margin-top: 8px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: var(--text-light); margin-bottom: 4px;">
+                                    <span>動用率 ${utilizationPct}%</span>
+                                    <span style="color:var(--income); font-weight:bold;">剩餘 $${available.toLocaleString()}</span>
+                                </div>
+                                <div style="width: 100%; height: 6px; background: var(--bg-color); border-radius: 3px; overflow: hidden; border: 1px solid var(--border);">
+                                    <div style="width: ${utilizationPct}%; height: 100%; background: var(--expense); transition: width 0.3s;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-sub" style="margin-bottom: 15px;">
+                            <b>總額度:</b> $${limit.toLocaleString()} | <b>年利率:</b> ${loan.rate}%<br>
+                            <b>本月累計利息:</b> <span style="color:var(--expense)">$${accruedInterest.toLocaleString()}</span> (估算至今日)<br>
+                            <b>下期預估扣款:</b> <span style="color:var(--expense)">$${nextAmt.toLocaleString()}</span> (每月 ${loan.payDay} 號)<br>
+                            <b>扣款帳戶:</b> ${accName}
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: auto;">
+                            <button class="btn-borrow" onclick="openRevTxModal('${loan.id}', 'borrow')">➕ 借款</button>
+                            <button class="btn-repay" onclick="openRevTxModal('${loan.id}', 'repay')">➖ 還款</button>
+                        </div>
                     </div>`;
                 } else {
                     let currentBal = nextPayment ? nextPayment.principalRemain : (sch.length > 0 ? 0 : loan.principal); 
@@ -1485,8 +1516,8 @@
                     
                     let title = '';
                     if (tx.isDividend) title = `領息 ${tx.ticker}${astName}`;
-                    else if (tx.type === 'rev_borrow') title = `🔽借款自 ${(appData.loans.find(l => l.id === tx.loanId)?.name || '理財型')}`;
-                    else if (tx.type === 'rev_repay') title = `🔼還款至 ${(appData.loans.find(l => l.id === tx.loanId)?.name || '理財型')}`;
+                    else if (tx.type === 'rev_borrow') title = `➕ 借款自 ${(appData.loans.find(l => l.id === tx.loanId)?.name || '理財型')}`;
+                    else if (tx.type === 'rev_repay') title = `➖ 還款至 ${(appData.loans.find(l => l.id === tx.loanId)?.name || '理財型')}`;
                     else title = tx.category || ((tx.type.includes('buy') ? '買入 ' : '賣出 ') + tx.ticker + astName);
                     
                     let amtStr = (tx.type==='income' || tx.type.includes('sell') || tx.type==='rev_borrow' ? '+' : '-') + '$' + Math.round(tx.amount).toLocaleString();
@@ -1540,10 +1571,10 @@
                                 label = `🔄 ${tx.loanName} -$${tx.amount.toLocaleString()}`; cls = 'bg-loan';
                             } else if (tx.type === 'rev_borrow') {
                                 let lName = appData.loans.find(l => l.id === tx.loanId)?.name || '理財型';
-                                label = `+$${tx.amount.toLocaleString()} 借款 ${lName}`; cls = 'bg-income';
+                                label = `+$${tx.amount.toLocaleString()} ➕ 借款 ${lName}`; cls = 'bg-income';
                             } else if (tx.type === 'rev_repay') {
                                 let lName = appData.loans.find(l => l.id === tx.loanId)?.name || '理財型';
-                                label = `-$${tx.amount.toLocaleString()} 還款 ${lName}`; cls = 'bg-expense';
+                                label = `-$${tx.amount.toLocaleString()} ➖ 還款 ${lName}`; cls = 'bg-expense';
                             } else {
                                 label = (tx.isDividend ? `+$${tx.amount.toLocaleString()} 領息 ${tx.ticker}${astName}` : (tx.type==='income' ? `+$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='expense' ? `-$${tx.amount.toLocaleString()} ${tx.category}` : (tx.type==='loan_extra' ? `大額還款 -$${tx.amount.toLocaleString()}` : (tx.type==='stock_buy' ? `買 ${tx.ticker}${astName}` : `賣 ${tx.ticker}${astName}`)))));
                                 cls = (tx.isDividend || tx.type==='income' ? 'bg-income' : (tx.type==='expense' ? 'bg-expense' : (tx.type==='loan_extra' ? 'bg-sell' : (tx.type==='stock_buy' ? 'bg-buy' : 'bg-sell'))));
@@ -1591,7 +1622,7 @@
                 document.getElementById('revTxAmount').value = tx.amount;
                 document.getElementById('editRevTxId').value = tx.id;
                 const loan = appData.loans.find(l => l.id === tx.loanId);
-                document.getElementById('revTxTitle').innerText = (tx.type === 'rev_borrow' ? `🔽 編輯借款: ` : `🔼 編輯還款: `) + (loan?.name || '');
+                document.getElementById('revTxTitle').innerText = (tx.type === 'rev_borrow' ? `➕ 借款自: ` : `➖ 還款至: `) + (loan?.name || '');
                 document.getElementById('btnDeleteRevTx').style.display = 'block';
                 document.getElementById('revTxModal').classList.add('active');
                 return;
@@ -1672,7 +1703,7 @@
             document.getElementById('editRevTxId').value = '';
             document.getElementById('revTxDate').value = currentDate.toISOString().split('T')[0];
             document.getElementById('revTxAmount').value = '';
-            document.getElementById('revTxTitle').innerText = actionType === 'borrow' ? `🔽 借款自: ${loan.name}` : `🔼 還款至: ${loan.name}`;
+            document.getElementById('revTxTitle').innerText = actionType === 'borrow' ? `➕ 借款自: ${loan.name}` : `➖ 還款至: ${loan.name}`;
             document.getElementById('btnDeleteRevTx').style.display = 'none';
             document.getElementById('revTxModal').classList.add('active');
         }
