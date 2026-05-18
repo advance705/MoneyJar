@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.65.3</title>
+    <title>🍯 MoneyJar v0.65.4</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1687,7 +1687,7 @@
             let pnl = undefined, linkedId = undefined;
             if(action === 'sell') {
                 const choice = document.getElementById('stockLotSelect').value; const lots = Object.values(getBuyLotStatus()).filter(l => l.ticker === ast.ticker && l.accountId === accId && l.remaining > 0);
-                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest' ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice));
+                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest') ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice);
                 if (!lot || shares > lot.remaining) { alert("批次剩餘股數不足"); return; }
                 linkedId = lot.id; pnl = total - (lot.price * shares + Math.floor(lot.price * shares * 0.001425));
             }
@@ -1803,12 +1803,82 @@
             saveData(); btn.innerText = `✅ 成功更新 ${count} 檔`; setTimeout(() => { btn.innerText = "🔄 一鍵更新所有報價"; btn.disabled = false; }, 3000);
         }
 
+        // v0.65.4 新增：計算特定股票未結清庫存之加權平均持股單價
+        function getStockAverageCost(ticker) {
+            let ast = appData.assets.find(a => a.ticker === ticker);
+            if (!ast) return 0;
+            const buyLots = getBuyLotStatus();
+            let totalCost = 0;
+            let totalShares = 0;
+            
+            // 累加交易紀錄中的賸餘批次
+            for (let id in buyLots) {
+                let lot = buyLots[id];
+                if (lot.ticker === ticker && lot.remaining > 0) {
+                    totalCost += lot.remaining * lot.price;
+                    totalShares += lot.remaining;
+                }
+            }
+            
+            // 處理手動登入之初始資產庫存與賸餘交易股數之差異，防止未登載交易的庫存失去成本價
+            let totalInv = getStockInventory(ticker);
+            let diffShares = Math.max(0, totalInv - totalShares);
+            if (diffShares > 0) {
+                totalCost += diffShares * ast.price; // 初始股數以現價作為初始成本假設
+                totalShares += diffShares;
+            }
+            
+            if (totalShares === 0) return 0;
+            return totalCost / totalShares;
+        }
+
         function renderAssets() {
             const bL = document.getElementById('bankList'); const sL = document.getElementById('stockList'); bL.innerHTML = ''; sL.innerHTML = '';
             appData.accounts.forEach(acc => { bL.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event,'bank','${acc.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'bank','${acc.id}')"><div class="card-actions"><button onclick="editAssetItem('bank','${acc.id}')">✏️</button><button onclick="deleteAssetItem('bank','${acc.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title">${acc.name} ${acc.type==='broker'?'<span style="background:var(--accent);color:#2e3440;padding:2px 6px;border-radius:4px;font-size:0.7em;">交割戶</span>':''}</h3></div><div class="card-val-row"><div class="card-val" style="color:var(--income);">$${Math.round(getDynamicBalance(acc.id)).toLocaleString()}</div></div></div>`; });
             appData.assets.forEach(ast => {
                 let sh = getStockInventory(ast.ticker); let mv = sh * ast.price; let yieldVal = (ast.price > 0 && ast.dividend > 0) ? (ast.dividend/ast.price*100).toFixed(2) : '0.00';
-                sL.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event,'stock','${ast.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'stock','${ast.id}')"><div class="card-actions">${sh===0?'👀':''}<button onclick="editAssetItem('stock','${ast.id}')">✏️</button><button onclick="deleteAssetItem('stock','${ast.id}')">🗑️</button></div><div class="card-title-row"><h3 class="card-title"><a href="https://tw.stock.yahoo.com/quote/${ast.ticker}" target="_blank" class="title-link">${ast.ticker} ${ast.name||''}</a></h3></div><div style="font-size:0.8em;color:var(--text-light);margin-bottom:12px;"><span style="background:var(--bg-color);padding:3px 8px;border-radius:4px;border:1px solid var(--border);">🏦 交割戶: ${getStockAccounts(ast.ticker)}</span></div><div class="card-val-row"><div class="card-val">$${ast.price.toLocaleString()}<span class="val-label">現價</span></div>${sh>0?`<div class="card-val">$${Math.round(mv).toLocaleString()}<span class="val-label">總市值</span></div>`:''}</div><div class="card-sub"><b>庫存:</b> ${sh.toLocaleString()}股 | <b>預估股利:</b> ${ast.dividend||0}元 | <b>殖利率:</b> ${yieldVal}%<br><b>除息日:</b> ${ast.exDate||'未定'} | <b>發放日:</b> ${ast.payDate||'未定'}</div></div>`;
+                
+                // v0.65.4 新增：平均成本與未實現損益計算及 HTML 模版生成
+                let holdingInfoHtml = '';
+                if (sh > 0) {
+                    let avgCost = getStockAverageCost(ast.ticker);
+                    let unrealizedPnL = Math.round((ast.price - avgCost) * sh);
+                    let roi = avgCost > 0 ? ((ast.price - avgCost) / avgCost * 100).toFixed(2) : '0.00';
+                    let pnlSign = unrealizedPnL >= 0 ? '+' : '';
+                    let pnlColor = unrealizedPnL >= 0 ? 'var(--income)' : 'var(--expense)';
+                    
+                    holdingInfoHtml = `
+                        <div style="margin-top: 10px; margin-bottom: 10px; padding: 10px; background: rgba(236, 239, 244, 0.05); border-radius: 6px; border-left: 3px solid var(--accent);">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: var(--text-light); margin-bottom: 4px;">
+                                <span><b>持股:</b> ${sh.toLocaleString()} 股</span>
+                                <span><b>平均成本:</b> $${avgCost.toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold;">
+                                <span>未實現損益:</span>
+                                <span style="color: ${pnlColor};">${pnlSign}$${unrealizedPnL.toLocaleString()} (${pnlSign}${roi}%)</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let subHtml = '';
+                if (sh > 0) {
+                    subHtml = `<b>預估股利:</b> ${ast.dividend||0}元 | <b>殖利率:</b> ${yieldVal}%<br><b>除息日:</b> ${ast.exDate||'未定'} | <b>發放日:</b> ${ast.payDate||'未定'}`;
+                } else {
+                    subHtml = `<b>庫存:</b> 0 股 | <b>預估股利:</b> ${ast.dividend||0}元 | <b>殖利率:</b> ${yieldVal}%<br><b>除息日:</b> ${ast.exDate||'未定'} | <b>發放日:</b> ${ast.payDate||'未定'}`;
+                }
+
+                sL.innerHTML += `<div class="card" draggable="true" ondragstart="handleDragStart(event,'stock','${ast.id}')" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'stock','${ast.id}')">
+                    <div class="card-actions">${sh===0?'👀':''}<button onclick="editAssetItem('stock','${ast.id}')">✏️</button><button onclick="deleteAssetItem('stock','${ast.id}')">🗑️</button></div>
+                    <div class="card-title-row"><h3 class="card-title"><a href="https://tw.stock.yahoo.com/quote/${ast.ticker}" target="_blank" class="title-link">${ast.ticker} ${ast.name||''}</a></h3></div>
+                    <div style="font-size:0.8em;color:var(--text-light);margin-bottom:12px;"><span style="background:var(--bg-color);padding:3px 8px;border-radius:4px;border:1px solid var(--border);">🏦 交割戶: ${getStockAccounts(ast.ticker)}</span></div>
+                    <div class="card-val-row">
+                        <div class="card-val">$${ast.price.toLocaleString()}<span class="val-label">現價</span></div>
+                        ${sh>0?`<div class="card-val">$${Math.round(mv).toLocaleString()}<span class="val-label">總市值</span></div>`:''}
+                    </div>
+                    ${holdingInfoHtml}
+                    <div class="card-sub">${subHtml}</div>
+                </div>`;
             });
         }
 
