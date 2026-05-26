@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍯 MoneyJar v0.65.4</title>
+    <title>🍯 MoneyJar v0.65.5</title>
     <!-- 引入 Chart.js 與 Google Identity Services (GIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -76,7 +76,6 @@
         .btn-fetch { background: var(--income); color: #2e3440; padding: 8px; margin-top: 4px; font-size: 0.85em; }
         .btn-add:hover, .btn-fetch:hover { filter: brightness(1.1); }
         
-        /* v0.65.1 理財型借還款按鈕專屬樣式調整 (統一暗色風格) */
         .btn-borrow, .btn-repay { background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border); flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-borrow:hover, .btn-repay:hover { background: var(--sidebar-hover); border-color: var(--accent); transform: scale(1.02); }
 
@@ -233,7 +232,7 @@
             .form-group label { font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
             .form-group input, .form-group select { font-size: 16px !important; min-height: 36px !important; padding: 6px 8px !important; -webkit-appearance: none; appearance: none; background-color: var(--bg-color); min-width: 0 !important; width: 100% !important; box-sizing: border-box !important;}
             .btn-add, .btn-fetch { padding: 8px 12px; margin-top: 5px; font-size: 0.9em; }
-            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%12.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
+            .form-group select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d8dee9%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat, repeat; background-position: right .7em top 50%, 0 0; background-size: .65em auto, 100%; }
 
             .desktop-form-wrapper, .modal-overlay { display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.75) !important; z-index: 99999 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding: calc(env(safe-area-inset-top) + 70px) 15px calc(env(safe-area-inset-bottom) + 85px) 15px !important; }
             .desktop-form-wrapper.active, .modal-overlay.active { display: block !important; }
@@ -292,7 +291,7 @@
     </div>
 
     <div class="mobile-header">
-        <div class="mobile-header-title">🍯 MoneyJar v0.65.4</div>
+        <div class="mobile-header-title">🍯 MoneyJar v0.65.5</div>
         <div class="mobile-header-controls">
             <span id="mobileSyncIcon" style="font-size:1.1em; transition:0.3s; opacity:0.5; cursor:help;" onclick="showCustomAlert(document.getElementById('syncStatus').innerText)">☁️</span>
             <img id="mobileAvatar" class="user-avatar" src="" style="display:none;" onclick="confirmSignout()">
@@ -300,7 +299,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">🍯 MoneyJar v0.65.4</div>
+        <div class="sidebar-header">🍯 MoneyJar v0.65.5</div>
         
         <div class="user-profile" id="desktopProfile" style="display:none;">
             <img id="desktopAvatar" class="user-avatar" src="" onclick="confirmSignout()">
@@ -440,7 +439,7 @@
         </div>
 
         <div id="loans" class="page">
-            <h2>🏦 貸款與負債管理</h2>
+            <h2>🏦 貸款與負債 management</h2>
             <button class="mobile-fab" onclick="openLoanForm()">➕</button>
             <div class="card-grid" style="grid-template-columns: minmax(300px, 350px) 1fr; align-items: start;">
                 <div id="loanFormOverlay" class="desktop-form-wrapper" onclick="closeLoanForm()">
@@ -1602,13 +1601,18 @@
             }
         }
 
+        // v0.65.5 修正：將抓取日期過濾條件從嚴格小於（<）改為小於等於（<=），正確抓出當沖買入批次
         function populateLotSelect(excludeSellId = null) {
             const action = document.getElementById('stockAction').value; if (action !== 'sell') { document.getElementById('sellBuyPriceRow').style.display = 'none'; return; }
             document.getElementById('sellBuyPriceRow').style.display = 'block';
             const ast = appData.assets.find(a => a.id === document.getElementById('stockAsset').value); 
             const accId = document.getElementById('stockAccount').value; const sel = document.getElementById('stockLotSelect');
+            const txDateStr = document.getElementById('txDate').value;
             if(!ast || !accId) { sel.innerHTML = '<option value="">請先選擇股票與帳戶</option>'; return; }
-            const availableLots = Object.values(getBuyLotStatus(excludeSellId)).filter(l => l.ticker === ast.ticker && l.accountId === accId && l.remaining > 0).sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            // v0.65.5 關鍵修復點：l.date <= txDateStr
+            const availableLots = Object.values(getBuyLotStatus(excludeSellId)).filter(l => l.ticker === ast.ticker && l.accountId === accId && l.remaining > 0 && l.date <= txDateStr).sort((a,b) => new Date(a.date) - new Date(b.date));
+            
             if (availableLots.length === 0) { sel.innerHTML = '<option value="">無可用買入批次</option>'; return; }
             let html = `<option value="auto_lowest">自動：優先扣除最低成本</option><option value="auto_highest">自動：優先最高成本</option>`;
             availableLots.forEach(l => { html += `<option value="${l.id}">${l.date} 買入 @ $${l.price} (剩 ${l.remaining.toLocaleString()}股)</option>`; });
@@ -1687,7 +1691,7 @@
             let pnl = undefined, linkedId = undefined;
             if(action === 'sell') {
                 const choice = document.getElementById('stockLotSelect').value; const lots = Object.values(getBuyLotStatus()).filter(l => l.ticker === ast.ticker && l.accountId === accId && l.remaining > 0);
-                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest') ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice);
+                let lot = (choice === 'auto_lowest') ? lots.reduce((min, l) => l.price < min.price ? l : min, lots[0]) : (choice === 'auto_highest' ? lots.reduce((max, l) => l.price > max.price ? l : max, lots[0]) : lots.find(l => l.id === choice));
                 if (!lot || shares > lot.remaining) { alert("批次剩餘股數不足"); return; }
                 linkedId = lot.id; pnl = total - (lot.price * shares + Math.floor(lot.price * shares * 0.001425));
             }
