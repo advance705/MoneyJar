@@ -1,5 +1,5 @@
 {
-  "version": "0.0.13",
+  "version": "0.0.14",
   "channel": "beta",
   "site": "https://advance705.github.io/MoneyJar/",
   "googleSyncMode": "automatic-while-open",
@@ -8,14 +8,14 @@
   "legacyCommit": "12080ff71dc2a8f0a5a06ed65e766cd1fb9baf0a",
   "files": [
     {
-      "path": "assets/index-BjhLzrOK.js",
-      "bytes": 479305,
-      "sha256": "c052e021967fe967aca1646a8bb32d70adc865d2f68294c7bf595e41143c9ab9"
-    },
-    {
       "path": "assets/index-BknWKy-G.css",
       "bytes": 74109,
       "sha256": "72d589b335c68f2646ec8b0113d4bf61d0f5273162ba47c1a89ac46eba88bb0f"
+    },
+    {
+      "path": "assets/index-BScIP-9n.js",
+      "bytes": 476291,
+      "sha256": "91ece1abc50878e1d05779637a8db81f25b8a83ca82062ccae0b8772300845eb"
     },
     {
       "path": "data/securities.json",
@@ -30,7 +30,7 @@
     {
       "path": "index.html",
       "bytes": 636,
-      "sha256": "a361a95e800887158f173e6174d5fa2c1a8a3dcb690306d70e3848c65be7cd41"
+      "sha256": "9f31d369f304454b6e7b4f86c0b568fdba7f9a7eed46bb5867693f0997d05e13"
     },
     {
       "path": "preview.html",
@@ -44,8 +44,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 1704,
-      "sha256": "9f5cd08116db6be6f134a58e642998fe57e60d6f4d4843a243794f51da202216"
+      "bytes": 1994,
+      "sha256": "743292a0efc9de34bd879d8366931878dc0c26e527c0de2b6b68d703aa67e565"
     },
     {
       "path": "assets/README.md",
