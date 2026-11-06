@@ -1,4 +1,4 @@
-# MoneyJar 0.0.16 beta
+# MoneyJar 0.0.17 beta
 
 個人跨裝置記帳工具。
 
